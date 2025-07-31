@@ -47,8 +47,12 @@ import (
 	"github.com/GoogleCloudPlatform/k8s-config-connector/mockgcp/mockcloudquota"
 	"github.com/GoogleCloudPlatform/k8s-config-connector/mockgcp/mockcloudtasks"
 	"github.com/GoogleCloudPlatform/k8s-config-connector/mockgcp/mockcomposer"
-        "github.com/GoogleCloudPlatform/k8s-config-connector/mockgcp/mockcompute"
-        "github.com/GoogleCloudPlatform/k8s-config-connector/mockgcp/mockcontainer"
+        _ "github.com/GoogleCloudPlatform/k8s-config-connector/mockgcp/mockcompute"
+        _ "github.com/GoogleCloudPlatform/k8s-config-connector/mockgcp/mockcontainer"
+	_ "github.com/GoogleCloudPlatform/k8s-config-connector/mockgcp/mockdatacatalog"
+	_ "github.com/GoogleCloudPlatform/k8s-config-connector/mockgcp/mockdataflow"
+	"github.com/GoogleCloudPlatform/k8s-config-connector/mockgcp/mockdataform"
+>>>>>>> 8d1b897b9a (feature-future-reservations: Remove service from mock_http_roundtrip to solve duplicate registration issue)
 	"github.com/GoogleCloudPlatform/k8s-config-connector/mockgcp/mockdataplex"
 	"github.com/GoogleCloudPlatform/k8s-config-connector/mockgcp/mockdatastream"
 	"github.com/GoogleCloudPlatform/k8s-config-connector/mockgcp/mockdocumentai"
@@ -182,7 +186,6 @@ func NewMockRoundTripper(ctx context.Context, k8sClient client.Client, storage s
 	services = append(services, mockgkebackup.New(env, storage))
 	services = append(services, mockrecaptchaenterprise.New(env, storage))
 	services = append(services, mockspeech.New(env, storage))
-	services = append(services, mockcompute.New(env, storage))
 
 	for _, service := range services {
 		service.Register(server)
