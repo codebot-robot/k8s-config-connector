@@ -19,16 +19,35 @@ package vertexai_test
 
 import (
 	"fmt"
+	"log"
+	"strconv"
 	"strings"
 	"testing"
+	"time"
 
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/terraform"
 
 	"github.com/hashicorp/terraform-provider-google-beta/google-beta/acctest"
 	"github.com/hashicorp/terraform-provider-google-beta/google-beta/envvar"
 	"github.com/hashicorp/terraform-provider-google-beta/google-beta/tpgresource"
 	transport_tpg "github.com/hashicorp/terraform-provider-google-beta/google-beta/transport"
+
+	"google.golang.org/api/googleapi"
+)
+
+var (
+	_ = fmt.Sprintf
+	_ = log.Print
+	_ = strconv.Atoi
+	_ = strings.Trim
+	_ = time.Now
+	_ = resource.TestMain
+	_ = terraform.NewState
+	_ = envvar.TestEnvVar
+	_ = tpgresource.SetLabels
+	_ = transport_tpg.Config{}
+	_ = googleapi.Error{}
 )
 
 func TestAccVertexAIIndex_vertexAiIndexExample(t *testing.T) {
@@ -36,12 +55,13 @@ func TestAccVertexAIIndex_vertexAiIndexExample(t *testing.T) {
 
 	context := map[string]interface{}{
 		"project":       envvar.GetTestProjectFromEnv(),
+		"kms_key_name":  acctest.BootstrapKMSKeyInLocation(t, "us-central1").CryptoKey.Name,
 		"random_suffix": acctest.RandString(t, 10),
 	}
 
 	acctest.VcrTest(t, resource.TestCase{
 		PreCheck:                 func() { acctest.AccTestPreCheck(t) },
-		ProtoV5ProviderFactories: acctest.ProtoV5ProviderFactories(t),
+		ProtoV5ProviderFactories: acctest.ProtoV5ProviderBetaFactories(t),
 		CheckDestroy:             testAccCheckVertexAIIndexDestroyProducer(t),
 		Steps: []resource.TestStep{
 			{
@@ -51,7 +71,7 @@ func TestAccVertexAIIndex_vertexAiIndexExample(t *testing.T) {
 				ResourceName:            "google_vertex_ai_index.index",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"etag", "region", "metadata.0.contents_delta_uri", "metadata.0.is_complete_overwrite"},
+				ImportStateVerifyIgnore: []string{"etag", "labels", "metadata.0.config.0.feature_norm_type", "metadata.0.contents_delta_uri", "metadata.0.is_complete_overwrite", "region", "terraform_labels"},
 			},
 		},
 	})
@@ -59,7 +79,13 @@ func TestAccVertexAIIndex_vertexAiIndexExample(t *testing.T) {
 
 func testAccVertexAIIndex_vertexAiIndexExample(context map[string]interface{}) string {
 	return acctest.Nprintf(`
+resource "google_project_service_identity" "vertexai_sa" {
+  provider = google-beta
+  service = "aiplatform.googleapis.com"
+}
+
 resource "google_storage_bucket" "bucket" {
+  provider = google-beta
   name     = "tf-test-vertex-ai-index-test%{random_suffix}"
   location = "us-central1"
   uniform_bucket_level_access = true
@@ -68,6 +94,7 @@ resource "google_storage_bucket" "bucket" {
 # The sample data comes from the following link:
 # https://cloud.google.com/vertex-ai/docs/matching-engine/filtering#specify-namespaces-tokens
 resource "google_storage_bucket_object" "data" {
+  provider = google-beta
   name   = "contents/data.json"
   bucket = google_storage_bucket.bucket.name
   content = <<EOF
@@ -76,7 +103,15 @@ resource "google_storage_bucket_object" "data" {
 EOF
 }
 
+resource "google_kms_crypto_key_iam_member" "vertexai_encrypterdecrypter" {
+  provider = google-beta
+  crypto_key_id = "%{kms_key_name}"
+  role          = "roles/cloudkms.cryptoKeyEncrypterDecrypter"
+  member        =  google_project_service_identity.vertexai_sa.member
+}
+
 resource "google_vertex_ai_index" "index" {
+  provider = google-beta
   labels = {
     foo = "bar"
   }
@@ -98,7 +133,14 @@ resource "google_vertex_ai_index" "index" {
       }
     }
   }
+  encryption_spec {
+  kms_key_name = "%{kms_key_name}"
+  }
   index_update_method = "BATCH_UPDATE"
+
+  depends_on = [
+  google_kms_crypto_key_iam_member.vertexai_encrypterdecrypter,
+  ]
 }
 `, context)
 }
@@ -108,6 +150,7 @@ func TestAccVertexAIIndex_vertexAiIndexStreamingExample(t *testing.T) {
 
 	context := map[string]interface{}{
 		"project":       envvar.GetTestProjectFromEnv(),
+		"kms_key_name":  acctest.BootstrapKMSKeyInLocation(t, "us-central1").CryptoKey.Name,
 		"random_suffix": acctest.RandString(t, 10),
 	}
 
@@ -123,7 +166,7 @@ func TestAccVertexAIIndex_vertexAiIndexStreamingExample(t *testing.T) {
 				ResourceName:            "google_vertex_ai_index.index",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"etag", "region", "metadata.0.contents_delta_uri", "metadata.0.is_complete_overwrite"},
+				ImportStateVerifyIgnore: []string{"etag", "labels", "metadata.0.config.0.feature_norm_type", "metadata.0.contents_delta_uri", "metadata.0.is_complete_overwrite", "region", "terraform_labels"},
 			},
 		},
 	})

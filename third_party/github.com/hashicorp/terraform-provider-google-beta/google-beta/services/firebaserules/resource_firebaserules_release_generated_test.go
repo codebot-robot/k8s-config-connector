@@ -23,8 +23,8 @@ import (
 	"fmt"
 	dcl "github.com/GoogleCloudPlatform/declarative-resource-client-library/dcl"
 	firebaserules "github.com/GoogleCloudPlatform/declarative-resource-client-library/services/google/firebaserules/beta"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/terraform"
 	"strings"
 	"testing"
 
@@ -33,7 +33,7 @@ import (
 	transport_tpg "github.com/hashicorp/terraform-provider-google-beta/google-beta/transport"
 )
 
-func TestAccFirebaserulesRelease_FirestoreReleaseHandWritten(t *testing.T) {
+func TestAccFirebaserulesRelease_FirestoreReleaseAdditionalHandWritten(t *testing.T) {
 	t.Parallel()
 
 	context := map[string]interface{}{
@@ -47,15 +47,7 @@ func TestAccFirebaserulesRelease_FirestoreReleaseHandWritten(t *testing.T) {
 		CheckDestroy:             testAccCheckFirebaserulesReleaseDestroyProducer(t),
 		Steps: []resource.TestStep{
 			{
-				Config: testAccFirebaserulesRelease_FirestoreReleaseHandWritten(context),
-			},
-			{
-				ResourceName:      "google_firebaserules_release.primary",
-				ImportState:       true,
-				ImportStateVerify: true,
-			},
-			{
-				Config: testAccFirebaserulesRelease_FirestoreReleaseHandWrittenUpdate0(context),
+				Config: testAccFirebaserulesRelease_FirestoreReleaseAdditionalHandWritten(context),
 			},
 			{
 				ResourceName:      "google_firebaserules_release.primary",
@@ -92,57 +84,23 @@ func TestAccFirebaserulesRelease_StorageReleaseHandWritten(t *testing.T) {
 	})
 }
 
-func testAccFirebaserulesRelease_FirestoreReleaseHandWritten(context map[string]interface{}) string {
+func testAccFirebaserulesRelease_FirestoreReleaseAdditionalHandWritten(context map[string]interface{}) string {
 	return acctest.Nprintf(`
 resource "google_firebaserules_release" "primary" {
-  name         = "cloud.firestore"
-  ruleset_name = "projects/%{project_name}/rulesets/${google_firebaserules_ruleset.firestore.name}"
+  name         = "cloud.firestore/tf-test-database%{random_suffix}"
   project      = "%{project_name}"
-
-  lifecycle {
-    replace_triggered_by = [
-      google_firebaserules_ruleset.firestore
-    ]
-  }
+  ruleset_name = "projects/%{project_name}/rulesets/${google_firebaserules_ruleset.firestore.name}"
 }
 
 resource "google_firebaserules_ruleset" "firestore" {
+  project = "%{project_name}"
+
   source {
     files {
       content = "service cloud.firestore {match /databases/{database}/documents { match /{document=**} { allow read, write: if false; } } }"
       name    = "firestore.rules"
     }
   }
-
-  project = "%{project_name}"
-}
-
-`, context)
-}
-
-func testAccFirebaserulesRelease_FirestoreReleaseHandWrittenUpdate0(context map[string]interface{}) string {
-	return acctest.Nprintf(`
-resource "google_firebaserules_release" "primary" {
-  name         = "cloud.firestore"
-  ruleset_name = "projects/%{project_name}/rulesets/${google_firebaserules_ruleset.firestore.name}"
-  project      = "%{project_name}"
-
-  lifecycle {
-    replace_triggered_by = [
-      google_firebaserules_ruleset.firestore
-    ]
-  }
-}
-
-resource "google_firebaserules_ruleset" "firestore" {
-  source {
-    files {
-      content = "service cloud.firestore {match /databases/{database}/documents { match /{document=**} { allow read, write: if request.auth != null; } } }"
-      name    = "firestore.rules"
-    }
-  }
-
-  project = "%{project_name}"
 }
 
 `, context)

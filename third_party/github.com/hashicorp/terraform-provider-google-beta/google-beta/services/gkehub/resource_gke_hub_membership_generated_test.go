@@ -19,23 +19,97 @@ package gkehub_test
 
 import (
 	"fmt"
+	"log"
+	"strconv"
 	"strings"
 	"testing"
+	"time"
 
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/terraform"
 
 	"github.com/hashicorp/terraform-provider-google-beta/google-beta/acctest"
 	"github.com/hashicorp/terraform-provider-google-beta/google-beta/envvar"
 	"github.com/hashicorp/terraform-provider-google-beta/google-beta/tpgresource"
 	transport_tpg "github.com/hashicorp/terraform-provider-google-beta/google-beta/transport"
+
+	"google.golang.org/api/googleapi"
 )
+
+var (
+	_ = fmt.Sprintf
+	_ = log.Print
+	_ = strconv.Atoi
+	_ = strings.Trim
+	_ = time.Now
+	_ = resource.TestMain
+	_ = terraform.NewState
+	_ = envvar.TestEnvVar
+	_ = tpgresource.SetLabels
+	_ = transport_tpg.Config{}
+	_ = googleapi.Error{}
+)
+
+func TestAccGKEHubMembership_gkehubMembershipRegionalExample(t *testing.T) {
+	t.Parallel()
+
+	context := map[string]interface{}{
+		"location":        envvar.GetTestRegionFromEnv(),
+		"project":         envvar.GetTestProjectFromEnv(),
+		"network_name":    acctest.BootstrapSharedTestNetwork(t, "gke-cluster"),
+		"subnetwork_name": acctest.BootstrapSubnet(t, "gke-cluster", acctest.BootstrapSharedTestNetwork(t, "gke-cluster")),
+		"random_suffix":   acctest.RandString(t, 10),
+	}
+
+	acctest.VcrTest(t, resource.TestCase{
+		PreCheck:                 func() { acctest.AccTestPreCheck(t) },
+		ProtoV5ProviderFactories: acctest.ProtoV5ProviderFactories(t),
+		CheckDestroy:             testAccCheckGKEHubMembershipDestroyProducer(t),
+		Steps: []resource.TestStep{
+			{
+				Config: testAccGKEHubMembership_gkehubMembershipRegionalExample(context),
+			},
+			{
+				ResourceName:            "google_gke_hub_membership.membership",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"labels", "location", "membership_id", "terraform_labels"},
+			},
+		},
+	})
+}
+
+func testAccGKEHubMembership_gkehubMembershipRegionalExample(context map[string]interface{}) string {
+	return acctest.Nprintf(`
+resource "google_container_cluster" "primary" {
+  name               = "tf-test-basic-cluster%{random_suffix}"
+  location           = "us-central1-a"
+  initial_node_count = 1
+  deletion_protection = false
+  network       = "%{network_name}"
+  subnetwork    = "%{subnetwork_name}"
+}
+
+resource "google_gke_hub_membership" "membership" {
+  membership_id = "basic%{random_suffix}"
+  location = "%{location}"
+  endpoint {
+    gke_cluster {
+      resource_link = "//container.googleapis.com/${google_container_cluster.primary.id}"
+    }
+  }
+}
+`, context)
+}
 
 func TestAccGKEHubMembership_gkehubMembershipBasicExample(t *testing.T) {
 	t.Parallel()
 
 	context := map[string]interface{}{
-		"random_suffix": acctest.RandString(t, 10),
+		"deletion_protection": false,
+		"network_name":        acctest.BootstrapSharedTestNetwork(t, "gke-cluster"),
+		"subnetwork_name":     acctest.BootstrapSubnet(t, "gke-cluster", acctest.BootstrapSharedTestNetwork(t, "gke-cluster")),
+		"random_suffix":       acctest.RandString(t, 10),
 	}
 
 	acctest.VcrTest(t, resource.TestCase{
@@ -50,7 +124,7 @@ func TestAccGKEHubMembership_gkehubMembershipBasicExample(t *testing.T) {
 				ResourceName:            "google_gke_hub_membership.membership",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"membership_id"},
+				ImportStateVerifyIgnore: []string{"labels", "location", "membership_id", "terraform_labels"},
 			},
 		},
 	})
@@ -59,9 +133,12 @@ func TestAccGKEHubMembership_gkehubMembershipBasicExample(t *testing.T) {
 func testAccGKEHubMembership_gkehubMembershipBasicExample(context map[string]interface{}) string {
 	return acctest.Nprintf(`
 resource "google_container_cluster" "primary" {
-  name               = "basiccluster%{random_suffix}"
+  name               = "tf-test-basic-cluster%{random_suffix}"
   location           = "us-central1-a"
   initial_node_count = 1
+  deletion_protection  = %{deletion_protection}
+  network       = "%{network_name}"
+  subnetwork    = "%{subnetwork_name}"
 }
 
 resource "google_gke_hub_membership" "membership" {
@@ -71,6 +148,10 @@ resource "google_gke_hub_membership" "membership" {
       resource_link = "//container.googleapis.com/${google_container_cluster.primary.id}"
     }
   }
+
+  labels = {
+    env = "test"
+  }
 }
 `, context)
 }
@@ -79,8 +160,11 @@ func TestAccGKEHubMembership_gkehubMembershipIssuerExample(t *testing.T) {
 	t.Parallel()
 
 	context := map[string]interface{}{
-		"project":       envvar.GetTestProjectFromEnv(),
-		"random_suffix": acctest.RandString(t, 10),
+		"project":             envvar.GetTestProjectFromEnv(),
+		"deletion_protection": false,
+		"network_name":        acctest.BootstrapSharedTestNetwork(t, "gke-cluster"),
+		"subnetwork_name":     acctest.BootstrapSubnet(t, "gke-cluster", acctest.BootstrapSharedTestNetwork(t, "gke-cluster")),
+		"random_suffix":       acctest.RandString(t, 10),
 	}
 
 	acctest.VcrTest(t, resource.TestCase{
@@ -95,7 +179,7 @@ func TestAccGKEHubMembership_gkehubMembershipIssuerExample(t *testing.T) {
 				ResourceName:            "google_gke_hub_membership.membership",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"membership_id"},
+				ImportStateVerifyIgnore: []string{"labels", "location", "membership_id", "terraform_labels"},
 			},
 		},
 	})
@@ -104,12 +188,15 @@ func TestAccGKEHubMembership_gkehubMembershipIssuerExample(t *testing.T) {
 func testAccGKEHubMembership_gkehubMembershipIssuerExample(context map[string]interface{}) string {
 	return acctest.Nprintf(`
 resource "google_container_cluster" "primary" {
-  name               = "basiccluster%{random_suffix}"
+  name               = "tf-test-basic-cluster%{random_suffix}"
   location           = "us-central1-a"
   initial_node_count = 1
   workload_identity_config {
     workload_pool = "%{project}.svc.id.goog"
   }
+  deletion_protection  = %{deletion_protection}
+  network       = "%{network_name}"
+  subnetwork    = "%{subnetwork_name}"
 }
 
 resource "google_gke_hub_membership" "membership" {
@@ -138,7 +225,7 @@ func testAccCheckGKEHubMembershipDestroyProducer(t *testing.T) func(s *terraform
 
 			config := acctest.GoogleProviderConfig(t)
 
-			url, err := tpgresource.ReplaceVarsForTest(config, rs, "{{GKEHubBasePath}}projects/{{project}}/locations/global/memberships/{{membership_id}}")
+			url, err := tpgresource.ReplaceVarsForTest(config, rs, "{{GKEHubBasePath}}projects/{{project}}/locations/{{location}}/memberships/{{membership_id}}")
 			if err != nil {
 				return err
 			}

@@ -19,15 +19,35 @@ package compute_test
 
 import (
 	"fmt"
+	"log"
+	"strconv"
 	"strings"
 	"testing"
+	"time"
 
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/terraform"
 
 	"github.com/hashicorp/terraform-provider-google-beta/google-beta/acctest"
+	"github.com/hashicorp/terraform-provider-google-beta/google-beta/envvar"
 	"github.com/hashicorp/terraform-provider-google-beta/google-beta/tpgresource"
 	transport_tpg "github.com/hashicorp/terraform-provider-google-beta/google-beta/transport"
+
+	"google.golang.org/api/googleapi"
+)
+
+var (
+	_ = fmt.Sprintf
+	_ = log.Print
+	_ = strconv.Atoi
+	_ = strings.Trim
+	_ = time.Now
+	_ = resource.TestMain
+	_ = terraform.NewState
+	_ = envvar.TestEnvVar
+	_ = tpgresource.SetLabels
+	_ = transport_tpg.Config{}
+	_ = googleapi.Error{}
 )
 
 func TestAccComputeNodeTemplate_nodeTemplateBasicExample(t *testing.T) {
@@ -107,6 +127,95 @@ resource "google_compute_node_template" "template" {
 
   server_binding {
     type = "RESTART_NODE_ON_MINIMAL_SERVERS"
+  }
+}
+`, context)
+}
+
+func TestAccComputeNodeTemplate_nodeTemplateAcceleratorsExample(t *testing.T) {
+	t.Parallel()
+
+	context := map[string]interface{}{
+		"random_suffix": acctest.RandString(t, 10),
+	}
+
+	acctest.VcrTest(t, resource.TestCase{
+		PreCheck:                 func() { acctest.AccTestPreCheck(t) },
+		ProtoV5ProviderFactories: acctest.ProtoV5ProviderFactories(t),
+		CheckDestroy:             testAccCheckComputeNodeTemplateDestroyProducer(t),
+		Steps: []resource.TestStep{
+			{
+				Config: testAccComputeNodeTemplate_nodeTemplateAcceleratorsExample(context),
+			},
+			{
+				ResourceName:            "google_compute_node_template.template",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"region"},
+			},
+		},
+	})
+}
+
+func testAccComputeNodeTemplate_nodeTemplateAcceleratorsExample(context map[string]interface{}) string {
+	return acctest.Nprintf(`
+data "google_compute_node_types" "central1a" {
+  zone     = "us-central1-a"
+}
+
+resource "google_compute_node_template" "template" {
+  name      = "tf-test-soletenant-with-accelerators%{random_suffix}"
+  region    = "us-central1"
+  node_type = "n1-node-96-624"
+
+  accelerators {
+    accelerator_type  = "nvidia-tesla-t4"
+    accelerator_count = 4
+  }
+}
+`, context)
+}
+
+func TestAccComputeNodeTemplate_nodeTemplateDisksExample(t *testing.T) {
+	t.Parallel()
+
+	context := map[string]interface{}{
+		"random_suffix": acctest.RandString(t, 10),
+	}
+
+	acctest.VcrTest(t, resource.TestCase{
+		PreCheck:                 func() { acctest.AccTestPreCheck(t) },
+		ProtoV5ProviderFactories: acctest.ProtoV5ProviderFactories(t),
+		CheckDestroy:             testAccCheckComputeNodeTemplateDestroyProducer(t),
+		Steps: []resource.TestStep{
+			{
+				Config: testAccComputeNodeTemplate_nodeTemplateDisksExample(context),
+			},
+			{
+				ResourceName:            "google_compute_node_template.template",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"region"},
+			},
+		},
+	})
+}
+
+func testAccComputeNodeTemplate_nodeTemplateDisksExample(context map[string]interface{}) string {
+	return acctest.Nprintf(`
+data "google_compute_node_types" "central1a" {
+  zone     = "us-central1-a"
+}
+
+resource "google_compute_node_template" "template" {
+  name      = "tf-test-soletenant-with-disks%{random_suffix}"
+  region    = "us-central1"
+  node_type = "n2-node-80-640"
+
+  disks {
+    disk_count   = 16
+    disk_size_gb = 375
+    disk_type    = "local-ssd"
   }
 }
 `, context)

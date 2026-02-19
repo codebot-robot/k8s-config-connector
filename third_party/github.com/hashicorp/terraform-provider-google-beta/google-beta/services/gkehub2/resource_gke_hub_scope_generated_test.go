@@ -19,16 +19,35 @@ package gkehub2_test
 
 import (
 	"fmt"
+	"log"
+	"strconv"
 	"strings"
 	"testing"
+	"time"
 
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/terraform"
 
 	"github.com/hashicorp/terraform-provider-google-beta/google-beta/acctest"
 	"github.com/hashicorp/terraform-provider-google-beta/google-beta/envvar"
 	"github.com/hashicorp/terraform-provider-google-beta/google-beta/tpgresource"
 	transport_tpg "github.com/hashicorp/terraform-provider-google-beta/google-beta/transport"
+
+	"google.golang.org/api/googleapi"
+)
+
+var (
+	_ = fmt.Sprintf
+	_ = log.Print
+	_ = strconv.Atoi
+	_ = strings.Trim
+	_ = time.Now
+	_ = resource.TestMain
+	_ = terraform.NewState
+	_ = envvar.TestEnvVar
+	_ = tpgresource.SetLabels
+	_ = transport_tpg.Config{}
+	_ = googleapi.Error{}
 )
 
 func TestAccGKEHub2Scope_gkehubScopeBasicExample(t *testing.T) {
@@ -51,7 +70,7 @@ func TestAccGKEHub2Scope_gkehubScopeBasicExample(t *testing.T) {
 				ResourceName:            "google_gke_hub_scope.scope",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"scope_id"},
+				ImportStateVerifyIgnore: []string{"labels", "scope_id", "terraform_labels"},
 			},
 		},
 	})
@@ -60,7 +79,12 @@ func TestAccGKEHub2Scope_gkehubScopeBasicExample(t *testing.T) {
 func testAccGKEHub2Scope_gkehubScopeBasicExample(context map[string]interface{}) string {
 	return acctest.Nprintf(`
 resource "google_gke_hub_scope" "scope" {
-  scope_id = "tf-test-scope%{random_suffix}"
+  scope_id = "tf-test-my-scope%{random_suffix}"
+  namespace_labels = {
+      keyb = "valueb"
+      keya = "valuea"
+      keyc = "valuec" 
+  }
   labels = {
       keyb = "valueb"
       keya = "valuea"

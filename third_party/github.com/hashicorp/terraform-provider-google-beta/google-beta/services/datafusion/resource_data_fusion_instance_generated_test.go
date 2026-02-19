@@ -19,15 +19,35 @@ package datafusion_test
 
 import (
 	"fmt"
+	"log"
+	"strconv"
 	"strings"
 	"testing"
+	"time"
 
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/terraform"
 
 	"github.com/hashicorp/terraform-provider-google-beta/google-beta/acctest"
+	"github.com/hashicorp/terraform-provider-google-beta/google-beta/envvar"
 	"github.com/hashicorp/terraform-provider-google-beta/google-beta/tpgresource"
 	transport_tpg "github.com/hashicorp/terraform-provider-google-beta/google-beta/transport"
+
+	"google.golang.org/api/googleapi"
+)
+
+var (
+	_ = fmt.Sprintf
+	_ = log.Print
+	_ = strconv.Atoi
+	_ = strings.Trim
+	_ = time.Now
+	_ = resource.TestMain
+	_ = terraform.NewState
+	_ = envvar.TestEnvVar
+	_ = tpgresource.SetLabels
+	_ = transport_tpg.Config{}
+	_ = googleapi.Error{}
 )
 
 func TestAccDataFusionInstance_dataFusionInstanceBasicExample(t *testing.T) {
@@ -50,7 +70,7 @@ func TestAccDataFusionInstance_dataFusionInstanceBasicExample(t *testing.T) {
 				ResourceName:            "google_data_fusion_instance.basic_instance",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"region"},
+				ImportStateVerifyIgnore: []string{"labels", "network_config.0.private_service_connect_config.0.unreachable_cidr_block", "region", "tags", "terraform_labels"},
 			},
 		},
 	})
@@ -87,7 +107,7 @@ func TestAccDataFusionInstance_dataFusionInstanceFullExample(t *testing.T) {
 				ResourceName:            "google_data_fusion_instance.extended_instance",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"region"},
+				ImportStateVerifyIgnore: []string{"labels", "network_config.0.private_service_connect_config.0.unreachable_cidr_block", "region", "tags", "terraform_labels"},
 			},
 		},
 	})
@@ -139,6 +159,76 @@ resource "google_compute_global_address" "private_ip_alloc" {
 `, context)
 }
 
+func TestAccDataFusionInstance_dataFusionInstancePscExample(t *testing.T) {
+	t.Parallel()
+
+	context := map[string]interface{}{
+		"prober_test_run": `options = { prober_test_run = "true" }`,
+		"random_suffix":   acctest.RandString(t, 10),
+	}
+
+	acctest.VcrTest(t, resource.TestCase{
+		PreCheck:                 func() { acctest.AccTestPreCheck(t) },
+		ProtoV5ProviderFactories: acctest.ProtoV5ProviderFactories(t),
+		CheckDestroy:             testAccCheckDataFusionInstanceDestroyProducer(t),
+		Steps: []resource.TestStep{
+			{
+				Config: testAccDataFusionInstance_dataFusionInstancePscExample(context),
+			},
+			{
+				ResourceName:            "google_data_fusion_instance.psc_instance",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"labels", "network_config.0.private_service_connect_config.0.unreachable_cidr_block", "region", "tags", "terraform_labels"},
+			},
+		},
+	})
+}
+
+func testAccDataFusionInstance_dataFusionInstancePscExample(context map[string]interface{}) string {
+	return acctest.Nprintf(`
+resource "google_data_fusion_instance" "psc_instance" {
+  name             = "tf-test-psc-instance%{random_suffix}"
+  region           = "us-central1"
+  type             = "BASIC"
+  private_instance = true
+
+  network_config {
+    connection_type = "PRIVATE_SERVICE_CONNECT_INTERFACES"
+    private_service_connect_config {
+      network_attachment     = google_compute_network_attachment.psc.id
+      unreachable_cidr_block = "192.168.0.0/25"
+    }
+  }
+
+  %{prober_test_run}
+}
+
+resource "google_compute_network" "psc" {
+  name                    = "tf-test-datafusion-psc-network%{random_suffix}"
+  auto_create_subnetworks = false
+}
+
+resource "google_compute_subnetwork" "psc" {
+  name   = "tf-test-datafusion-psc-subnet%{random_suffix}"
+  region = "us-central1"
+
+  network       = google_compute_network.psc.id
+  ip_cidr_range = "10.0.0.0/16"
+}
+
+resource "google_compute_network_attachment" "psc" {
+  name                  = "tf-test-datafusion-psc-attachment%{random_suffix}"
+  region                = "us-central1"
+  connection_preference = "ACCEPT_AUTOMATIC"
+
+  subnetworks = [
+    google_compute_subnetwork.psc.self_link
+  ]
+}
+`, context)
+}
+
 func TestAccDataFusionInstance_dataFusionInstanceCmekExample(t *testing.T) {
 	t.Parallel()
 
@@ -158,7 +248,7 @@ func TestAccDataFusionInstance_dataFusionInstanceCmekExample(t *testing.T) {
 				ResourceName:            "google_data_fusion_instance.cmek",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"region"},
+				ImportStateVerifyIgnore: []string{"labels", "network_config.0.private_service_connect_config.0.unreachable_cidr_block", "region", "tags", "terraform_labels"},
 			},
 		},
 	})
@@ -175,7 +265,7 @@ resource "google_data_fusion_instance" "cmek" {
     key_reference = google_kms_crypto_key.crypto_key.id
   }
 
-  depends_on = [google_kms_crypto_key_iam_binding.crypto_key_binding]
+  depends_on = [google_kms_crypto_key_iam_member.crypto_key_member_gcs_sa]
 }
 
 resource "google_kms_crypto_key" "crypto_key" {
@@ -188,13 +278,20 @@ resource "google_kms_key_ring" "key_ring" {
   location = "us-central1"
 }
 
-resource "google_kms_crypto_key_iam_binding" "crypto_key_binding" {
+resource "google_kms_crypto_key_iam_member" "crypto_key_member_cdf_sa" {
   crypto_key_id = google_kms_crypto_key.crypto_key.id
   role          = "roles/cloudkms.cryptoKeyEncrypterDecrypter"
 
-  members = [
-    "serviceAccount:service-${data.google_project.project.number}@gcp-sa-datafusion.iam.gserviceaccount.com"
-  ]
+  member = "serviceAccount:service-${data.google_project.project.number}@gcp-sa-datafusion.iam.gserviceaccount.com"
+}
+
+resource "google_kms_crypto_key_iam_member" "crypto_key_member_gcs_sa" {
+  crypto_key_id = google_kms_crypto_key.crypto_key.id
+  role          = "roles/cloudkms.cryptoKeyEncrypterDecrypter"
+
+  member = "serviceAccount:service-${data.google_project.project.number}@gs-project-accounts.iam.gserviceaccount.com"
+
+  depends_on = [google_kms_crypto_key_iam_member.crypto_key_member_cdf_sa]
 }
 
 data "google_project" "project" {}
@@ -221,7 +318,7 @@ func TestAccDataFusionInstance_dataFusionInstanceEnterpriseExample(t *testing.T)
 				ResourceName:            "google_data_fusion_instance.enterprise_instance",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"region"},
+				ImportStateVerifyIgnore: []string{"labels", "network_config.0.private_service_connect_config.0.unreachable_cidr_block", "region", "tags", "terraform_labels"},
 			},
 		},
 	})
@@ -258,7 +355,7 @@ func TestAccDataFusionInstance_dataFusionInstanceEventExample(t *testing.T) {
 				ResourceName:            "google_data_fusion_instance.event",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"region"},
+				ImportStateVerifyIgnore: []string{"labels", "network_config.0.private_service_connect_config.0.unreachable_cidr_block", "region", "tags", "terraform_labels"},
 			},
 		},
 	})
@@ -302,7 +399,7 @@ func TestAccDataFusionInstance_dataFusionInstanceZoneExample(t *testing.T) {
 				ResourceName:            "google_data_fusion_instance.zone",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"region"},
+				ImportStateVerifyIgnore: []string{"labels", "network_config.0.private_service_connect_config.0.unreachable_cidr_block", "region", "tags", "terraform_labels"},
 			},
 		},
 	})
@@ -315,6 +412,43 @@ resource "google_data_fusion_instance" "zone" {
   region = "us-central1"
   zone   = "us-central1-a"
   type   = "DEVELOPER"
+}
+`, context)
+}
+
+func TestAccDataFusionInstance_dataFusionInstancePatchRevisionExample(t *testing.T) {
+	t.Parallel()
+
+	context := map[string]interface{}{
+		"random_suffix": acctest.RandString(t, 10),
+	}
+
+	acctest.VcrTest(t, resource.TestCase{
+		PreCheck:                 func() { acctest.AccTestPreCheck(t) },
+		ProtoV5ProviderFactories: acctest.ProtoV5ProviderFactories(t),
+		CheckDestroy:             testAccCheckDataFusionInstanceDestroyProducer(t),
+		Steps: []resource.TestStep{
+			{
+				Config: testAccDataFusionInstance_dataFusionInstancePatchRevisionExample(context),
+			},
+			{
+				ResourceName:            "google_data_fusion_instance.data_fusion_instance_patch_revision",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"labels", "network_config.0.private_service_connect_config.0.unreachable_cidr_block", "region", "tags", "terraform_labels"},
+			},
+		},
+	})
+}
+
+func testAccDataFusionInstance_dataFusionInstancePatchRevisionExample(context map[string]interface{}) string {
+	return acctest.Nprintf(`
+resource "google_data_fusion_instance" "data_fusion_instance_patch_revision" {
+  name = "tf-test-my-instance%{random_suffix}"
+  region = "us-central1"
+  type = "BASIC"
+  version = "6.10.1"
+  patch_revision = "6.10.1.5"
 }
 `, context)
 }

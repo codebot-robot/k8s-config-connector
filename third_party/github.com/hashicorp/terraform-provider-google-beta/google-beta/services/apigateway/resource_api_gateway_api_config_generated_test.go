@@ -19,15 +19,35 @@ package apigateway_test
 
 import (
 	"fmt"
+	"log"
+	"strconv"
 	"strings"
 	"testing"
+	"time"
 
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/terraform"
 
 	"github.com/hashicorp/terraform-provider-google-beta/google-beta/acctest"
+	"github.com/hashicorp/terraform-provider-google-beta/google-beta/envvar"
 	"github.com/hashicorp/terraform-provider-google-beta/google-beta/tpgresource"
 	transport_tpg "github.com/hashicorp/terraform-provider-google-beta/google-beta/transport"
+
+	"google.golang.org/api/googleapi"
+)
+
+var (
+	_ = fmt.Sprintf
+	_ = log.Print
+	_ = strconv.Atoi
+	_ = strings.Trim
+	_ = time.Now
+	_ = resource.TestMain
+	_ = terraform.NewState
+	_ = envvar.TestEnvVar
+	_ = tpgresource.SetLabels
+	_ = transport_tpg.Config{}
+	_ = googleapi.Error{}
 )
 
 func TestAccApiGatewayApiConfig_apigatewayApiConfigBasicExample(t *testing.T) {
@@ -49,7 +69,7 @@ func TestAccApiGatewayApiConfig_apigatewayApiConfigBasicExample(t *testing.T) {
 				ResourceName:            "google_api_gateway_api_config.api_cfg",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"gateway_config", "grpc_services", "api", "api_config_id"},
+				ImportStateVerifyIgnore: []string{"api", "api_config_id", "gateway_config", "grpc_services", "labels", "terraform_labels"},
 			},
 		},
 	})
@@ -99,7 +119,7 @@ func TestAccApiGatewayApiConfig_apigatewayApiConfigFullExample(t *testing.T) {
 				ResourceName:            "google_api_gateway_api_config.api_cfg",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"gateway_config", "grpc_services", "api", "api_config_id"},
+				ImportStateVerifyIgnore: []string{"api", "api_config_id", "gateway_config", "grpc_services", "labels", "terraform_labels"},
 			},
 		},
 	})
@@ -150,7 +170,7 @@ func TestAccApiGatewayApiConfig_apigatewayApiConfigGrpcExample(t *testing.T) {
 				ResourceName:            "google_api_gateway_api_config.api_cfg",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"gateway_config", "grpc_services", "api", "api_config_id", "grpc_services.0.file_descriptor_set"},
+				ImportStateVerifyIgnore: []string{"api", "api_config_id", "gateway_config", "grpc_services", "grpc_services.0.file_descriptor_set", "labels", "terraform_labels"},
 			},
 		},
 	})
@@ -222,7 +242,7 @@ func TestAccApiGatewayApiConfig_apigatewayApiConfigGrpcFullExample(t *testing.T)
 				ResourceName:            "google_api_gateway_api_config.api_cfg",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"gateway_config", "grpc_services", "api", "api_config_id"},
+				ImportStateVerifyIgnore: []string{"api", "api_config_id", "gateway_config", "grpc_services", "labels", "terraform_labels"},
 			},
 		},
 	})

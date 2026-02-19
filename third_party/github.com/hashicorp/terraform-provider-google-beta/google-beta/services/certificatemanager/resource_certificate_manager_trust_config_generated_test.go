@@ -19,15 +19,35 @@ package certificatemanager_test
 
 import (
 	"fmt"
+	"log"
+	"strconv"
 	"strings"
 	"testing"
+	"time"
 
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/terraform"
 
 	"github.com/hashicorp/terraform-provider-google-beta/google-beta/acctest"
+	"github.com/hashicorp/terraform-provider-google-beta/google-beta/envvar"
 	"github.com/hashicorp/terraform-provider-google-beta/google-beta/tpgresource"
 	transport_tpg "github.com/hashicorp/terraform-provider-google-beta/google-beta/transport"
+
+	"google.golang.org/api/googleapi"
+)
+
+var (
+	_ = fmt.Sprintf
+	_ = log.Print
+	_ = strconv.Atoi
+	_ = strings.Trim
+	_ = time.Now
+	_ = resource.TestMain
+	_ = terraform.NewState
+	_ = envvar.TestEnvVar
+	_ = tpgresource.SetLabels
+	_ = transport_tpg.Config{}
+	_ = googleapi.Error{}
 )
 
 func TestAccCertificateManagerTrustConfig_certificateManagerTrustConfigExample(t *testing.T) {
@@ -49,7 +69,7 @@ func TestAccCertificateManagerTrustConfig_certificateManagerTrustConfigExample(t
 				ResourceName:            "google_certificate_manager_trust_config.default",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"name", "location"},
+				ImportStateVerifyIgnore: []string{"labels", "location", "name", "terraform_labels"},
 			},
 		},
 	})
@@ -71,6 +91,52 @@ resource "google_certificate_manager_trust_config" "default" {
     }
   }
 
+  labels = {
+    foo = "bar"
+  }
+}
+`, context)
+}
+
+func TestAccCertificateManagerTrustConfig_certificateManagerTrustConfigAllowlistedCertificatesExample(t *testing.T) {
+	t.Parallel()
+
+	context := map[string]interface{}{
+		"random_suffix": acctest.RandString(t, 10),
+	}
+
+	acctest.VcrTest(t, resource.TestCase{
+		PreCheck:                 func() { acctest.AccTestPreCheck(t) },
+		ProtoV5ProviderFactories: acctest.ProtoV5ProviderFactories(t),
+		CheckDestroy:             testAccCheckCertificateManagerTrustConfigDestroyProducer(t),
+		Steps: []resource.TestStep{
+			{
+				Config: testAccCertificateManagerTrustConfig_certificateManagerTrustConfigAllowlistedCertificatesExample(context),
+			},
+			{
+				ResourceName:            "google_certificate_manager_trust_config.default",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"labels", "location", "name", "terraform_labels"},
+			},
+		},
+	})
+}
+
+func testAccCertificateManagerTrustConfig_certificateManagerTrustConfigAllowlistedCertificatesExample(context map[string]interface{}) string {
+	return acctest.Nprintf(`
+resource "google_certificate_manager_trust_config" "default" {
+  name        = "tf-test-trust-config%{random_suffix}"
+  description = "A sample trust config resource with allowlisted certificates"
+  location = "global"
+
+  allowlisted_certificates  {
+    pem_certificate = file("test-fixtures/cert.pem") 
+  }
+  allowlisted_certificates  {
+    pem_certificate = file("test-fixtures/cert2.pem") 
+  }
+  
   labels = {
     foo = "bar"
   }

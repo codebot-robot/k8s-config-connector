@@ -19,15 +19,35 @@ package compute_test
 
 import (
 	"fmt"
+	"log"
+	"strconv"
 	"strings"
 	"testing"
+	"time"
 
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/terraform"
 
 	"github.com/hashicorp/terraform-provider-google-beta/google-beta/acctest"
+	"github.com/hashicorp/terraform-provider-google-beta/google-beta/envvar"
 	"github.com/hashicorp/terraform-provider-google-beta/google-beta/tpgresource"
 	transport_tpg "github.com/hashicorp/terraform-provider-google-beta/google-beta/transport"
+
+	"google.golang.org/api/googleapi"
+)
+
+var (
+	_ = fmt.Sprintf
+	_ = log.Print
+	_ = strconv.Atoi
+	_ = strings.Trim
+	_ = time.Now
+	_ = resource.TestMain
+	_ = terraform.NewState
+	_ = envvar.TestEnvVar
+	_ = tpgresource.SetLabels
+	_ = transport_tpg.Config{}
+	_ = googleapi.Error{}
 )
 
 func TestAccComputeRegionUrlMap_regionUrlMapBasicExample(t *testing.T) {
@@ -749,6 +769,687 @@ resource "google_compute_region_backend_service" "home" {
 
 resource "google_compute_region_health_check" "default" {
   name               = "tf-test-health-check%{random_suffix}"
+  http_health_check {
+    port = 80
+  }
+}
+`, context)
+}
+
+func TestAccComputeRegionUrlMap_regionUrlMapPathTemplateMatchExample(t *testing.T) {
+	t.Parallel()
+
+	context := map[string]interface{}{
+		"random_suffix": acctest.RandString(t, 10),
+	}
+
+	acctest.VcrTest(t, resource.TestCase{
+		PreCheck:                 func() { acctest.AccTestPreCheck(t) },
+		ProtoV5ProviderFactories: acctest.ProtoV5ProviderFactories(t),
+		CheckDestroy:             testAccCheckComputeRegionUrlMapDestroyProducer(t),
+		Steps: []resource.TestStep{
+			{
+				Config: testAccComputeRegionUrlMap_regionUrlMapPathTemplateMatchExample(context),
+			},
+			{
+				ResourceName:            "google_compute_region_url_map.urlmap",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"default_service", "region"},
+			},
+		},
+	})
+}
+
+func testAccComputeRegionUrlMap_regionUrlMapPathTemplateMatchExample(context map[string]interface{}) string {
+	return acctest.Nprintf(`
+resource "google_compute_region_url_map" "urlmap" {
+  region = "us-central1"
+
+  name        = "urlmap%{random_suffix}"
+  description = "a description"
+
+  default_service = google_compute_region_backend_service.home-backend.id
+
+  host_rule {
+    hosts        = ["mysite.com"]
+    path_matcher = "mysite"
+  }
+
+  path_matcher {
+    name            = "mysite"
+    default_service = google_compute_region_backend_service.home-backend.id
+
+    route_rules {
+      match_rules {
+        path_template_match = "/xyzwebservices/v2/xyz/users/{username=*}/carts/{cartid=**}"
+      }
+      service = google_compute_region_backend_service.cart-backend.id
+      priority = 1
+      route_action {
+        url_rewrite {
+          path_template_rewrite = "/{username}-{cartid}/"
+        }
+      }
+    }
+
+    route_rules {
+      match_rules {
+        path_template_match = "/xyzwebservices/v2/xyz/users/*/accountinfo/*"
+      }
+      service = google_compute_region_backend_service.user-backend.id
+      priority = 2
+    }
+  }
+}
+
+resource "google_compute_region_backend_service" "home-backend" {
+  region = "us-central1"
+
+  name        = "tf-test-home-service%{random_suffix}"
+  port_name   = "http"
+  protocol    = "HTTP"
+  timeout_sec = 10
+  load_balancing_scheme = "EXTERNAL_MANAGED"
+
+  health_checks = [google_compute_region_health_check.default.id]
+}
+
+resource "google_compute_region_backend_service" "cart-backend" {
+  region = "us-central1"
+
+  name        = "tf-test-cart-service%{random_suffix}"
+  port_name   = "http"
+  protocol    = "HTTP"
+  timeout_sec = 10
+  load_balancing_scheme = "EXTERNAL_MANAGED"
+
+  health_checks = [google_compute_region_health_check.default.id]
+}
+
+resource "google_compute_region_backend_service" "user-backend" {
+  region = "us-central1"
+
+  name        = "tf-test-user-service%{random_suffix}"
+  port_name   = "http"
+  protocol    = "HTTP"
+  timeout_sec = 10
+  load_balancing_scheme = "EXTERNAL_MANAGED"
+
+  health_checks = [google_compute_region_health_check.default.id]
+}
+
+resource "google_compute_region_health_check" "default" {
+  region = "us-central1"
+
+  name               = "tf-test-health-check%{random_suffix}"
+  check_interval_sec = 1
+  timeout_sec        = 1
+  http_health_check {
+    port         = 80
+    request_path = "/"
+  }
+}
+`, context)
+}
+
+func TestAccComputeRegionUrlMap_regionUrlMapPathMatcherDefaultRouteActionExample(t *testing.T) {
+	t.Parallel()
+
+	context := map[string]interface{}{
+		"random_suffix": acctest.RandString(t, 10),
+	}
+
+	acctest.VcrTest(t, resource.TestCase{
+		PreCheck:                 func() { acctest.AccTestPreCheck(t) },
+		ProtoV5ProviderFactories: acctest.ProtoV5ProviderFactories(t),
+		CheckDestroy:             testAccCheckComputeRegionUrlMapDestroyProducer(t),
+		Steps: []resource.TestStep{
+			{
+				Config: testAccComputeRegionUrlMap_regionUrlMapPathMatcherDefaultRouteActionExample(context),
+			},
+			{
+				ResourceName:            "google_compute_region_url_map.regionurlmap",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"default_service", "region"},
+			},
+		},
+	})
+}
+
+func testAccComputeRegionUrlMap_regionUrlMapPathMatcherDefaultRouteActionExample(context map[string]interface{}) string {
+	return acctest.Nprintf(`
+resource "google_compute_region_url_map" "regionurlmap" {
+  region = "us-central1"
+
+  name        = "regionurlmap%{random_suffix}"
+  description = "a description"
+  default_service = google_compute_region_backend_service.home.id
+
+  host_rule {
+    hosts        = ["mysite.com"]
+    path_matcher = "allpaths"
+  }
+
+  path_matcher {
+    name            = "allpaths"
+
+    default_route_action {
+      cors_policy {
+        disabled = false
+        allow_credentials = true
+        allow_headers = [
+          "foobar"
+        ]
+        allow_methods = [
+          "GET",
+          "POST",
+        ]
+        allow_origins = [
+          "example.com"
+        ]
+        expose_headers = [
+          "foobar"
+        ]
+        max_age = 60
+      } 
+      fault_injection_policy {
+        abort {
+          http_status = 500
+          percentage  = 0.5
+        }
+        delay {
+          fixed_delay {
+            nanos   = 500
+            seconds = 0
+          }
+          percentage = 0.5
+        }
+      }
+      request_mirror_policy {
+        backend_service = google_compute_region_backend_service.home.id
+      }
+      retry_policy {
+        num_retries = 3
+        per_try_timeout {
+          nanos   = 500
+          seconds = 0
+        }
+        retry_conditions = [
+          "5xx",
+          "gateway-error",
+        ]
+      }
+      timeout {
+        nanos   = 500
+        seconds = 0
+      }
+      url_rewrite {
+        host_rewrite          = "dev.example.com"
+        path_prefix_rewrite   = "/v1/api/"
+      }
+      weighted_backend_services {
+        backend_service = google_compute_region_backend_service.home.id
+        header_action {
+          request_headers_to_add {
+            header_name  = "foo-request-1"
+            header_value = "bar"
+            replace      = true
+          }
+          request_headers_to_add {
+            header_name  = "foo-request-2"
+            header_value = "bar"
+            replace      = true
+          }
+          request_headers_to_remove = ["fizz"]
+          response_headers_to_add {
+            header_name  = "foo-response-1"
+            header_value = "bar"
+            replace      = true
+          }
+          response_headers_to_add {
+            header_name  = "foo-response-2"
+            header_value = "bar"
+            replace      = true
+          }
+          response_headers_to_remove = ["buzz"]
+        }
+        weight = 100
+      }
+      weighted_backend_services {
+        backend_service = google_compute_region_backend_service.login.id
+        header_action {
+          request_headers_to_add {
+            header_name  = "foo-request-1"
+            header_value = "bar"
+            replace      = true
+          }
+          request_headers_to_add {
+            header_name  = "foo-request-2"
+            header_value = "bar"
+            replace      = true
+          }
+          request_headers_to_remove = ["fizz"]
+          response_headers_to_add {
+            header_name  = "foo-response-1"
+            header_value = "bar"
+            replace      = true
+          }
+          response_headers_to_add {
+            header_name  = "foo-response-2"
+            header_value = "bar"
+            replace      = true
+          }
+          response_headers_to_remove = ["buzz"]
+        }
+        weight = 200
+      }
+    }
+
+    path_rule {
+      paths   = ["/home"]
+      service = google_compute_region_backend_service.home.id
+    }
+
+    path_rule {
+      paths   = ["/login"]
+      service = google_compute_region_backend_service.login.id
+    }
+  }
+
+  test {
+    service = google_compute_region_backend_service.home.id
+    host    = "hi.com"
+    path    = "/home"
+  }
+}
+
+resource "google_compute_region_backend_service" "login" {
+  region = "us-central1"
+
+  name        = "login%{random_suffix}"
+  protocol    = "HTTP"
+  load_balancing_scheme = "INTERNAL_MANAGED"
+  timeout_sec = 10
+
+  health_checks = [google_compute_region_health_check.default.id]
+}
+
+resource "google_compute_region_backend_service" "home" {
+  region = "us-central1"
+
+  name        = "home%{random_suffix}"
+  protocol    = "HTTP"
+  load_balancing_scheme = "INTERNAL_MANAGED"
+  timeout_sec = 10
+
+  health_checks = [google_compute_region_health_check.default.id]
+}
+
+resource "google_compute_region_health_check" "default" {
+  region = "us-central1"
+
+  name               = "tf-test-health-check%{random_suffix}"
+  check_interval_sec = 1
+  timeout_sec        = 1
+  http_health_check {
+    port         = 80
+    request_path = "/"
+  }
+}
+`, context)
+}
+
+func TestAccComputeRegionUrlMap_regionUrlMapDefaultMirrorPercentExample(t *testing.T) {
+	t.Parallel()
+
+	context := map[string]interface{}{
+		"random_suffix": acctest.RandString(t, 10),
+	}
+
+	acctest.VcrTest(t, resource.TestCase{
+		PreCheck:                 func() { acctest.AccTestPreCheck(t) },
+		ProtoV5ProviderFactories: acctest.ProtoV5ProviderBetaFactories(t),
+		CheckDestroy:             testAccCheckComputeRegionUrlMapDestroyProducer(t),
+		Steps: []resource.TestStep{
+			{
+				Config: testAccComputeRegionUrlMap_regionUrlMapDefaultMirrorPercentExample(context),
+			},
+			{
+				ResourceName:            "google_compute_region_url_map.regionurlmap",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"default_service", "region"},
+			},
+		},
+	})
+}
+
+func testAccComputeRegionUrlMap_regionUrlMapDefaultMirrorPercentExample(context map[string]interface{}) string {
+	return acctest.Nprintf(`
+resource "google_compute_region_url_map" "regionurlmap" {
+  provider    = google-beta
+  region      = "us-central1"
+  name        = "regionurlmap%{random_suffix}"
+  description = "Test for default route action mirror percent"
+
+  default_service = google_compute_region_backend_service.home.id
+
+  default_route_action {
+    request_mirror_policy {
+      backend_service = google_compute_region_backend_service.mirror.id
+      mirror_percent = 50.0
+    }
+  }
+
+  host_rule {
+    hosts        = ["mysite.com"]
+    path_matcher = "allpaths"
+  }
+
+  path_matcher {
+    name            = "allpaths"
+    default_service = google_compute_region_backend_service.home.id
+  }
+}
+
+resource "google_compute_region_backend_service" "home" {
+  provider    = google-beta
+  region      = "us-central1"
+  name        = "home%{random_suffix}"
+  port_name   = "http"
+  protocol    = "HTTP"
+  timeout_sec = 10
+  load_balancing_scheme = "INTERNAL_MANAGED"
+
+  health_checks = [google_compute_region_health_check.default.id]
+}
+
+resource "google_compute_region_backend_service" "mirror" {
+  provider    = google-beta
+  region      = "us-central1"
+  name        = "mirror%{random_suffix}"
+  port_name   = "http"
+  protocol    = "HTTP"
+  timeout_sec = 10
+  load_balancing_scheme = "INTERNAL_MANAGED"
+
+  health_checks = [google_compute_region_health_check.default.id]
+}
+
+resource "google_compute_region_health_check" "default" {
+  provider = google-beta
+  region   = "us-central1"
+  name     = "tf-test-health-check%{random_suffix}"
+  http_health_check {
+    port = 80
+  }
+}
+`, context)
+}
+
+func TestAccComputeRegionUrlMap_regionUrlMapPathMatcherDefaultMirrorPercentExample(t *testing.T) {
+	t.Parallel()
+
+	context := map[string]interface{}{
+		"random_suffix": acctest.RandString(t, 10),
+	}
+
+	acctest.VcrTest(t, resource.TestCase{
+		PreCheck:                 func() { acctest.AccTestPreCheck(t) },
+		ProtoV5ProviderFactories: acctest.ProtoV5ProviderBetaFactories(t),
+		CheckDestroy:             testAccCheckComputeRegionUrlMapDestroyProducer(t),
+		Steps: []resource.TestStep{
+			{
+				Config: testAccComputeRegionUrlMap_regionUrlMapPathMatcherDefaultMirrorPercentExample(context),
+			},
+			{
+				ResourceName:            "google_compute_region_url_map.regionurlmap",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"default_service", "region"},
+			},
+		},
+	})
+}
+
+func testAccComputeRegionUrlMap_regionUrlMapPathMatcherDefaultMirrorPercentExample(context map[string]interface{}) string {
+	return acctest.Nprintf(`
+resource "google_compute_region_url_map" "regionurlmap" {
+  provider    = google-beta
+  region      = "us-central1"
+  name        = "regionurlmap%{random_suffix}"
+  description = "Test for default route action mirror percent"
+
+  default_service = google_compute_region_backend_service.home.id
+
+  default_route_action {
+    request_mirror_policy {
+      backend_service = google_compute_region_backend_service.mirror.id
+      mirror_percent = 50.0
+    }
+  }
+
+  host_rule {
+    hosts        = ["mysite.com"]
+    path_matcher = "allpaths"
+  }
+
+  path_matcher {
+    name            = "allpaths"
+    default_service = google_compute_region_backend_service.home.id
+  }
+}
+
+resource "google_compute_region_backend_service" "home" {
+  provider    = google-beta
+  region      = "us-central1"
+  name        = "home%{random_suffix}"
+  port_name   = "http"
+  protocol    = "HTTP"
+  timeout_sec = 10
+  load_balancing_scheme = "INTERNAL_MANAGED"
+
+  health_checks = [google_compute_region_health_check.default.id]
+}
+
+resource "google_compute_region_backend_service" "mirror" {
+  provider    = google-beta
+  region      = "us-central1"
+  name        = "mirror%{random_suffix}"
+  port_name   = "http"
+  protocol    = "HTTP"
+  timeout_sec = 10
+  load_balancing_scheme = "INTERNAL_MANAGED"
+
+  health_checks = [google_compute_region_health_check.default.id]
+}
+
+resource "google_compute_region_health_check" "default" {
+  provider = google-beta
+  region   = "us-central1"
+  name     = "tf-test-health-check%{random_suffix}"
+  http_health_check {
+    port = 80
+  }
+}
+`, context)
+}
+
+func TestAccComputeRegionUrlMap_regionUrlMapPathRuleMirrorPercentExample(t *testing.T) {
+	t.Parallel()
+
+	context := map[string]interface{}{
+		"random_suffix": acctest.RandString(t, 10),
+	}
+
+	acctest.VcrTest(t, resource.TestCase{
+		PreCheck:                 func() { acctest.AccTestPreCheck(t) },
+		ProtoV5ProviderFactories: acctest.ProtoV5ProviderBetaFactories(t),
+		CheckDestroy:             testAccCheckComputeRegionUrlMapDestroyProducer(t),
+		Steps: []resource.TestStep{
+			{
+				Config: testAccComputeRegionUrlMap_regionUrlMapPathRuleMirrorPercentExample(context),
+			},
+			{
+				ResourceName:            "google_compute_region_url_map.regionurlmap",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"default_service", "region"},
+			},
+		},
+	})
+}
+
+func testAccComputeRegionUrlMap_regionUrlMapPathRuleMirrorPercentExample(context map[string]interface{}) string {
+	return acctest.Nprintf(`
+resource "google_compute_region_url_map" "regionurlmap" {
+  provider    = google-beta
+  region      = "us-central1"
+  name        = "regionurlmap%{random_suffix}"
+  description = "Test for path matcher default route action mirror percent"
+
+  default_service = google_compute_region_backend_service.home.id
+
+  host_rule {
+    hosts        = ["mysite.com"]
+    path_matcher = "allpaths"
+  }
+
+  path_matcher {
+    name            = "allpaths"
+    default_service = google_compute_region_backend_service.home.id
+
+    default_route_action {
+      request_mirror_policy {
+        backend_service = google_compute_region_backend_service.mirror.id
+        mirror_percent = 75.0
+      }
+    }
+  }
+}
+
+resource "google_compute_region_backend_service" "home" {
+  provider    = google-beta
+  region      = "us-central1"
+  name        = "home%{random_suffix}"
+  port_name   = "http"
+  protocol    = "HTTP"
+  timeout_sec = 10
+  load_balancing_scheme = "INTERNAL_MANAGED"
+
+  health_checks = [google_compute_region_health_check.default.id]
+}
+
+resource "google_compute_region_backend_service" "mirror" {
+  provider    = google-beta
+  region      = "us-central1"
+  name        = "mirror%{random_suffix}"
+  port_name   = "http"
+  protocol    = "HTTP"
+  timeout_sec = 10
+  load_balancing_scheme = "INTERNAL_MANAGED"
+
+  health_checks = [google_compute_region_health_check.default.id]
+}
+
+resource "google_compute_region_health_check" "default" {
+  provider = google-beta 
+  region   = "us-central1"
+  name     = "tf-test-health-check%{random_suffix}"
+  http_health_check {
+    port = 80
+  }
+}
+`, context)
+}
+
+func TestAccComputeRegionUrlMap_regionUrlMapRouteRuleMirrorPercentExample(t *testing.T) {
+	t.Parallel()
+
+	context := map[string]interface{}{
+		"random_suffix": acctest.RandString(t, 10),
+	}
+
+	acctest.VcrTest(t, resource.TestCase{
+		PreCheck:                 func() { acctest.AccTestPreCheck(t) },
+		ProtoV5ProviderFactories: acctest.ProtoV5ProviderBetaFactories(t),
+		CheckDestroy:             testAccCheckComputeRegionUrlMapDestroyProducer(t),
+		Steps: []resource.TestStep{
+			{
+				Config: testAccComputeRegionUrlMap_regionUrlMapRouteRuleMirrorPercentExample(context),
+			},
+			{
+				ResourceName:            "google_compute_region_url_map.regionurlmap",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"default_service", "region"},
+			},
+		},
+	})
+}
+
+func testAccComputeRegionUrlMap_regionUrlMapRouteRuleMirrorPercentExample(context map[string]interface{}) string {
+	return acctest.Nprintf(`
+resource "google_compute_region_url_map" "regionurlmap" {
+  provider    = google-beta
+  region      = "us-central1"
+  name        = "regionurlmap%{random_suffix}"
+  description = "Test for path rule route action mirror percent"
+
+  default_service = google_compute_region_backend_service.home.id
+
+  host_rule {
+    hosts        = ["mysite.com"]
+    path_matcher = "allpaths"
+  }
+
+  path_matcher {
+    name            = "allpaths"
+    default_service = google_compute_region_backend_service.home.id
+
+    path_rule {
+      paths   = ["/home"]
+      service = google_compute_region_backend_service.home.id
+      route_action {
+        request_mirror_policy {
+          backend_service = google_compute_region_backend_service.mirror.id
+          mirror_percent = 25.0
+        }
+      }
+    }
+  }
+}
+
+resource "google_compute_region_backend_service" "home" {
+  provider    = google-beta
+  region      = "us-central1"
+  name        = "home%{random_suffix}"
+  port_name   = "http"
+  protocol    = "HTTP"
+  timeout_sec = 10
+  load_balancing_scheme = "INTERNAL_MANAGED"
+
+  health_checks = [google_compute_region_health_check.default.id]
+}
+
+resource "google_compute_region_backend_service" "mirror" {
+  provider    = google-beta
+  region      = "us-central1"
+  name        = "mirror%{random_suffix}"
+  port_name   = "http"
+  protocol    = "HTTP"
+  timeout_sec = 10
+  load_balancing_scheme = "INTERNAL_MANAGED"
+
+  health_checks = [google_compute_region_health_check.default.id]
+}
+
+resource "google_compute_region_health_check" "default" {
+  provider = google-beta
+  region   = "us-central1"
+  name     = "tf-test-health-check%{random_suffix}"
   http_health_check {
     port = 80
   }

@@ -19,15 +19,35 @@ package datastream_test
 
 import (
 	"fmt"
+	"log"
+	"strconv"
 	"strings"
 	"testing"
+	"time"
 
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/terraform"
 
 	"github.com/hashicorp/terraform-provider-google-beta/google-beta/acctest"
+	"github.com/hashicorp/terraform-provider-google-beta/google-beta/envvar"
 	"github.com/hashicorp/terraform-provider-google-beta/google-beta/tpgresource"
 	transport_tpg "github.com/hashicorp/terraform-provider-google-beta/google-beta/transport"
+
+	"google.golang.org/api/googleapi"
+)
+
+var (
+	_ = fmt.Sprintf
+	_ = log.Print
+	_ = strconv.Atoi
+	_ = strings.Trim
+	_ = time.Now
+	_ = resource.TestMain
+	_ = terraform.NewState
+	_ = envvar.TestEnvVar
+	_ = tpgresource.SetLabels
+	_ = transport_tpg.Config{}
+	_ = googleapi.Error{}
 )
 
 func TestAccDatastreamConnectionProfile_datastreamConnectionProfileBasicExample(t *testing.T) {
@@ -49,7 +69,7 @@ func TestAccDatastreamConnectionProfile_datastreamConnectionProfileBasicExample(
 				ResourceName:            "google_datastream_connection_profile.default",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"connection_profile_id", "location"},
+				ImportStateVerifyIgnore: []string{"connection_profile_id", "create_without_validation", "labels", "location", "mongodb_profile.0.ssl_config.0.ca_certificate", "mongodb_profile.0.ssl_config.0.client_certificate", "mongodb_profile.0.ssl_config.0.client_key", "mongodb_profile.0.ssl_config.0.secret_manager_stored_client_key", "postgresql_profile.0.ssl_config.0.server_and_client_verification", "postgresql_profile.0.ssl_config.0.server_verification.0.ca_certificate", "terraform_labels"},
 			},
 		},
 	})
@@ -70,62 +90,169 @@ resource "google_datastream_connection_profile" "default" {
 `, context)
 }
 
-func TestAccDatastreamConnectionProfile_datastreamConnectionProfileBigqueryPrivateConnectionExample(t *testing.T) {
+func TestAccDatastreamConnectionProfile_datastreamConnectionProfilePostgresqlPrivateConnectionExample(t *testing.T) {
+	acctest.SkipIfVcr(t)
 	t.Parallel()
 
 	context := map[string]interface{}{
-		"random_suffix": acctest.RandString(t, 10),
+		"deletion_protection": false,
+		"random_suffix":       acctest.RandString(t, 10),
 	}
 
 	acctest.VcrTest(t, resource.TestCase{
 		PreCheck:                 func() { acctest.AccTestPreCheck(t) },
 		ProtoV5ProviderFactories: acctest.ProtoV5ProviderFactories(t),
-		CheckDestroy:             testAccCheckDatastreamConnectionProfileDestroyProducer(t),
+		ExternalProviders: map[string]resource.ExternalProvider{
+			"random": {},
+			"time":   {},
+		},
+		CheckDestroy: testAccCheckDatastreamConnectionProfileDestroyProducer(t),
 		Steps: []resource.TestStep{
 			{
-				Config: testAccDatastreamConnectionProfile_datastreamConnectionProfileBigqueryPrivateConnectionExample(context),
+				Config: testAccDatastreamConnectionProfile_datastreamConnectionProfilePostgresqlPrivateConnectionExample(context),
 			},
 			{
 				ResourceName:            "google_datastream_connection_profile.default",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"connection_profile_id", "location"},
+				ImportStateVerifyIgnore: []string{"connection_profile_id", "create_without_validation", "labels", "location", "mongodb_profile.0.ssl_config.0.ca_certificate", "mongodb_profile.0.ssl_config.0.client_certificate", "mongodb_profile.0.ssl_config.0.client_key", "mongodb_profile.0.ssl_config.0.secret_manager_stored_client_key", "postgresql_profile.0.password", "postgresql_profile.0.ssl_config.0.server_and_client_verification", "postgresql_profile.0.ssl_config.0.server_verification.0.ca_certificate", "terraform_labels"},
 			},
 		},
 	})
 }
 
-func testAccDatastreamConnectionProfile_datastreamConnectionProfileBigqueryPrivateConnectionExample(context map[string]interface{}) string {
+func testAccDatastreamConnectionProfile_datastreamConnectionProfilePostgresqlPrivateConnectionExample(context map[string]interface{}) string {
 	return acctest.Nprintf(`
-resource "google_datastream_private_connection" "private_connection" {
-	display_name          = "Connection profile"
-	location              = "us-central1"
-	private_connection_id = "tf-test-my-connection%{random_suffix}"
-
-	labels = {
-		key = "value"
-	}
-
-	vpc_peering_config {
-		vpc = google_compute_network.default.id
-		subnet = "10.0.0.0/29"
-	}
+resource "google_compute_network" "default" {
+    name = "tf-test-my-network%{random_suffix}"
+    auto_create_subnetworks = false
 }
 
-resource "google_compute_network" "default" {
-	name = "tf-test-my-network%{random_suffix}"
+resource "google_compute_subnetwork" "default" {
+  name          = "tf-test-my-subnetwork%{random_suffix}"
+  ip_cidr_range = "10.1.0.0/16"
+  region        = "us-central1"
+  network       = google_compute_network.default.id
+}
+
+resource "google_datastream_private_connection" "private_connection" {
+    display_name          = "Private connection"
+    location              = "us-central1"
+    private_connection_id = "tf-test-my-connection%{random_suffix}"
+
+    vpc_peering_config {
+        vpc = google_compute_network.default.id
+        subnet = "10.0.0.0/29"
+    }
+}
+
+resource "google_sql_database_instance" "instance" {
+    name             = "tf-test-my-instance%{random_suffix}"
+    database_version = "POSTGRES_14"
+    region           = "us-central1"
+    settings {
+        tier = "db-f1-micro"
+        ip_configuration {
+            authorized_networks {
+                value = google_compute_address.nat_vm_ip.address
+            }
+        }
+    }
+
+    deletion_protection  = %{deletion_protection}
+}
+
+resource "google_sql_database" "db" {
+    instance = google_sql_database_instance.instance.name
+    name     = "db"
+}
+
+resource "random_password" "pwd" {
+    length = 16
+    special = false
+}
+
+resource "google_sql_user" "user" {
+    name = "user"
+    instance = google_sql_database_instance.instance.name
+    password = random_password.pwd.result
+}
+
+resource "google_compute_address" "nat_vm_ip" {
+  name         = "tf-test-nat-vm-ip%{random_suffix}"
+}
+
+resource "google_compute_instance" "nat_vm" {
+  name           = "tf-test-nat-vm%{random_suffix}"
+  machine_type   = "e2-medium"
+  zone           = "us-central1-a"
+  desired_status  = "RUNNING"
+
+  boot_disk {
+    initialize_params {
+      image = "debian-cloud/debian-12"
+    }
+  }
+
+  network_interface {
+    network     = google_datastream_private_connection.private_connection.vpc_peering_config.0.vpc
+    subnetwork  = google_compute_subnetwork.default.self_link
+    access_config {
+        nat_ip = google_compute_address.nat_vm_ip.address
+    }
+  }
+
+  metadata_startup_script = <<EOT
+#! /bin/bash
+# See https://cloud.google.com/datastream/docs/private-connectivity#set-up-reverse-proxy
+export DB_ADDR=${google_sql_database_instance.instance.public_ip_address}
+export DB_PORT=5432
+echo 1 > /proc/sys/net/ipv4/ip_forward
+md_url_prefix="http://169.254.169.254/computeMetadata/v1/instance"
+vm_nic_ip="$(curl -H "Metadata-Flavor: Google" $${md_url_prefix}/network-interfaces/0/ip)"
+iptables -t nat -F
+iptables -t nat -A PREROUTING \
+     -p tcp --dport $DB_PORT \
+     -j DNAT \
+     --to-destination $DB_ADDR
+iptables -t nat -A POSTROUTING \
+     -p tcp --dport $DB_PORT \
+     -j SNAT \
+     --to-source $vm_nic_ip
+iptables-save
+EOT
+}
+
+resource "google_compute_firewall" "rules" {
+  name        = "tf-test-ingress-rule%{random_suffix}"
+  network     = google_datastream_private_connection.private_connection.vpc_peering_config.0.vpc
+  description = "Allow traffic into NAT VM"
+  direction   = "INGRESS"
+
+  allow {
+    protocol = "tcp"
+    ports    = ["5432"]
+  }
+
+  source_ranges = [google_datastream_private_connection.private_connection.vpc_peering_config.0.subnet]
 }
 
 resource "google_datastream_connection_profile" "default" {
-	display_name          = "Connection profile"
-	location              = "us-central1"
-	connection_profile_id = "tf-test-my-profile%{random_suffix}"
+    display_name          = "Connection profile"
+    location              = "us-central1"
+    connection_profile_id = "tf-test-my-profile%{random_suffix}"
 
-	bigquery_profile {}
+    postgresql_profile {
+        hostname = google_compute_instance.nat_vm.network_interface.0.network_ip
+        username = google_sql_user.user.name
+        password = google_sql_user.user.password
+        database = google_sql_database.db.name
+        port = 5432
+    }
 
-	private_connectivity {
-		private_connection = google_datastream_private_connection.private_connection.id
-	}
+    private_connectivity {
+        private_connection = google_datastream_private_connection.private_connection.id
+    }
 }
 `, context)
 }
@@ -149,7 +276,7 @@ func TestAccDatastreamConnectionProfile_datastreamConnectionProfileFullExample(t
 				ResourceName:            "google_datastream_connection_profile.default",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"connection_profile_id", "location", "forward_ssh_connectivity.0.password"},
+				ImportStateVerifyIgnore: []string{"connection_profile_id", "create_without_validation", "forward_ssh_connectivity.0.password", "labels", "location", "mongodb_profile.0.ssl_config.0.ca_certificate", "mongodb_profile.0.ssl_config.0.client_certificate", "mongodb_profile.0.ssl_config.0.client_key", "mongodb_profile.0.ssl_config.0.secret_manager_stored_client_key", "postgresql_profile.0.ssl_config.0.server_and_client_verification", "postgresql_profile.0.ssl_config.0.server_verification.0.ca_certificate", "terraform_labels"},
 			},
 		},
 	})
@@ -176,6 +303,155 @@ resource "google_datastream_connection_profile" "default" {
 	labels = {
 		key = "value"
 	}
+}
+`, context)
+}
+
+func TestAccDatastreamConnectionProfile_datastreamStreamPostgresqlSslconfigServerAndClientVerificationExample(t *testing.T) {
+	acctest.SkipIfVcr(t)
+	t.Parallel()
+
+	context := map[string]interface{}{
+		"deletion_protection": false,
+		"random_suffix":       acctest.RandString(t, 10),
+	}
+
+	acctest.VcrTest(t, resource.TestCase{
+		PreCheck:                 func() { acctest.AccTestPreCheck(t) },
+		ProtoV5ProviderFactories: acctest.ProtoV5ProviderFactories(t),
+		ExternalProviders: map[string]resource.ExternalProvider{
+			"random": {},
+		},
+		CheckDestroy: testAccCheckDatastreamConnectionProfileDestroyProducer(t),
+		Steps: []resource.TestStep{
+			{
+				Config: testAccDatastreamConnectionProfile_datastreamStreamPostgresqlSslconfigServerAndClientVerificationExample(context),
+			},
+			{
+				ResourceName:            "google_datastream_connection_profile.default",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"connection_profile_id", "create_without_validation", "labels", "location", "mongodb_profile.0.ssl_config.0.ca_certificate", "mongodb_profile.0.ssl_config.0.client_certificate", "mongodb_profile.0.ssl_config.0.client_key", "mongodb_profile.0.ssl_config.0.secret_manager_stored_client_key", "postgresql_profile.0.password", "postgresql_profile.0.ssl_config.0.server_and_client_verification", "postgresql_profile.0.ssl_config.0.server_verification.0.ca_certificate", "terraform_labels"},
+			},
+		},
+	})
+}
+
+func testAccDatastreamConnectionProfile_datastreamStreamPostgresqlSslconfigServerAndClientVerificationExample(context map[string]interface{}) string {
+	return acctest.Nprintf(`
+data "google_datastream_static_ips" "datastream_ips" {
+  location           = "us-central1"
+}
+
+resource "google_sql_database_instance" "instance" {
+  name             = "tf-test-my-instance%{random_suffix}"
+  database_version = "POSTGRES_15"
+  region           = "us-central1"
+  settings {
+    tier = "db-f1-micro"
+    ip_configuration {
+      ipv4_enabled = true
+      ssl_mode = "TRUSTED_CLIENT_CERTIFICATE_REQUIRED"
+      dynamic "authorized_networks" {
+        for_each = data.google_datastream_static_ips.datastream_ips.static_ips
+        iterator = ip
+
+        content {
+          name  = format("datastream-%d", ip.key)
+          value = ip.value
+        }
+      }
+    }
+  }
+
+  deletion_protection  = %{deletion_protection}
+}
+
+resource "google_sql_database" "db" {
+    instance = google_sql_database_instance.instance.name
+    name     = "db"
+}
+
+resource "random_password" "pwd" {
+  length  = 16
+  special = false
+}
+
+resource "google_sql_user" "user" {
+    name = "user"
+    instance = google_sql_database_instance.instance.name
+    password = random_password.pwd.result
+}
+
+resource "google_sql_ssl_cert" "client_cert" {
+  common_name = "client-name"
+  instance    = google_sql_database_instance.instance.name
+}
+
+resource "google_datastream_connection_profile" "default" {
+    display_name          = "Connection Profile"
+    location              = "us-central1"
+    connection_profile_id = "tf-test-profile-id%{random_suffix}"
+
+    postgresql_profile {
+        hostname = google_sql_database_instance.instance.public_ip_address
+        port     = 5432
+        username = "user"
+        password = random_password.pwd.result
+        database = google_sql_database.db.name
+        ssl_config {
+            server_and_client_verification {
+              client_certificate = google_sql_ssl_cert.client_cert.cert
+              client_key = google_sql_ssl_cert.client_cert.private_key
+              ca_certificate = google_sql_ssl_cert.client_cert.server_ca_cert
+            }
+        }
+    }
+}
+`, context)
+}
+
+func TestAccDatastreamConnectionProfile_datastreamConnectionProfilePostgresSecretManagerExample(t *testing.T) {
+	t.Parallel()
+
+	context := map[string]interface{}{
+		"random_suffix": acctest.RandString(t, 10),
+	}
+
+	acctest.VcrTest(t, resource.TestCase{
+		PreCheck:                 func() { acctest.AccTestPreCheck(t) },
+		ProtoV5ProviderFactories: acctest.ProtoV5ProviderFactories(t),
+		CheckDestroy:             testAccCheckDatastreamConnectionProfileDestroyProducer(t),
+		Steps: []resource.TestStep{
+			{
+				Config: testAccDatastreamConnectionProfile_datastreamConnectionProfilePostgresSecretManagerExample(context),
+			},
+			{
+				ResourceName:            "google_datastream_connection_profile.default",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"connection_profile_id", "create_without_validation", "labels", "location", "mongodb_profile.0.ssl_config.0.ca_certificate", "mongodb_profile.0.ssl_config.0.client_certificate", "mongodb_profile.0.ssl_config.0.client_key", "mongodb_profile.0.ssl_config.0.secret_manager_stored_client_key", "postgresql_profile.0.ssl_config.0.server_and_client_verification", "postgresql_profile.0.ssl_config.0.server_verification.0.ca_certificate", "terraform_labels"},
+			},
+		},
+	})
+}
+
+func testAccDatastreamConnectionProfile_datastreamConnectionProfilePostgresSecretManagerExample(context map[string]interface{}) string {
+	return acctest.Nprintf(`
+resource "google_datastream_connection_profile" "default" {
+    display_name              = "Postgres Source With Secret Manager"
+    location                  = "us-central1"
+    connection_profile_id     = "tf-test-source-profile%{random_suffix}"
+    create_without_validation = true
+
+
+    postgresql_profile {
+        hostname = "fake-hostname"
+        port = 3306
+        username = "fake-username"
+        secret_manager_stored_password = "projects/fake-project/secrets/fake-secret/versions/1"
+        database = "fake-database"
+    }
 }
 `, context)
 }

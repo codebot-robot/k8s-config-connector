@@ -24,6 +24,7 @@ import (
 	"log"
 	"time"
 
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/customdiff"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 
 	dcl "github.com/GoogleCloudPlatform/declarative-resource-client-library/dcl"
@@ -50,6 +51,11 @@ func ResourceClouddeployDeliveryPipeline() *schema.Resource {
 			Update: schema.DefaultTimeout(20 * time.Minute),
 			Delete: schema.DefaultTimeout(20 * time.Minute),
 		},
+		CustomizeDiff: customdiff.All(
+			tpgresource.DefaultProviderProject,
+			tpgresource.SetLabelsDiff,
+			tpgresource.SetAnnotationsDiff,
+		),
 
 		Schema: map[string]*schema.Schema{
 			"location": {
@@ -63,14 +69,7 @@ func ResourceClouddeployDeliveryPipeline() *schema.Resource {
 				Type:        schema.TypeString,
 				Required:    true,
 				ForceNew:    true,
-				Description: "Name of the `DeliveryPipeline`. Format is [a-z][a-z0-9\\-]{0,62}.",
-			},
-
-			"annotations": {
-				Type:        schema.TypeMap,
-				Optional:    true,
-				Description: "User annotations. These attributes can only be set and used by the user, and not by Google Cloud Deploy. See https://google.aip.dev/128#annotations for more details such as format and size limitations.",
-				Elem:        &schema.Schema{Type: schema.TypeString},
+				Description: "Name of the `DeliveryPipeline`. Format is `[a-z]([a-z0-9-]{0,61}[a-z0-9])?`.",
 			},
 
 			"description": {
@@ -79,11 +78,16 @@ func ResourceClouddeployDeliveryPipeline() *schema.Resource {
 				Description: "Description of the `DeliveryPipeline`. Max length is 255 characters.",
 			},
 
-			"labels": {
+			"effective_annotations": {
 				Type:        schema.TypeMap,
-				Optional:    true,
-				Description: "Labels are attributes that can be set and used by both the user and by Google Cloud Deploy. Labels must meet the following constraints: * Keys and values can contain only lowercase letters, numeric characters, underscores, and dashes. * All characters must use UTF-8 encoding, and international characters are allowed. * Keys must start with a lowercase letter or international character. * Each resource is limited to a maximum of 64 labels. Both keys and values are additionally constrained to be <= 128 bytes.",
-				Elem:        &schema.Schema{Type: schema.TypeString},
+				Computed:    true,
+				Description: "All of annotations (key/value pairs) present on the resource in GCP, including the annotations configured through Terraform, other clients and services.",
+			},
+
+			"effective_labels": {
+				Type:        schema.TypeMap,
+				Computed:    true,
+				Description: "All of labels (key/value pairs) present on the resource in GCP, including the labels configured through Terraform, other clients and services.",
 			},
 
 			"project": {
@@ -109,6 +113,13 @@ func ResourceClouddeployDeliveryPipeline() *schema.Resource {
 				Description: "When suspended, no new releases or rollouts can be created, but in-progress ones will complete.",
 			},
 
+			"annotations": {
+				Type:        schema.TypeMap,
+				Optional:    true,
+				Description: "User annotations. These attributes can only be set and used by the user, and not by Google Cloud Deploy. See https://google.aip.dev/128#annotations for more details such as format and size limitations.\n\n**Note**: This field is non-authoritative, and will only manage the annotations present in your configuration.\nPlease refer to the field `effective_annotations` for all of the annotations present on the resource.",
+				Elem:        &schema.Schema{Type: schema.TypeString},
+			},
+
 			"condition": {
 				Type:        schema.TypeList,
 				Computed:    true,
@@ -126,6 +137,19 @@ func ResourceClouddeployDeliveryPipeline() *schema.Resource {
 				Type:        schema.TypeString,
 				Computed:    true,
 				Description: "This checksum is computed by the server based on the value of other fields, and may be sent on update and delete requests to ensure the client has an up-to-date value before proceeding.",
+			},
+
+			"labels": {
+				Type:        schema.TypeMap,
+				Optional:    true,
+				Description: "Labels are attributes that can be set and used by both the user and by Google Cloud Deploy. Labels must meet the following constraints: * Keys and values can contain only lowercase letters, numeric characters, underscores, and dashes. * All characters must use UTF-8 encoding, and international characters are allowed. * Keys must start with a lowercase letter or international character. * Each resource is limited to a maximum of 64 labels. Both keys and values are additionally constrained to be <= 128 bytes.\n\n**Note**: This field is non-authoritative, and will only manage the labels present in your configuration.\nPlease refer to the field `effective_labels` for all of the labels present on the resource.",
+				Elem:        &schema.Schema{Type: schema.TypeString},
+			},
+
+			"terraform_labels": {
+				Type:        schema.TypeMap,
+				Computed:    true,
+				Description: "The combination of labels configured directly on the resource and default labels configured on the provider.",
 			},
 
 			"uid": {
@@ -439,6 +463,27 @@ func ClouddeployDeliveryPipelineSerialPipelineStagesStrategyCanaryRuntimeConfigC
 				Optional:    true,
 				Description: "Whether Cloud Deploy should update the traffic stanza in a Cloud Run Service on the user's behalf to facilitate traffic splitting. This is required to be true for CanaryDeployments, but optional for CustomCanaryDeployments.",
 			},
+
+			"canary_revision_tags": {
+				Type:        schema.TypeList,
+				Optional:    true,
+				Description: "Optional. A list of tags that are added to the canary revision while the canary phase is in progress.",
+				Elem:        &schema.Schema{Type: schema.TypeString},
+			},
+
+			"prior_revision_tags": {
+				Type:        schema.TypeList,
+				Optional:    true,
+				Description: "Optional. A list of tags that are added to the prior revision while the canary phase is in progress.",
+				Elem:        &schema.Schema{Type: schema.TypeString},
+			},
+
+			"stable_revision_tags": {
+				Type:        schema.TypeList,
+				Optional:    true,
+				Description: "Optional. A list of tags that are added to the final stable revision when the stable phase is applied.",
+				Elem:        &schema.Schema{Type: schema.TypeString},
+			},
 		},
 	}
 }
@@ -486,10 +531,49 @@ func ClouddeployDeliveryPipelineSerialPipelineStagesStrategyCanaryRuntimeConfigK
 				Description: "Required. Name of the Kubernetes Service.",
 			},
 
+			"pod_selector_label": {
+				Type:        schema.TypeString,
+				Optional:    true,
+				Description: "Optional. The label to use when selecting Pods for the Deployment and Service resources. This label must already be present in both resources.",
+			},
+
+			"route_destinations": {
+				Type:        schema.TypeList,
+				Optional:    true,
+				Description: "Optional. Route destinations allow configuring the Gateway API HTTPRoute to be deployed to additional clusters. This option is available for multi-cluster service mesh set ups that require the route to exist in the clusters that call the service. If unspecified, the HTTPRoute will only be deployed to the Target cluster.",
+				MaxItems:    1,
+				Elem:        ClouddeployDeliveryPipelineSerialPipelineStagesStrategyCanaryRuntimeConfigKubernetesGatewayServiceMeshRouteDestinationsSchema(),
+			},
+
 			"route_update_wait_time": {
 				Type:        schema.TypeString,
 				Optional:    true,
 				Description: "Optional. The time to wait for route updates to propagate. The maximum configurable time is 3 hours, in seconds format. If unspecified, there is no wait time.",
+			},
+
+			"stable_cutback_duration": {
+				Type:        schema.TypeString,
+				Optional:    true,
+				Description: "Optional. The amount of time to migrate traffic back from the canary Service to the original Service during the stable phase deployment. If specified, must be between 15s and 3600s. If unspecified, there is no cutback time.",
+			},
+		},
+	}
+}
+
+func ClouddeployDeliveryPipelineSerialPipelineStagesStrategyCanaryRuntimeConfigKubernetesGatewayServiceMeshRouteDestinationsSchema() *schema.Resource {
+	return &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			"destination_ids": {
+				Type:        schema.TypeList,
+				Required:    true,
+				Description: "Required. The clusters where the Gateway API HTTPRoute resource will be deployed to. Valid entries include the associated entities IDs configured in the Target resource and \"@self\" to include the Target cluster.",
+				Elem:        &schema.Schema{Type: schema.TypeString},
+			},
+
+			"propagate_service": {
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Description: "Optional. Whether to propagate the Kubernetes Service to the route destination clusters. The Service will always be deployed to the Target cluster even if the HTTPRoute is not. This option may be used to facilitiate successful DNS lookup in the route destination clusters. Can only be set to true if destinations are specified.",
 			},
 		},
 	}
@@ -514,6 +598,12 @@ func ClouddeployDeliveryPipelineSerialPipelineStagesStrategyCanaryRuntimeConfigK
 				Type:        schema.TypeBool,
 				Optional:    true,
 				Description: "Optional. Whether to disable Pod overprovisioning. If Pod overprovisioning is disabled then Cloud Deploy will limit the number of total Pods used for the deployment strategy to the number of Pods the Deployment has on the cluster.",
+			},
+
+			"pod_selector_label": {
+				Type:        schema.TypeString,
+				Optional:    true,
+				Description: "Optional. The label to use when selecting Pods for the Deployment resource. This label must already be present in the Deployment.",
 			},
 		},
 	}
@@ -671,9 +761,9 @@ func resourceClouddeployDeliveryPipelineCreate(d *schema.ResourceData, meta inte
 	obj := &clouddeploy.DeliveryPipeline{
 		Location:       dcl.String(d.Get("location").(string)),
 		Name:           dcl.String(d.Get("name").(string)),
-		Annotations:    tpgresource.CheckStringMap(d.Get("annotations")),
 		Description:    dcl.String(d.Get("description").(string)),
-		Labels:         tpgresource.CheckStringMap(d.Get("labels")),
+		Annotations:    tpgresource.CheckStringMap(d.Get("effective_annotations")),
+		Labels:         tpgresource.CheckStringMap(d.Get("effective_labels")),
 		Project:        dcl.String(project),
 		SerialPipeline: expandClouddeployDeliveryPipelineSerialPipeline(d.Get("serial_pipeline")),
 		Suspended:      dcl.Bool(d.Get("suspended").(bool)),
@@ -726,9 +816,9 @@ func resourceClouddeployDeliveryPipelineRead(d *schema.ResourceData, meta interf
 	obj := &clouddeploy.DeliveryPipeline{
 		Location:       dcl.String(d.Get("location").(string)),
 		Name:           dcl.String(d.Get("name").(string)),
-		Annotations:    tpgresource.CheckStringMap(d.Get("annotations")),
 		Description:    dcl.String(d.Get("description").(string)),
-		Labels:         tpgresource.CheckStringMap(d.Get("labels")),
+		Annotations:    tpgresource.CheckStringMap(d.Get("effective_annotations")),
+		Labels:         tpgresource.CheckStringMap(d.Get("effective_labels")),
 		Project:        dcl.String(project),
 		SerialPipeline: expandClouddeployDeliveryPipelineSerialPipeline(d.Get("serial_pipeline")),
 		Suspended:      dcl.Bool(d.Get("suspended").(bool)),
@@ -762,14 +852,14 @@ func resourceClouddeployDeliveryPipelineRead(d *schema.ResourceData, meta interf
 	if err = d.Set("name", res.Name); err != nil {
 		return fmt.Errorf("error setting name in state: %s", err)
 	}
-	if err = d.Set("annotations", res.Annotations); err != nil {
-		return fmt.Errorf("error setting annotations in state: %s", err)
-	}
 	if err = d.Set("description", res.Description); err != nil {
 		return fmt.Errorf("error setting description in state: %s", err)
 	}
-	if err = d.Set("labels", res.Labels); err != nil {
-		return fmt.Errorf("error setting labels in state: %s", err)
+	if err = d.Set("effective_annotations", res.Annotations); err != nil {
+		return fmt.Errorf("error setting effective_annotations in state: %s", err)
+	}
+	if err = d.Set("effective_labels", res.Labels); err != nil {
+		return fmt.Errorf("error setting effective_labels in state: %s", err)
 	}
 	if err = d.Set("project", res.Project); err != nil {
 		return fmt.Errorf("error setting project in state: %s", err)
@@ -780,6 +870,9 @@ func resourceClouddeployDeliveryPipelineRead(d *schema.ResourceData, meta interf
 	if err = d.Set("suspended", res.Suspended); err != nil {
 		return fmt.Errorf("error setting suspended in state: %s", err)
 	}
+	if err = d.Set("annotations", flattenClouddeployDeliveryPipelineAnnotations(res.Annotations, d)); err != nil {
+		return fmt.Errorf("error setting annotations in state: %s", err)
+	}
 	if err = d.Set("condition", flattenClouddeployDeliveryPipelineCondition(res.Condition)); err != nil {
 		return fmt.Errorf("error setting condition in state: %s", err)
 	}
@@ -788,6 +881,12 @@ func resourceClouddeployDeliveryPipelineRead(d *schema.ResourceData, meta interf
 	}
 	if err = d.Set("etag", res.Etag); err != nil {
 		return fmt.Errorf("error setting etag in state: %s", err)
+	}
+	if err = d.Set("labels", flattenClouddeployDeliveryPipelineLabels(res.Labels, d)); err != nil {
+		return fmt.Errorf("error setting labels in state: %s", err)
+	}
+	if err = d.Set("terraform_labels", flattenClouddeployDeliveryPipelineTerraformLabels(res.Labels, d)); err != nil {
+		return fmt.Errorf("error setting terraform_labels in state: %s", err)
 	}
 	if err = d.Set("uid", res.Uid); err != nil {
 		return fmt.Errorf("error setting uid in state: %s", err)
@@ -808,9 +907,9 @@ func resourceClouddeployDeliveryPipelineUpdate(d *schema.ResourceData, meta inte
 	obj := &clouddeploy.DeliveryPipeline{
 		Location:       dcl.String(d.Get("location").(string)),
 		Name:           dcl.String(d.Get("name").(string)),
-		Annotations:    tpgresource.CheckStringMap(d.Get("annotations")),
 		Description:    dcl.String(d.Get("description").(string)),
-		Labels:         tpgresource.CheckStringMap(d.Get("labels")),
+		Annotations:    tpgresource.CheckStringMap(d.Get("effective_annotations")),
+		Labels:         tpgresource.CheckStringMap(d.Get("effective_labels")),
 		Project:        dcl.String(project),
 		SerialPipeline: expandClouddeployDeliveryPipelineSerialPipeline(d.Get("serial_pipeline")),
 		Suspended:      dcl.Bool(d.Get("suspended").(bool)),
@@ -858,9 +957,9 @@ func resourceClouddeployDeliveryPipelineDelete(d *schema.ResourceData, meta inte
 	obj := &clouddeploy.DeliveryPipeline{
 		Location:       dcl.String(d.Get("location").(string)),
 		Name:           dcl.String(d.Get("name").(string)),
-		Annotations:    tpgresource.CheckStringMap(d.Get("annotations")),
 		Description:    dcl.String(d.Get("description").(string)),
-		Labels:         tpgresource.CheckStringMap(d.Get("labels")),
+		Annotations:    tpgresource.CheckStringMap(d.Get("effective_annotations")),
+		Labels:         tpgresource.CheckStringMap(d.Get("effective_labels")),
 		Project:        dcl.String(project),
 		SerialPipeline: expandClouddeployDeliveryPipelineSerialPipeline(d.Get("serial_pipeline")),
 		Suspended:      dcl.Bool(d.Get("suspended").(bool)),
@@ -1380,6 +1479,9 @@ func expandClouddeployDeliveryPipelineSerialPipelineStagesStrategyCanaryRuntimeC
 	obj := objArr[0].(map[string]interface{})
 	return &clouddeploy.DeliveryPipelineSerialPipelineStagesStrategyCanaryRuntimeConfigCloudRun{
 		AutomaticTrafficControl: dcl.Bool(obj["automatic_traffic_control"].(bool)),
+		CanaryRevisionTags:      tpgdclresource.ExpandStringArray(obj["canary_revision_tags"]),
+		PriorRevisionTags:       tpgdclresource.ExpandStringArray(obj["prior_revision_tags"]),
+		StableRevisionTags:      tpgdclresource.ExpandStringArray(obj["stable_revision_tags"]),
 	}
 }
 
@@ -1389,6 +1491,9 @@ func flattenClouddeployDeliveryPipelineSerialPipelineStagesStrategyCanaryRuntime
 	}
 	transformed := map[string]interface{}{
 		"automatic_traffic_control": obj.AutomaticTrafficControl,
+		"canary_revision_tags":      obj.CanaryRevisionTags,
+		"prior_revision_tags":       obj.PriorRevisionTags,
+		"stable_revision_tags":      obj.StableRevisionTags,
 	}
 
 	return []interface{}{transformed}
@@ -1433,10 +1538,13 @@ func expandClouddeployDeliveryPipelineSerialPipelineStagesStrategyCanaryRuntimeC
 	}
 	obj := objArr[0].(map[string]interface{})
 	return &clouddeploy.DeliveryPipelineSerialPipelineStagesStrategyCanaryRuntimeConfigKubernetesGatewayServiceMesh{
-		Deployment:          dcl.String(obj["deployment"].(string)),
-		HttpRoute:           dcl.String(obj["http_route"].(string)),
-		Service:             dcl.String(obj["service"].(string)),
-		RouteUpdateWaitTime: dcl.String(obj["route_update_wait_time"].(string)),
+		Deployment:            dcl.String(obj["deployment"].(string)),
+		HttpRoute:             dcl.String(obj["http_route"].(string)),
+		Service:               dcl.String(obj["service"].(string)),
+		PodSelectorLabel:      dcl.String(obj["pod_selector_label"].(string)),
+		RouteDestinations:     expandClouddeployDeliveryPipelineSerialPipelineStagesStrategyCanaryRuntimeConfigKubernetesGatewayServiceMeshRouteDestinations(obj["route_destinations"]),
+		RouteUpdateWaitTime:   dcl.String(obj["route_update_wait_time"].(string)),
+		StableCutbackDuration: dcl.String(obj["stable_cutback_duration"].(string)),
 	}
 }
 
@@ -1445,10 +1553,41 @@ func flattenClouddeployDeliveryPipelineSerialPipelineStagesStrategyCanaryRuntime
 		return nil
 	}
 	transformed := map[string]interface{}{
-		"deployment":             obj.Deployment,
-		"http_route":             obj.HttpRoute,
-		"service":                obj.Service,
-		"route_update_wait_time": obj.RouteUpdateWaitTime,
+		"deployment":              obj.Deployment,
+		"http_route":              obj.HttpRoute,
+		"service":                 obj.Service,
+		"pod_selector_label":      obj.PodSelectorLabel,
+		"route_destinations":      flattenClouddeployDeliveryPipelineSerialPipelineStagesStrategyCanaryRuntimeConfigKubernetesGatewayServiceMeshRouteDestinations(obj.RouteDestinations),
+		"route_update_wait_time":  obj.RouteUpdateWaitTime,
+		"stable_cutback_duration": obj.StableCutbackDuration,
+	}
+
+	return []interface{}{transformed}
+
+}
+
+func expandClouddeployDeliveryPipelineSerialPipelineStagesStrategyCanaryRuntimeConfigKubernetesGatewayServiceMeshRouteDestinations(o interface{}) *clouddeploy.DeliveryPipelineSerialPipelineStagesStrategyCanaryRuntimeConfigKubernetesGatewayServiceMeshRouteDestinations {
+	if o == nil {
+		return clouddeploy.EmptyDeliveryPipelineSerialPipelineStagesStrategyCanaryRuntimeConfigKubernetesGatewayServiceMeshRouteDestinations
+	}
+	objArr := o.([]interface{})
+	if len(objArr) == 0 || objArr[0] == nil {
+		return clouddeploy.EmptyDeliveryPipelineSerialPipelineStagesStrategyCanaryRuntimeConfigKubernetesGatewayServiceMeshRouteDestinations
+	}
+	obj := objArr[0].(map[string]interface{})
+	return &clouddeploy.DeliveryPipelineSerialPipelineStagesStrategyCanaryRuntimeConfigKubernetesGatewayServiceMeshRouteDestinations{
+		DestinationIds:   tpgdclresource.ExpandStringArray(obj["destination_ids"]),
+		PropagateService: dcl.Bool(obj["propagate_service"].(bool)),
+	}
+}
+
+func flattenClouddeployDeliveryPipelineSerialPipelineStagesStrategyCanaryRuntimeConfigKubernetesGatewayServiceMeshRouteDestinations(obj *clouddeploy.DeliveryPipelineSerialPipelineStagesStrategyCanaryRuntimeConfigKubernetesGatewayServiceMeshRouteDestinations) interface{} {
+	if obj == nil || obj.Empty() {
+		return nil
+	}
+	transformed := map[string]interface{}{
+		"destination_ids":   obj.DestinationIds,
+		"propagate_service": obj.PropagateService,
 	}
 
 	return []interface{}{transformed}
@@ -1468,6 +1607,7 @@ func expandClouddeployDeliveryPipelineSerialPipelineStagesStrategyCanaryRuntimeC
 		Deployment:                 dcl.String(obj["deployment"].(string)),
 		Service:                    dcl.String(obj["service"].(string)),
 		DisablePodOverprovisioning: dcl.Bool(obj["disable_pod_overprovisioning"].(bool)),
+		PodSelectorLabel:           dcl.String(obj["pod_selector_label"].(string)),
 	}
 }
 
@@ -1479,6 +1619,7 @@ func flattenClouddeployDeliveryPipelineSerialPipelineStagesStrategyCanaryRuntime
 		"deployment":                   obj.Deployment,
 		"service":                      obj.Service,
 		"disable_pod_overprovisioning": obj.DisablePodOverprovisioning,
+		"pod_selector_label":           obj.PodSelectorLabel,
 	}
 
 	return []interface{}{transformed}
@@ -1619,4 +1760,49 @@ func flattenClouddeployDeliveryPipelineConditionTargetsTypeCondition(obj *cloudd
 
 	return []interface{}{transformed}
 
+}
+
+func flattenClouddeployDeliveryPipelineLabels(v map[string]string, d *schema.ResourceData) interface{} {
+	if v == nil {
+		return nil
+	}
+
+	transformed := make(map[string]interface{})
+	if l, ok := d.Get("labels").(map[string]interface{}); ok {
+		for k := range l {
+			transformed[k] = v[k]
+		}
+	}
+
+	return transformed
+}
+
+func flattenClouddeployDeliveryPipelineTerraformLabels(v map[string]string, d *schema.ResourceData) interface{} {
+	if v == nil {
+		return nil
+	}
+
+	transformed := make(map[string]interface{})
+	if l, ok := d.Get("terraform_labels").(map[string]interface{}); ok {
+		for k := range l {
+			transformed[k] = v[k]
+		}
+	}
+
+	return transformed
+}
+
+func flattenClouddeployDeliveryPipelineAnnotations(v map[string]string, d *schema.ResourceData) interface{} {
+	if v == nil {
+		return nil
+	}
+
+	transformed := make(map[string]interface{})
+	if l, ok := d.Get("annotations").(map[string]interface{}); ok {
+		for k := range l {
+			transformed[k] = v[k]
+		}
+	}
+
+	return transformed
 }

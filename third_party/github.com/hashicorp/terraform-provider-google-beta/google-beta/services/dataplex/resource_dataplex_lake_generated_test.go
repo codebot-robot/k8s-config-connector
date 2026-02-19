@@ -23,8 +23,8 @@ import (
 	"fmt"
 	dcl "github.com/GoogleCloudPlatform/declarative-resource-client-library/dcl"
 	dataplex "github.com/GoogleCloudPlatform/declarative-resource-client-library/services/google/dataplex/beta"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/terraform"
 	"strings"
 	"testing"
 
@@ -51,17 +51,19 @@ func TestAccDataplexLake_BasicLake(t *testing.T) {
 				Config: testAccDataplexLake_BasicLake(context),
 			},
 			{
-				ResourceName:      "google_dataplex_lake.primary",
-				ImportState:       true,
-				ImportStateVerify: true,
+				ResourceName:            "google_dataplex_lake.primary",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"labels", "terraform_labels"},
 			},
 			{
 				Config: testAccDataplexLake_BasicLakeUpdate0(context),
 			},
 			{
-				ResourceName:      "google_dataplex_lake.primary",
-				ImportState:       true,
-				ImportStateVerify: true,
+				ResourceName:            "google_dataplex_lake.primary",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"labels", "terraform_labels"},
 			},
 		},
 	})
@@ -74,12 +76,11 @@ resource "google_dataplex_lake" "primary" {
   name         = "tf-test-lake%{random_suffix}"
   description  = "Lake for DCL"
   display_name = "Lake for DCL"
+  project      = "%{project_name}"
 
   labels = {
     my-lake = "exists"
   }
-
-  project = "%{project_name}"
 }
 
 
@@ -93,12 +94,11 @@ resource "google_dataplex_lake" "primary" {
   name         = "tf-test-lake%{random_suffix}"
   description  = "Updated description for lake"
   display_name = "Lake for DCL"
+  project      = "%{project_name}"
 
   labels = {
     my-lake = "exists"
   }
-
-  project = "%{project_name}"
 }
 
 

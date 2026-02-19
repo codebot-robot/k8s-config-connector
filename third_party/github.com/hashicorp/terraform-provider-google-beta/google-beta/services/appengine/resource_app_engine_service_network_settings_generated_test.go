@@ -18,11 +18,36 @@
 package appengine_test
 
 import (
+	"fmt"
+	"log"
+	"strconv"
+	"strings"
 	"testing"
+	"time"
 
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/terraform"
 
 	"github.com/hashicorp/terraform-provider-google-beta/google-beta/acctest"
+	"github.com/hashicorp/terraform-provider-google-beta/google-beta/envvar"
+	"github.com/hashicorp/terraform-provider-google-beta/google-beta/tpgresource"
+	transport_tpg "github.com/hashicorp/terraform-provider-google-beta/google-beta/transport"
+
+	"google.golang.org/api/googleapi"
+)
+
+var (
+	_ = fmt.Sprintf
+	_ = log.Print
+	_ = strconv.Atoi
+	_ = strings.Trim
+	_ = time.Now
+	_ = resource.TestMain
+	_ = terraform.NewState
+	_ = envvar.TestEnvVar
+	_ = tpgresource.SetLabels
+	_ = transport_tpg.Config{}
+	_ = googleapi.Error{}
 )
 
 func TestAccAppEngineServiceNetworkSettings_appEngineServiceNetworkSettingsExample(t *testing.T) {
@@ -66,7 +91,7 @@ resource "google_app_engine_standard_app_version" "internalapp" {
   service = "internalapp"
   delete_service_on_destroy = true
 
-  runtime = "nodejs10"
+  runtime = "nodejs20"
   entrypoint {
     shell = "node ./app.js"
   }

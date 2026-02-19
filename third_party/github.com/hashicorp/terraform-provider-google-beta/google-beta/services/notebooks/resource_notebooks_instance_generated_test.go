@@ -19,16 +19,35 @@ package notebooks_test
 
 import (
 	"fmt"
+	"log"
+	"strconv"
 	"strings"
 	"testing"
+	"time"
 
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/terraform"
 
 	"github.com/hashicorp/terraform-provider-google-beta/google-beta/acctest"
 	"github.com/hashicorp/terraform-provider-google-beta/google-beta/envvar"
 	"github.com/hashicorp/terraform-provider-google-beta/google-beta/tpgresource"
 	transport_tpg "github.com/hashicorp/terraform-provider-google-beta/google-beta/transport"
+
+	"google.golang.org/api/googleapi"
+)
+
+var (
+	_ = fmt.Sprintf
+	_ = log.Print
+	_ = strconv.Atoi
+	_ = strings.Trim
+	_ = time.Now
+	_ = resource.TestMain
+	_ = terraform.NewState
+	_ = envvar.TestEnvVar
+	_ = tpgresource.SetLabels
+	_ = transport_tpg.Config{}
+	_ = googleapi.Error{}
 )
 
 func TestAccNotebooksInstance_notebookInstanceBasicExample(t *testing.T) {
@@ -50,7 +69,7 @@ func TestAccNotebooksInstance_notebookInstanceBasicExample(t *testing.T) {
 				ResourceName:            "google_notebooks_instance.instance",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"name", "instance_owners", "boot_disk_type", "boot_disk_size_gb", "data_disk_type", "data_disk_size_gb", "no_remove_data_disk", "metadata", "vm_image", "container_image", "location"},
+				ImportStateVerifyIgnore: []string{"boot_disk_size_gb", "boot_disk_type", "container_image", "data_disk_size_gb", "data_disk_type", "instance_owners", "labels", "location", "metadata", "name", "no_remove_data_disk", "terraform_labels", "update_time", "vm_image"},
 			},
 		},
 	})
@@ -63,9 +82,50 @@ resource "google_notebooks_instance" "instance" {
   location = "us-west1-a"
   machine_type = "e2-medium"
   vm_image {
-    project      = "deeplearning-platform-release"
-    image_family = "tf-latest-cpu"
+    project      = "cloud-notebooks-managed"
+    image_family = "workbench-instances"
   }
+}
+`, context)
+}
+
+func TestAccNotebooksInstance_notebookInstanceBasicStoppedExample(t *testing.T) {
+	t.Skip("https://github.com/hashicorp/terraform-provider-google/issues/17593#issuecomment-2888583933")
+	t.Parallel()
+
+	context := map[string]interface{}{
+		"random_suffix": acctest.RandString(t, 10),
+	}
+
+	acctest.VcrTest(t, resource.TestCase{
+		PreCheck:                 func() { acctest.AccTestPreCheck(t) },
+		ProtoV5ProviderFactories: acctest.ProtoV5ProviderFactories(t),
+		CheckDestroy:             testAccCheckNotebooksInstanceDestroyProducer(t),
+		Steps: []resource.TestStep{
+			{
+				Config: testAccNotebooksInstance_notebookInstanceBasicStoppedExample(context),
+			},
+			{
+				ResourceName:            "google_notebooks_instance.instance",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"boot_disk_size_gb", "boot_disk_type", "container_image", "data_disk_size_gb", "data_disk_type", "desired_state", "instance_owners", "labels", "location", "metadata", "name", "no_remove_data_disk", "terraform_labels", "update_time", "vm_image"},
+			},
+		},
+	})
+}
+
+func testAccNotebooksInstance_notebookInstanceBasicStoppedExample(context map[string]interface{}) string {
+	return acctest.Nprintf(`
+resource "google_notebooks_instance" "instance" {
+  name = "tf-test-notebooks-instance%{random_suffix}"
+  location = "us-west1-a"
+  machine_type = "e2-medium"
+  vm_image {
+    project      = "cloud-notebooks-managed"
+    image_family = "workbench-instances"
+  }
+  desired_state = "STOPPED"
 }
 `, context)
 }
@@ -89,7 +149,7 @@ func TestAccNotebooksInstance_notebookInstanceBasicContainerExample(t *testing.T
 				ResourceName:            "google_notebooks_instance.instance",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"name", "instance_owners", "boot_disk_type", "boot_disk_size_gb", "data_disk_type", "data_disk_size_gb", "no_remove_data_disk", "metadata", "vm_image", "container_image", "location"},
+				ImportStateVerifyIgnore: []string{"boot_disk_size_gb", "boot_disk_type", "container_image", "data_disk_size_gb", "data_disk_type", "instance_owners", "labels", "location", "metadata", "name", "no_remove_data_disk", "terraform_labels", "update_time", "vm_image"},
 			},
 		},
 	})
@@ -132,7 +192,7 @@ func TestAccNotebooksInstance_notebookInstanceBasicGpuExample(t *testing.T) {
 				ResourceName:            "google_notebooks_instance.instance",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"name", "instance_owners", "boot_disk_type", "boot_disk_size_gb", "data_disk_type", "data_disk_size_gb", "no_remove_data_disk", "metadata", "vm_image", "container_image", "location"},
+				ImportStateVerifyIgnore: []string{"boot_disk_size_gb", "boot_disk_type", "container_image", "data_disk_size_gb", "data_disk_type", "instance_owners", "labels", "location", "metadata", "name", "no_remove_data_disk", "terraform_labels", "update_time", "vm_image"},
 			},
 		},
 	})
@@ -151,8 +211,8 @@ resource "google_notebooks_instance" "instance" {
     core_count   = 1
   }
   vm_image {
-    project      = "deeplearning-platform-release"
-    image_family = "tf-latest-gpu"
+    project      = "cloud-notebooks-managed"
+    image_family = "workbench-instances"
   }
 }
 `, context)
@@ -163,6 +223,7 @@ func TestAccNotebooksInstance_notebookInstanceFullExample(t *testing.T) {
 
 	context := map[string]interface{}{
 		"service_account": envvar.GetTestServiceAccountFromEnv(t),
+		"key_name":        acctest.BootstrapKMSKeyInLocation(t, "global").CryptoKey.Name,
 		"random_suffix":   acctest.RandString(t, 10),
 	}
 
@@ -178,7 +239,7 @@ func TestAccNotebooksInstance_notebookInstanceFullExample(t *testing.T) {
 				ResourceName:            "google_notebooks_instance.instance",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"name", "instance_owners", "boot_disk_type", "boot_disk_size_gb", "data_disk_type", "data_disk_size_gb", "no_remove_data_disk", "metadata", "vm_image", "container_image", "location"},
+				ImportStateVerifyIgnore: []string{"boot_disk_size_gb", "boot_disk_type", "container_image", "data_disk_size_gb", "data_disk_type", "instance_owners", "labels", "location", "metadata", "name", "no_remove_data_disk", "terraform_labels", "update_time", "vm_image"},
 			},
 		},
 	})
@@ -192,8 +253,8 @@ resource "google_notebooks_instance" "instance" {
   machine_type = "e2-medium"
 
   vm_image {
-    project      = "deeplearning-platform-release"
-    image_family = "tf-latest-cpu"
+    project      = "cloud-notebooks-managed"
+    image_family = "workbench-instances"
   }
 
   instance_owners = [ "%{service_account}"]
@@ -201,7 +262,7 @@ resource "google_notebooks_instance" "instance" {
 
   install_gpu_driver = true
   boot_disk_type = "PD_SSD"
-  boot_disk_size_gb = 110
+  boot_disk_size_gb = 150
 
   no_public_ip = true
   no_proxy_access = true
@@ -216,6 +277,18 @@ resource "google_notebooks_instance" "instance" {
   metadata = {
     terraform = "true"
   }
+  service_account_scopes = [
+    "https://www.googleapis.com/auth/bigquery",
+    "https://www.googleapis.com/auth/devstorage.read_write",
+    "https://www.googleapis.com/auth/cloud-platform",
+    "https://www.googleapis.com/auth/userinfo.email"
+  ]
+
+  tags = ["foo", "bar"]
+
+  disk_encryption = "CMEK"
+  kms_key         = "%{key_name}"
+  desired_state = "ACTIVE"
 }
 
 data "google_compute_network" "my_network" {

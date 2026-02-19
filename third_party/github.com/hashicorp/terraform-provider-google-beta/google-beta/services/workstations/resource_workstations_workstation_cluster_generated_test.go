@@ -19,15 +19,35 @@ package workstations_test
 
 import (
 	"fmt"
+	"log"
+	"strconv"
 	"strings"
 	"testing"
+	"time"
 
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/terraform"
 
 	"github.com/hashicorp/terraform-provider-google-beta/google-beta/acctest"
+	"github.com/hashicorp/terraform-provider-google-beta/google-beta/envvar"
 	"github.com/hashicorp/terraform-provider-google-beta/google-beta/tpgresource"
 	transport_tpg "github.com/hashicorp/terraform-provider-google-beta/google-beta/transport"
+
+	"google.golang.org/api/googleapi"
+)
+
+var (
+	_ = fmt.Sprintf
+	_ = log.Print
+	_ = strconv.Atoi
+	_ = strings.Trim
+	_ = time.Now
+	_ = resource.TestMain
+	_ = terraform.NewState
+	_ = envvar.TestEnvVar
+	_ = tpgresource.SetLabels
+	_ = transport_tpg.Config{}
+	_ = googleapi.Error{}
 )
 
 func TestAccWorkstationsWorkstationCluster_workstationClusterBasicExample(t *testing.T) {
@@ -49,7 +69,7 @@ func TestAccWorkstationsWorkstationCluster_workstationClusterBasicExample(t *tes
 				ResourceName:            "google_workstations_workstation_cluster.default",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"workstation_cluster_id", "location"},
+				ImportStateVerifyIgnore: []string{"annotations", "labels", "location", "tags", "terraform_labels", "workstation_cluster_id"},
 			},
 		},
 	})
@@ -112,7 +132,7 @@ func TestAccWorkstationsWorkstationCluster_workstationClusterPrivateExample(t *t
 				ResourceName:            "google_workstations_workstation_cluster.default",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"workstation_cluster_id", "location"},
+				ImportStateVerifyIgnore: []string{"annotations", "labels", "location", "tags", "terraform_labels", "workstation_cluster_id"},
 			},
 		},
 	})
@@ -153,6 +173,150 @@ resource "google_compute_network" "default" {
 resource "google_compute_subnetwork" "default" {
   provider = google-beta
   name          = "tf-test-workstation-cluster-private%{random_suffix}"
+  ip_cidr_range = "10.0.0.0/24"
+  region        = "us-central1"
+  network       = google_compute_network.default.name
+}
+`, context)
+}
+
+func TestAccWorkstationsWorkstationCluster_workstationClusterCustomDomainExample(t *testing.T) {
+	t.Parallel()
+
+	context := map[string]interface{}{
+		"random_suffix": acctest.RandString(t, 10),
+	}
+
+	acctest.VcrTest(t, resource.TestCase{
+		PreCheck:                 func() { acctest.AccTestPreCheck(t) },
+		ProtoV5ProviderFactories: acctest.ProtoV5ProviderBetaFactories(t),
+		CheckDestroy:             testAccCheckWorkstationsWorkstationClusterDestroyProducer(t),
+		Steps: []resource.TestStep{
+			{
+				Config: testAccWorkstationsWorkstationCluster_workstationClusterCustomDomainExample(context),
+			},
+			{
+				ResourceName:            "google_workstations_workstation_cluster.default",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"annotations", "labels", "location", "tags", "terraform_labels", "workstation_cluster_id"},
+			},
+		},
+	})
+}
+
+func testAccWorkstationsWorkstationCluster_workstationClusterCustomDomainExample(context map[string]interface{}) string {
+	return acctest.Nprintf(`
+resource "google_workstations_workstation_cluster" "default" {
+  provider               = google-beta
+  workstation_cluster_id = "tf-test-workstation-cluster-custom-domain%{random_suffix}"
+  network                = google_compute_network.default.id
+  subnetwork             = google_compute_subnetwork.default.id
+  location               = "us-central1"
+
+  private_cluster_config {
+    enable_private_endpoint = true
+  }
+
+  domain_config {
+    domain = "workstations.example.com"
+  }
+
+  labels = {
+    "label" = "key"
+  }
+
+  annotations = {
+    label-one = "value-one"
+  }
+}
+
+data "google_project" "project" {
+  provider = google-beta
+}
+
+resource "google_compute_network" "default" {
+  provider                = google-beta
+  name                    = "tf-test-workstation-cluster-custom-domain%{random_suffix}"
+  auto_create_subnetworks = false
+}
+
+resource "google_compute_subnetwork" "default" {
+  provider = google-beta
+  name          = "tf-test-workstation-cluster-custom-domain%{random_suffix}"
+  ip_cidr_range = "10.0.0.0/24"
+  region        = "us-central1"
+  network       = google_compute_network.default.name
+}
+`, context)
+}
+
+func TestAccWorkstationsWorkstationCluster_workstationClusterTagsExample(t *testing.T) {
+	t.Parallel()
+
+	context := map[string]interface{}{
+		"key_short_name":   "tf-test-key-" + acctest.RandString(t, 10),
+		"value_short_name": "tf-test-value-" + acctest.RandString(t, 10),
+		"random_suffix":    acctest.RandString(t, 10),
+	}
+
+	acctest.VcrTest(t, resource.TestCase{
+		PreCheck:                 func() { acctest.AccTestPreCheck(t) },
+		ProtoV5ProviderFactories: acctest.ProtoV5ProviderBetaFactories(t),
+		CheckDestroy:             testAccCheckWorkstationsWorkstationClusterDestroyProducer(t),
+		Steps: []resource.TestStep{
+			{
+				Config: testAccWorkstationsWorkstationCluster_workstationClusterTagsExample(context),
+			},
+			{
+				ResourceName:            "google_workstations_workstation_cluster.default",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"annotations", "labels", "location", "tags", "terraform_labels", "workstation_cluster_id"},
+			},
+		},
+	})
+}
+
+func testAccWorkstationsWorkstationCluster_workstationClusterTagsExample(context map[string]interface{}) string {
+	return acctest.Nprintf(`
+data "google_project" "project" {
+  provider = google-beta
+}
+
+resource "google_tags_tag_key" "tag_key" {
+  provider   = google-beta
+  parent     = "projects/${data.google_project.project.number}"
+  short_name = "%{key_short_name}"
+}
+
+resource "google_tags_tag_value" "tag_value" {
+  provider   = google-beta
+  parent     = "tagKeys/${google_tags_tag_key.tag_key.name}"
+  short_name = "%{value_short_name}"
+}
+
+resource "google_workstations_workstation_cluster" "default" {
+  provider               = google-beta
+  workstation_cluster_id = "tf-test-workstation-cluster-tags%{random_suffix}"
+  network                = google_compute_network.default.id
+  subnetwork             = google_compute_subnetwork.default.id
+  location               = "us-central1"
+  
+  tags = {
+    "${data.google_project.project.project_id}/${google_tags_tag_key.tag_key.short_name}" = "${google_tags_tag_value.tag_value.short_name}"
+  }
+}
+
+resource "google_compute_network" "default" {
+  provider                = google-beta
+  name                    = "tf-test-workstation-cluster-tags%{random_suffix}"
+  auto_create_subnetworks = false
+}
+
+resource "google_compute_subnetwork" "default" {
+  provider      = google-beta
+  name          = "tf-test-workstation-cluster-tags%{random_suffix}"
   ip_cidr_range = "10.0.0.0/24"
   region        = "us-central1"
   network       = google_compute_network.default.name

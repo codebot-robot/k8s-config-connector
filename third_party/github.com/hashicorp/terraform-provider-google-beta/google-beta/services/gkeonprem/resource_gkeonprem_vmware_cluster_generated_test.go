@@ -19,15 +19,35 @@ package gkeonprem_test
 
 import (
 	"fmt"
+	"log"
+	"strconv"
 	"strings"
 	"testing"
+	"time"
 
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/terraform"
 
 	"github.com/hashicorp/terraform-provider-google-beta/google-beta/acctest"
+	"github.com/hashicorp/terraform-provider-google-beta/google-beta/envvar"
 	"github.com/hashicorp/terraform-provider-google-beta/google-beta/tpgresource"
 	transport_tpg "github.com/hashicorp/terraform-provider-google-beta/google-beta/transport"
+
+	"google.golang.org/api/googleapi"
+)
+
+var (
+	_ = fmt.Sprintf
+	_ = log.Print
+	_ = strconv.Atoi
+	_ = strings.Trim
+	_ = time.Now
+	_ = resource.TestMain
+	_ = terraform.NewState
+	_ = envvar.TestEnvVar
+	_ = tpgresource.SetLabels
+	_ = transport_tpg.Config{}
+	_ = googleapi.Error{}
 )
 
 func TestAccGkeonpremVmwareCluster_gkeonpremVmwareClusterBasicExample(t *testing.T) {
@@ -39,7 +59,7 @@ func TestAccGkeonpremVmwareCluster_gkeonpremVmwareClusterBasicExample(t *testing
 
 	acctest.VcrTest(t, resource.TestCase{
 		PreCheck:                 func() { acctest.AccTestPreCheck(t) },
-		ProtoV5ProviderFactories: acctest.ProtoV5ProviderBetaFactories(t),
+		ProtoV5ProviderFactories: acctest.ProtoV5ProviderFactories(t),
 		CheckDestroy:             testAccCheckGkeonpremVmwareClusterDestroyProducer(t),
 		Steps: []resource.TestStep{
 			{
@@ -49,7 +69,7 @@ func TestAccGkeonpremVmwareCluster_gkeonpremVmwareClusterBasicExample(t *testing
 				ResourceName:            "google_gkeonprem_vmware_cluster.cluster-basic",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"name", "location"},
+				ImportStateVerifyIgnore: []string{"annotations", "location", "name", "skip_validations"},
 			},
 		},
 	})
@@ -58,7 +78,6 @@ func TestAccGkeonpremVmwareCluster_gkeonpremVmwareClusterBasicExample(t *testing
 func testAccGkeonpremVmwareCluster_gkeonpremVmwareClusterBasicExample(context map[string]interface{}) string {
 	return acctest.Nprintf(`
 resource "google_gkeonprem_vmware_cluster" "cluster-basic" {
-  provider = google-beta
   name = "tf-test-cluster-basic%{random_suffix}"
   location = "us-west1"
   admin_cluster_membership = "projects/870316890899/locations/global/memberships/gkeonprem-terraform-test"
@@ -110,7 +129,7 @@ func TestAccGkeonpremVmwareCluster_gkeonpremVmwareClusterF5lbExample(t *testing.
 
 	acctest.VcrTest(t, resource.TestCase{
 		PreCheck:                 func() { acctest.AccTestPreCheck(t) },
-		ProtoV5ProviderFactories: acctest.ProtoV5ProviderBetaFactories(t),
+		ProtoV5ProviderFactories: acctest.ProtoV5ProviderFactories(t),
 		CheckDestroy:             testAccCheckGkeonpremVmwareClusterDestroyProducer(t),
 		Steps: []resource.TestStep{
 			{
@@ -120,7 +139,7 @@ func TestAccGkeonpremVmwareCluster_gkeonpremVmwareClusterF5lbExample(t *testing.
 				ResourceName:            "google_gkeonprem_vmware_cluster.cluster-f5lb",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"name", "location"},
+				ImportStateVerifyIgnore: []string{"annotations", "location", "name", "skip_validations"},
 			},
 		},
 	})
@@ -129,7 +148,6 @@ func TestAccGkeonpremVmwareCluster_gkeonpremVmwareClusterF5lbExample(t *testing.
 func testAccGkeonpremVmwareCluster_gkeonpremVmwareClusterF5lbExample(context map[string]interface{}) string {
 	return acctest.Nprintf(`
 resource "google_gkeonprem_vmware_cluster" "cluster-f5lb" {
-  provider = google-beta  
   name = "tf-test-cluster-f5lb%{random_suffix}"
   location = "us-west1"
   admin_cluster_membership = "projects/870316890899/locations/global/memberships/gkeonprem-terraform-test"
@@ -152,6 +170,7 @@ resource "google_gkeonprem_vmware_cluster" "cluster-f5lb" {
         gateway="test-gateway"
       }
     }
+    vcenter_network = "test-vcenter-network"
   }
   control_plane_node {
      cpus = 4
@@ -179,6 +198,7 @@ resource "google_gkeonprem_vmware_cluster" "cluster-f5lb" {
   }
   vm_tracking_enabled = true
   enable_control_plane_v2 = true
+  disable_bundled_ingress = true
   authorization {
     admin_users {
       username = "testuser@gmail.com"
@@ -206,7 +226,7 @@ func TestAccGkeonpremVmwareCluster_gkeonpremVmwareClusterManuallbExample(t *test
 
 	acctest.VcrTest(t, resource.TestCase{
 		PreCheck:                 func() { acctest.AccTestPreCheck(t) },
-		ProtoV5ProviderFactories: acctest.ProtoV5ProviderBetaFactories(t),
+		ProtoV5ProviderFactories: acctest.ProtoV5ProviderFactories(t),
 		CheckDestroy:             testAccCheckGkeonpremVmwareClusterDestroyProducer(t),
 		Steps: []resource.TestStep{
 			{
@@ -216,7 +236,7 @@ func TestAccGkeonpremVmwareCluster_gkeonpremVmwareClusterManuallbExample(t *test
 				ResourceName:            "google_gkeonprem_vmware_cluster.cluster-manuallb",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"name", "location"},
+				ImportStateVerifyIgnore: []string{"annotations", "location", "name", "skip_validations"},
 			},
 		},
 	})
@@ -225,8 +245,8 @@ func TestAccGkeonpremVmwareCluster_gkeonpremVmwareClusterManuallbExample(t *test
 func testAccGkeonpremVmwareCluster_gkeonpremVmwareClusterManuallbExample(context map[string]interface{}) string {
 	return acctest.Nprintf(`
 resource "google_gkeonprem_vmware_cluster" "cluster-manuallb" {
-  provider = google-beta
   name = "tf-test-cluster-manuallb%{random_suffix}"
+  skip_validations = ["WORKSTATION", "CONFIG", "DOCKER"]
   location = "us-west1"
   admin_cluster_membership = "projects/870316890899/locations/global/memberships/gkeonprem-terraform-test"
   description = "test cluster"
@@ -284,6 +304,15 @@ resource "google_gkeonprem_vmware_cluster" "cluster-manuallb" {
       konnectivity_server_node_port = 30008
     }
   }
+  vcenter {
+    resource_pool = "test-resource-pool"
+    datastore = "test-datastore"
+    datacenter = "test-datacenter"
+    cluster = "test-cluster"
+    folder = "test-folder"
+    ca_cert_data = "test-ca-cert-data"
+    storage_policy_name = "test-storage-policy-name"
+  }
   dataplane_v2 {
     dataplane_v2_enabled = true
     windows_dataplane_v2_enabled = true
@@ -291,6 +320,7 @@ resource "google_gkeonprem_vmware_cluster" "cluster-manuallb" {
   }
   vm_tracking_enabled = true
   enable_control_plane_v2 = true
+  enable_advanced_cluster = true
   upgrade_policy {
     control_plane_only = true
   }

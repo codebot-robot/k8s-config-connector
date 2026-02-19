@@ -26,24 +26,10 @@ The Cloud Deploy `DeliveryPipeline` resource
 Creates a basic Cloud Deploy delivery pipeline
 ```hcl
 resource "google_clouddeploy_delivery_pipeline" "primary" {
-  location = "us-west1"
-  name     = "pipeline"
-
-  annotations = {
-    my_first_annotation = "example-annotation-1"
-
-    my_second_annotation = "example-annotation-2"
-  }
-
+  location    = "us-west1"
+  name        = "pipeline"
   description = "basic description"
-
-  labels = {
-    my_first_label = "example-label-1"
-
-    my_second_label = "example-label-2"
-  }
-
-  project = "my-project-name"
+  project     = "my-project-name"
 
   serial_pipeline {
     stages {
@@ -64,7 +50,19 @@ resource "google_clouddeploy_delivery_pipeline" "primary" {
       target_id = "example-target-two"
     }
   }
-  provider = google-beta
+
+  annotations = {
+    my_first_annotation = "example-annotation-1"
+
+    my_second_annotation = "example-annotation-2"
+  }
+
+  labels = {
+    my_first_label = "example-label-1"
+
+    my_second_label = "example-label-2"
+  }
+  provider    = google-beta
 }
 
 ```
@@ -72,24 +70,10 @@ resource "google_clouddeploy_delivery_pipeline" "primary" {
 Creates a basic Cloud Deploy delivery pipeline
 ```hcl
 resource "google_clouddeploy_delivery_pipeline" "primary" {
-  location = "us-west1"
-  name     = "pipeline"
-
-  annotations = {
-    my_first_annotation = "example-annotation-1"
-
-    my_second_annotation = "example-annotation-2"
-  }
-
+  location    = "us-west1"
+  name        = "pipeline"
   description = "basic description"
-
-  labels = {
-    my_first_label = "example-label-1"
-
-    my_second_label = "example-label-2"
-  }
-
-  project = "my-project-name"
+  project     = "my-project-name"
 
   serial_pipeline {
     stages {
@@ -110,7 +94,19 @@ resource "google_clouddeploy_delivery_pipeline" "primary" {
       target_id = "example-target-two"
     }
   }
-  provider = google-beta
+
+  annotations = {
+    my_first_annotation = "example-annotation-1"
+
+    my_second_annotation = "example-annotation-2"
+  }
+
+  labels = {
+    my_first_label = "example-label-1"
+
+    my_second_label = "example-label-2"
+  }
+  provider    = google-beta
 }
 
 ```
@@ -118,24 +114,10 @@ resource "google_clouddeploy_delivery_pipeline" "primary" {
 Creates a basic Cloud Deploy delivery pipeline
 ```hcl
 resource "google_clouddeploy_delivery_pipeline" "primary" {
-  location = "us-west1"
-  name     = "pipeline"
-
-  annotations = {
-    my_first_annotation = "example-annotation-1"
-
-    my_second_annotation = "example-annotation-2"
-  }
-
+  location    = "us-west1"
+  name        = "pipeline"
   description = "basic description"
-
-  labels = {
-    my_first_label = "example-label-1"
-
-    my_second_label = "example-label-2"
-  }
-
-  project = "my-project-name"
+  project     = "my-project-name"
 
   serial_pipeline {
     stages {
@@ -156,7 +138,19 @@ resource "google_clouddeploy_delivery_pipeline" "primary" {
       target_id = "example-target-two"
     }
   }
-  provider = google-beta
+
+  annotations = {
+    my_first_annotation = "example-annotation-1"
+
+    my_second_annotation = "example-annotation-2"
+  }
+
+  labels = {
+    my_first_label = "example-label-1"
+
+    my_second_label = "example-label-2"
+  }
+  provider    = google-beta
 }
 
 ```
@@ -164,24 +158,10 @@ resource "google_clouddeploy_delivery_pipeline" "primary" {
 Creates a basic Cloud Deploy delivery pipeline
 ```hcl
 resource "google_clouddeploy_delivery_pipeline" "primary" {
-  location = "us-west1"
-  name     = "pipeline"
-
-  annotations = {
-    my_first_annotation = "example-annotation-1"
-
-    my_second_annotation = "example-annotation-2"
-  }
-
+  location    = "us-west1"
+  name        = "pipeline"
   description = "basic description"
-
-  labels = {
-    my_first_label = "example-label-1"
-
-    my_second_label = "example-label-2"
-  }
-
-  project = "my-project-name"
+  project     = "my-project-name"
 
   serial_pipeline {
     stages {
@@ -201,6 +181,18 @@ resource "google_clouddeploy_delivery_pipeline" "primary" {
       profiles  = []
       target_id = "example-target-two"
     }
+  }
+
+  annotations = {
+    my_first_annotation = "example-annotation-1"
+
+    my_second_annotation = "example-annotation-2"
+  }
+
+  labels = {
+    my_first_label = "example-label-1"
+
+    my_second_label = "example-label-2"
   }
 }
 
@@ -210,24 +202,10 @@ resource "google_clouddeploy_delivery_pipeline" "primary" {
 tests creating and updating a delivery pipeline with deployment verification strategy
 ```hcl
 resource "google_clouddeploy_delivery_pipeline" "primary" {
-  location = "us-west1"
-  name     = "pipeline"
-
-  annotations = {
-    my_first_annotation = "example-annotation-1"
-
-    my_second_annotation = "example-annotation-2"
-  }
-
+  location    = "us-west1"
+  name        = "pipeline"
   description = "basic description"
-
-  labels = {
-    my_first_label = "example-label-1"
-
-    my_second_label = "example-label-2"
-  }
-
-  project = "my-project-name"
+  project     = "my-project-name"
 
   serial_pipeline {
     stages {
@@ -248,7 +226,19 @@ resource "google_clouddeploy_delivery_pipeline" "primary" {
       target_id = "example-target-two"
     }
   }
-  provider = google-beta
+
+  annotations = {
+    my_first_annotation = "example-annotation-1"
+
+    my_second_annotation = "example-annotation-2"
+  }
+
+  labels = {
+    my_first_label = "example-label-1"
+
+    my_second_label = "example-label-2"
+  }
+  provider    = google-beta
 }
 
 ```
@@ -263,41 +253,18 @@ The following arguments are supported:
   
 * `name` -
   (Required)
-  Name of the `DeliveryPipeline`. Format is [a-z][a-z0-9\-]{0,62}.
+  Name of the `DeliveryPipeline`. Format is `[a-z]([a-z0-9-]{0,61}[a-z0-9])?`.
   
 
 
-The `phase_configs` block supports:
-    
-* `percentage` -
-  (Required)
-  Required. Percentage deployment for the phase.
-    
-* `phase_id` -
-  (Required)
-  Required. The ID to assign to the `Rollout` phase. This value must consist of lower-case letters, numbers, and hyphens, start with a letter and end with a letter or a number, and have a max length of 63 characters. In other words, it must match the following regex: `^[a-z]([a-z0-9-]{0,61}[a-z0-9])?$`.
-    
-* `postdeploy` -
-  (Optional)
-  (Beta only) Optional. Configuration for the postdeploy job of this phase. If this is not configured, postdeploy job will not be present for this phase.
-    
-* `predeploy` -
-  (Optional)
-  (Beta only) Optional. Configuration for the predeploy job of this phase. If this is not configured, predeploy job will not be present for this phase.
-    
-* `profiles` -
-  (Optional)
-  Skaffold profiles to use when rendering the manifest for this phase. These are in addition to the profiles list specified in the `DeliveryPipeline` stage.
-    
-* `verify` -
-  (Optional)
-  Whether to run verify tests after the deployment.
-    
 - - -
 
 * `annotations` -
   (Optional)
   User annotations. These attributes can only be set and used by the user, and not by Google Cloud Deploy. See https://google.aip.dev/128#annotations for more details such as format and size limitations.
+
+**Note**: This field is non-authoritative, and will only manage the annotations present in your configuration.
+Please refer to the field `effective_annotations` for all of the annotations present on the resource.
   
 * `description` -
   (Optional)
@@ -306,6 +273,9 @@ The `phase_configs` block supports:
 * `labels` -
   (Optional)
   Labels are attributes that can be set and used by both the user and by Google Cloud Deploy. Labels must meet the following constraints: * Keys and values can contain only lowercase letters, numeric characters, underscores, and dashes. * All characters must use UTF-8 encoding, and international characters are allowed. * Keys must start with a lowercase letter or international character. * Each resource is limited to a maximum of 64 labels. Both keys and values are additionally constrained to be <= 128 bytes.
+
+**Note**: This field is non-authoritative, and will only manage the labels present in your configuration.
+Please refer to the field `effective_labels` for all of the labels present on the resource.
   
 * `project` -
   (Optional)
@@ -387,11 +357,11 @@ The `canary_deployment` block supports:
     
 * `postdeploy` -
   (Optional)
-  (Beta only) Optional. Configuration for the postdeploy job of the last phase. If this is not configured, postdeploy job will not be present.
+  Optional. Configuration for the postdeploy job of the last phase. If this is not configured, postdeploy job will not be present.
     
 * `predeploy` -
   (Optional)
-  (Beta only) Optional. Configuration for the predeploy job of the first phase. If this is not configured, predeploy job will not be present.
+  Optional. Configuration for the predeploy job of the first phase. If this is not configured, predeploy job will not be present.
     
 * `verify` -
   (Optional)
@@ -414,6 +384,32 @@ The `custom_canary_deployment` block supports:
 * `phase_configs` -
   (Required)
   Required. Configuration for each phase in the canary deployment in the order executed.
+    
+The `phase_configs` block supports:
+    
+* `percentage` -
+  (Required)
+  Required. Percentage deployment for the phase.
+    
+* `phase_id` -
+  (Required)
+  Required. The ID to assign to the `Rollout` phase. This value must consist of lower-case letters, numbers, and hyphens, start with a letter and end with a letter or a number, and have a max length of 63 characters. In other words, it must match the following regex: `^[a-z]([a-z0-9-]{0,61}[a-z0-9])?$`.
+    
+* `postdeploy` -
+  (Optional)
+  Optional. Configuration for the postdeploy job of this phase. If this is not configured, postdeploy job will not be present for this phase.
+    
+* `predeploy` -
+  (Optional)
+  Optional. Configuration for the predeploy job of this phase. If this is not configured, predeploy job will not be present for this phase.
+    
+* `profiles` -
+  (Optional)
+  Skaffold profiles to use when rendering the manifest for this phase. These are in addition to the profiles list specified in the `DeliveryPipeline` stage.
+    
+* `verify` -
+  (Optional)
+  Whether to run verify tests after the deployment.
     
 The `postdeploy` block supports:
     
@@ -443,6 +439,18 @@ The `cloud_run` block supports:
   (Optional)
   Whether Cloud Deploy should update the traffic stanza in a Cloud Run Service on the user's behalf to facilitate traffic splitting. This is required to be true for CanaryDeployments, but optional for CustomCanaryDeployments.
     
+* `canary_revision_tags` -
+  (Optional)
+  Optional. A list of tags that are added to the canary revision while the canary phase is in progress.
+    
+* `prior_revision_tags` -
+  (Optional)
+  Optional. A list of tags that are added to the prior revision while the canary phase is in progress.
+    
+* `stable_revision_tags` -
+  (Optional)
+  Optional. A list of tags that are added to the final stable revision when the stable phase is applied.
+    
 The `kubernetes` block supports:
     
 * `gateway_service_mesh` -
@@ -463,6 +471,14 @@ The `gateway_service_mesh` block supports:
   (Required)
   Required. Name of the Gateway API HTTPRoute.
     
+* `pod_selector_label` -
+  (Optional)
+  Optional. The label to use when selecting Pods for the Deployment and Service resources. This label must already be present in both resources.
+    
+* `route_destinations` -
+  (Optional)
+  Optional. Route destinations allow configuring the Gateway API HTTPRoute to be deployed to additional clusters. This option is available for multi-cluster service mesh set ups that require the route to exist in the clusters that call the service. If unspecified, the HTTPRoute will only be deployed to the Target cluster.
+    
 * `route_update_wait_time` -
   (Optional)
   Optional. The time to wait for route updates to propagate. The maximum configurable time is 3 hours, in seconds format. If unspecified, there is no wait time.
@@ -470,6 +486,20 @@ The `gateway_service_mesh` block supports:
 * `service` -
   (Required)
   Required. Name of the Kubernetes Service.
+    
+* `stable_cutback_duration` -
+  (Optional)
+  Optional. The amount of time to migrate traffic back from the canary Service to the original Service during the stable phase deployment. If specified, must be between 15s and 3600s. If unspecified, there is no cutback time.
+    
+The `route_destinations` block supports:
+    
+* `destination_ids` -
+  (Required)
+  Required. The clusters where the Gateway API HTTPRoute resource will be deployed to. Valid entries include the associated entities IDs configured in the Target resource and "@self" to include the Target cluster.
+    
+* `propagate_service` -
+  (Optional)
+  Optional. Whether to propagate the Kubernetes Service to the route destination clusters. The Service will always be deployed to the Target cluster even if the HTTPRoute is not. This option may be used to facilitiate successful DNS lookup in the route destination clusters. Can only be set to true if destinations are specified.
     
 The `service_networking` block supports:
     
@@ -481,6 +511,10 @@ The `service_networking` block supports:
   (Optional)
   Optional. Whether to disable Pod overprovisioning. If Pod overprovisioning is disabled then Cloud Deploy will limit the number of total Pods used for the deployment strategy to the number of Pods the Deployment has on the cluster.
     
+* `pod_selector_label` -
+  (Optional)
+  Optional. The label to use when selecting Pods for the Deployment resource. This label must already be present in the Deployment.
+    
 * `service` -
   (Required)
   Required. Name of the Kubernetes Service.
@@ -489,11 +523,11 @@ The `standard` block supports:
     
 * `postdeploy` -
   (Optional)
-  (Beta only) Optional. Configuration for the postdeploy job. If this is not configured, postdeploy job will not be present.
+  Optional. Configuration for the postdeploy job. If this is not configured, postdeploy job will not be present.
     
 * `predeploy` -
   (Optional)
-  (Beta only) Optional. Configuration for the predeploy job. If this is not configured, predeploy job will not be present.
+  Optional. Configuration for the predeploy job. If this is not configured, predeploy job will not be present.
     
 * `verify` -
   (Optional)
@@ -523,8 +557,17 @@ In addition to the arguments listed above, the following computed attributes are
 * `create_time` -
   Output only. Time at which the pipeline was created.
   
+* `effective_annotations` -
+  All of annotations (key/value pairs) present on the resource in GCP, including the annotations configured through Terraform, other clients and services.
+  
+* `effective_labels` -
+  All of labels (key/value pairs) present on the resource in GCP, including the labels configured through Terraform, other clients and services.
+  
 * `etag` -
   This checksum is computed by the server based on the value of other fields, and may be sent on update and delete requests to ensure the client has an up-to-date value before proceeding.
+  
+* `terraform_labels` -
+  The combination of labels configured directly on the resource and default labels configured on the provider.
   
 * `uid` -
   Output only. Unique identifier of the `DeliveryPipeline`.
@@ -544,6 +587,21 @@ This resource provides the following
 ## Import
 
 DeliveryPipeline can be imported using any of these accepted formats:
+* `projects/{{project}}/locations/{{location}}/deliveryPipelines/{{name}}`
+* `{{project}}/{{location}}/{{name}}`
+* `{{location}}/{{name}}`
+
+In Terraform v1.5.0 and later, use an [`import` block](https://developer.hashicorp.com/terraform/language/import) to import DeliveryPipeline using one of the formats above. For example:
+
+
+```tf
+import {
+  id = "projects/{{project}}/locations/{{location}}/deliveryPipelines/{{name}}"
+  to = google_clouddeploy_delivery_pipeline.default
+}
+```
+
+When using the [`terraform import` command](https://developer.hashicorp.com/terraform/cli/commands/import), DeliveryPipeline can be imported using one of the formats above. For example:
 
 ```
 $ terraform import google_clouddeploy_delivery_pipeline.default projects/{{project}}/locations/{{location}}/deliveryPipelines/{{name}}

@@ -19,15 +19,35 @@ package compute_test
 
 import (
 	"fmt"
+	"log"
+	"strconv"
 	"strings"
 	"testing"
+	"time"
 
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/terraform"
 
 	"github.com/hashicorp/terraform-provider-google-beta/google-beta/acctest"
+	"github.com/hashicorp/terraform-provider-google-beta/google-beta/envvar"
 	"github.com/hashicorp/terraform-provider-google-beta/google-beta/tpgresource"
 	transport_tpg "github.com/hashicorp/terraform-provider-google-beta/google-beta/transport"
+
+	"google.golang.org/api/googleapi"
+)
+
+var (
+	_ = fmt.Sprintf
+	_ = log.Print
+	_ = strconv.Atoi
+	_ = strings.Trim
+	_ = time.Now
+	_ = resource.TestMain
+	_ = terraform.NewState
+	_ = envvar.TestEnvVar
+	_ = tpgresource.SetLabels
+	_ = transport_tpg.Config{}
+	_ = googleapi.Error{}
 )
 
 func TestAccComputeRouter_routerBasicExample(t *testing.T) {
@@ -49,7 +69,7 @@ func TestAccComputeRouter_routerBasicExample(t *testing.T) {
 				ResourceName:            "google_compute_router.foobar",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"network", "region"},
+				ImportStateVerifyIgnore: []string{"advertisedIpRanges", "md5_authentication_keys", "ncc_gateway", "network", "params", "region"},
 			},
 		},
 	})
@@ -99,7 +119,7 @@ func TestAccComputeRouter_computeRouterEncryptedInterconnectExample(t *testing.T
 				ResourceName:            "google_compute_router.encrypted-interconnect-router",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"network", "region"},
+				ImportStateVerifyIgnore: []string{"advertisedIpRanges", "md5_authentication_keys", "ncc_gateway", "network", "params", "region"},
 			},
 		},
 	})
@@ -119,6 +139,149 @@ resource "google_compute_router" "encrypted-interconnect-router" {
 resource "google_compute_network" "network" {
   name                    = "tf-test-test-network%{random_suffix}"
   auto_create_subnetworks = false
+}
+`, context)
+}
+
+func TestAccComputeRouter_computeRouterMd5encryptedExample(t *testing.T) {
+	t.Parallel()
+
+	context := map[string]interface{}{
+		"random_suffix": acctest.RandString(t, 10),
+	}
+
+	acctest.VcrTest(t, resource.TestCase{
+		PreCheck:                 func() { acctest.AccTestPreCheck(t) },
+		ProtoV5ProviderFactories: acctest.ProtoV5ProviderFactories(t),
+		CheckDestroy:             testAccCheckComputeRouterDestroyProducer(t),
+		Steps: []resource.TestStep{
+			{
+				Config: testAccComputeRouter_computeRouterMd5encryptedExample(context),
+			},
+			{
+				ResourceName:            "google_compute_router.foobar",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"advertisedIpRanges", "md5_authentication_keys", "ncc_gateway", "network", "params", "region"},
+			},
+		},
+	})
+}
+
+func testAccComputeRouter_computeRouterMd5encryptedExample(context map[string]interface{}) string {
+	return acctest.Nprintf(`
+resource "google_compute_router" "foobar" {
+  name    = "tf-test-test-router%{random_suffix}"
+  network = google_compute_network.foobar.name
+  bgp {
+    asn               = 64514
+    advertise_mode    = "CUSTOM"
+    advertised_groups = ["ALL_SUBNETS"]
+    advertised_ip_ranges {
+      range = "1.2.3.4"
+    }
+    advertised_ip_ranges {
+      range = "6.7.0.0/16"
+    }
+  }
+  md5_authentication_keys {
+    name = "test"
+    key = "test"
+  }
+}
+
+resource "google_compute_network" "foobar" {
+  name                    = "tf-test-test-network%{random_suffix}"
+  auto_create_subnetworks = false
+}
+`, context)
+}
+
+func TestAccComputeRouter_routerNccGwExample(t *testing.T) {
+	t.Parallel()
+
+	context := map[string]interface{}{
+		"random_suffix": acctest.RandString(t, 10),
+	}
+
+	acctest.VcrTest(t, resource.TestCase{
+		PreCheck:                 func() { acctest.AccTestPreCheck(t) },
+		ProtoV5ProviderFactories: acctest.ProtoV5ProviderBetaFactories(t),
+		CheckDestroy:             testAccCheckComputeRouterDestroyProducer(t),
+		Steps: []resource.TestStep{
+			{
+				Config: testAccComputeRouter_routerNccGwExample(context),
+			},
+			{
+				ResourceName:            "google_compute_router.foobar",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"md5_authentication_keys", "ncc_gateway", "network", "params", "region"},
+			},
+		},
+	})
+}
+
+func testAccComputeRouter_routerNccGwExample(context map[string]interface{}) string {
+	return acctest.Nprintf(`
+resource "google_compute_network" "network" {
+  provider = google-beta
+  name        = "tf-test-net-spoke%{random_suffix}"
+  auto_create_subnetworks = false
+}
+
+resource "google_compute_subnetwork" "subnetwork" {
+  provider = google-beta
+  name          = "tf-test-subnet%{random_suffix}"
+  ip_cidr_range = "10.0.0.0/28"
+  region        = "us-central1"
+  network       = google_compute_network.network.self_link
+}
+
+resource "google_network_connectivity_hub" "basic_hub" {
+  provider = google-beta
+  name        = "hub%{random_suffix}"
+  description = "A sample hub"
+  labels = {
+    label-two = "value-one"
+  }
+  preset_topology = "HYBRID_INSPECTION"
+}
+
+resource "google_network_connectivity_spoke" "primary" {
+  provider = google-beta
+  name        = "tf-test-my-ncc-gw%{random_suffix}"
+  location = "us-central1"
+  description = "A sample spoke of type Gateway"
+  labels = {
+    label-one = "value-one"
+  }
+  hub =  google_network_connectivity_hub.basic_hub.id
+  gateway {
+    ip_range_reservations {
+      ip_range = "10.0.0.0/23"
+    }
+    capacity = "CAPACITY_1_GBPS"
+  }
+  group = "gateways"
+}
+
+
+resource "google_compute_router" "foobar" {
+  provider = google-beta
+  name    = "tf-test-my-router%{random_suffix}"
+  bgp {
+    asn               = 64514
+    advertise_mode    = "CUSTOM"
+    advertised_groups = ["ALL_SUBNETS"]
+    advertised_ip_ranges {
+      range = "1.2.3.4"
+    }
+    advertised_ip_ranges {
+      range = "6.7.0.0/16"
+    }
+  }
+  ncc_gateway = google_network_connectivity_spoke.primary.id
 }
 `, context)
 }

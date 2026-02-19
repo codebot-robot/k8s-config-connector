@@ -19,15 +19,35 @@ package compute_test
 
 import (
 	"fmt"
+	"log"
+	"strconv"
 	"strings"
 	"testing"
+	"time"
 
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/terraform"
 
 	"github.com/hashicorp/terraform-provider-google-beta/google-beta/acctest"
+	"github.com/hashicorp/terraform-provider-google-beta/google-beta/envvar"
 	"github.com/hashicorp/terraform-provider-google-beta/google-beta/tpgresource"
 	transport_tpg "github.com/hashicorp/terraform-provider-google-beta/google-beta/transport"
+
+	"google.golang.org/api/googleapi"
+)
+
+var (
+	_ = fmt.Sprintf
+	_ = log.Print
+	_ = strconv.Atoi
+	_ = strings.Trim
+	_ = time.Now
+	_ = resource.TestMain
+	_ = terraform.NewState
+	_ = envvar.TestEnvVar
+	_ = tpgresource.SetLabels
+	_ = transport_tpg.Config{}
+	_ = googleapi.Error{}
 )
 
 func TestAccComputeTargetSslProxy_targetSslProxyBasicExample(t *testing.T) {
@@ -61,6 +81,7 @@ resource "google_compute_target_ssl_proxy" "default" {
   name             = "tf-test-test-proxy%{random_suffix}"
   backend_service  = google_compute_backend_service.default.id
   ssl_certificates = [google_compute_ssl_certificate.default.id]
+  certificate_map = "//certificatemanager.googleapis.com/${google_certificate_manager_certificate_map.default.id}"
 }
 
 resource "google_compute_ssl_certificate" "default" {
@@ -82,6 +103,11 @@ resource "google_compute_health_check" "default" {
   tcp_health_check {
     port = "443"
   }
+}
+
+resource "google_certificate_manager_certificate_map" "default" {
+  name        = "certificate-map-test"
+  description = "My acceptance test certificate map"
 }
 `, context)
 }

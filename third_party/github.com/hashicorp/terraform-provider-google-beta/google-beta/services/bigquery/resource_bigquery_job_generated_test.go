@@ -18,12 +18,36 @@
 package bigquery_test
 
 import (
+	"fmt"
+	"log"
+	"strconv"
+	"strings"
 	"testing"
+	"time"
 
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/terraform"
 
 	"github.com/hashicorp/terraform-provider-google-beta/google-beta/acctest"
 	"github.com/hashicorp/terraform-provider-google-beta/google-beta/envvar"
+	"github.com/hashicorp/terraform-provider-google-beta/google-beta/tpgresource"
+	transport_tpg "github.com/hashicorp/terraform-provider-google-beta/google-beta/transport"
+
+	"google.golang.org/api/googleapi"
+)
+
+var (
+	_ = fmt.Sprintf
+	_ = log.Print
+	_ = strconv.Atoi
+	_ = strings.Trim
+	_ = time.Now
+	_ = resource.TestMain
+	_ = terraform.NewState
+	_ = envvar.TestEnvVar
+	_ = tpgresource.SetLabels
+	_ = transport_tpg.Config{}
+	_ = googleapi.Error{}
 )
 
 func TestAccBigQueryJob_bigqueryJobQueryExample(t *testing.T) {
@@ -44,7 +68,7 @@ func TestAccBigQueryJob_bigqueryJobQueryExample(t *testing.T) {
 				ResourceName:            "google_bigquery_job.job",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"etag", "status.0.state"},
+				ImportStateVerifyIgnore: []string{"etag", "labels", "status.0.state", "terraform_labels"},
 			},
 		},
 	})
@@ -92,6 +116,50 @@ resource "google_bigquery_job" "job" {
 `, context)
 }
 
+func TestAccBigQueryJob_bigqueryJobQueryContinuousExample(t *testing.T) {
+	t.Parallel()
+
+	context := map[string]interface{}{
+		"random_suffix": acctest.RandString(t, 10),
+	}
+
+	acctest.VcrTest(t, resource.TestCase{
+		PreCheck:                 func() { acctest.AccTestPreCheck(t) },
+		ProtoV5ProviderFactories: acctest.ProtoV5ProviderBetaFactories(t),
+		Steps: []resource.TestStep{
+			{
+				Config: testAccBigQueryJob_bigqueryJobQueryContinuousExample(context),
+			},
+			{
+				ResourceName:            "google_bigquery_job.job",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"etag", "labels", "status.0.state", "terraform_labels"},
+			},
+		},
+	})
+}
+
+func testAccBigQueryJob_bigqueryJobQueryContinuousExample(context map[string]interface{}) string {
+	return acctest.Nprintf(`
+resource "google_bigquery_job" "job" {
+  provider = google-beta
+
+  job_id     = "tf_test_job_query_continuous%{random_suffix}"
+
+  query {
+    query = "SELECT state FROM [lookerdata:cdc.project_tycho_reports]"
+    continuous = true
+
+    connection_properties {
+      key = "service_account"
+      value = "bq-runner@project-query-continuous.iam.gserviceaccount.com"
+    }
+  }
+}
+`, context)
+}
+
 func TestAccBigQueryJob_bigqueryJobQueryTableReferenceExample(t *testing.T) {
 	t.Parallel()
 
@@ -110,7 +178,7 @@ func TestAccBigQueryJob_bigqueryJobQueryTableReferenceExample(t *testing.T) {
 				ResourceName:            "google_bigquery_job.job",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"etag", "query.0.default_dataset.0.dataset_id", "query.0.destination_table.0.table_id", "status.0.state"},
+				ImportStateVerifyIgnore: []string{"etag", "labels", "query.0.default_dataset.0.dataset_id", "query.0.destination_table.0.table_id", "status.0.state", "terraform_labels"},
 			},
 		},
 	})
@@ -178,7 +246,7 @@ func TestAccBigQueryJob_bigqueryJobLoadExample(t *testing.T) {
 				ResourceName:            "google_bigquery_job.job",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"etag", "status.0.state"},
+				ImportStateVerifyIgnore: []string{"etag", "labels", "status.0.state", "terraform_labels"},
 			},
 		},
 	})
@@ -246,7 +314,7 @@ func TestAccBigQueryJob_bigqueryJobLoadGeojsonExample(t *testing.T) {
 				ResourceName:            "google_bigquery_job.job",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"etag", "status.0.state"},
+				ImportStateVerifyIgnore: []string{"etag", "labels", "status.0.state", "terraform_labels"},
 			},
 		},
 	})
@@ -333,7 +401,7 @@ func TestAccBigQueryJob_bigqueryJobLoadParquetExample(t *testing.T) {
 				ResourceName:            "google_bigquery_job.job",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"etag", "status.0.state"},
+				ImportStateVerifyIgnore: []string{"etag", "labels", "status.0.state", "terraform_labels"},
 			},
 		},
 	})
@@ -416,7 +484,7 @@ func TestAccBigQueryJob_bigqueryJobLoadTableReferenceExample(t *testing.T) {
 				ResourceName:            "google_bigquery_job.job",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"etag", "load.0.destination_table.0.table_id", "status.0.state"},
+				ImportStateVerifyIgnore: []string{"etag", "labels", "load.0.destination_table.0.table_id", "status.0.state", "terraform_labels"},
 			},
 		},
 	})
@@ -468,6 +536,7 @@ func TestAccBigQueryJob_bigqueryJobCopyExample(t *testing.T) {
 
 	context := map[string]interface{}{
 		"project":       envvar.GetTestProjectFromEnv(),
+		"kms_key_name":  acctest.BootstrapKMSKeyWithPurposeInLocationAndName(t, "ENCRYPT_DECRYPT", "global", "tf-bootstrap-bigquery-job-key1").CryptoKey.Name,
 		"random_suffix": acctest.RandString(t, 10),
 	}
 
@@ -482,7 +551,7 @@ func TestAccBigQueryJob_bigqueryJobCopyExample(t *testing.T) {
 				ResourceName:            "google_bigquery_job.job",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"etag", "status.0.state"},
+				ImportStateVerifyIgnore: []string{"etag", "labels", "status.0.state", "terraform_labels"},
 			},
 		},
 	})
@@ -490,12 +559,17 @@ func TestAccBigQueryJob_bigqueryJobCopyExample(t *testing.T) {
 
 func testAccBigQueryJob_bigqueryJobCopyExample(context map[string]interface{}) string {
 	return acctest.Nprintf(`
+locals {
+  count = 2
+}
+
 resource "google_bigquery_table" "source" {
-  deletion_protection = false
-  count = length(google_bigquery_dataset.source)
+  count = local.count
 
   dataset_id = google_bigquery_dataset.source[count.index].dataset_id
   table_id   = "tf_test_job_copy%{random_suffix}_${count.index}_table"
+
+  deletion_protection = false
 
   schema = <<EOF
 [
@@ -519,7 +593,7 @@ EOF
 }
 
 resource "google_bigquery_dataset" "source" {
-  count = 2
+  count = local.count
 
   dataset_id                  = "tf_test_job_copy%{random_suffix}_${count.index}_dataset"
   friendly_name               = "test"
@@ -553,10 +627,10 @@ resource "google_bigquery_table" "dest" {
 EOF
 
   encryption_configuration {
-    kms_key_name = google_kms_crypto_key.crypto_key.id
+    kms_key_name = "%{kms_key_name}"
   }
 
-  depends_on = ["google_project_iam_member.encrypt_role"]
+  depends_on = ["google_kms_crypto_key_iam_member.encrypt_role"]
 }
 
 resource "google_bigquery_dataset" "dest" {
@@ -566,22 +640,12 @@ resource "google_bigquery_dataset" "dest" {
   location      = "US"
 }
 
-resource "google_kms_crypto_key" "crypto_key" {
-  name     = "tf-test-example-key%{random_suffix}"
-  key_ring = google_kms_key_ring.key_ring.id
-}
-
-resource "google_kms_key_ring" "key_ring" {
-  name     = "tf-test-example-keyring%{random_suffix}"
-  location = "global"
-}
-
 data "google_project" "project" {
   project_id = "%{project}"
 }
 
-resource "google_project_iam_member" "encrypt_role" {
-  project = data.google_project.project.project_id
+resource "google_kms_crypto_key_iam_member" "encrypt_role" {
+  crypto_key_id = "%{kms_key_name}"
   role = "roles/cloudkms.cryptoKeyEncrypterDecrypter"
   member = "serviceAccount:bq-${data.google_project.project.number}@bigquery-encryption.iam.gserviceaccount.com"
 }
@@ -609,11 +673,11 @@ resource "google_bigquery_job" "job" {
     }
 
     destination_encryption_configuration {
-      kms_key_name = google_kms_crypto_key.crypto_key.id
+      kms_key_name = "%{kms_key_name}"
     }
   }
 
-  depends_on = ["google_project_iam_member.encrypt_role"]
+  depends_on = ["google_kms_crypto_key_iam_member.encrypt_role"]
 }
 `, context)
 }
@@ -623,6 +687,7 @@ func TestAccBigQueryJob_bigqueryJobCopyTableReferenceExample(t *testing.T) {
 
 	context := map[string]interface{}{
 		"project":       envvar.GetTestProjectFromEnv(),
+		"kms_key_name":  acctest.BootstrapKMSKeyWithPurposeInLocationAndName(t, "ENCRYPT_DECRYPT", "global", "tf-bootstrap-bigquery-job-key2").CryptoKey.Name,
 		"random_suffix": acctest.RandString(t, 10),
 	}
 
@@ -637,7 +702,7 @@ func TestAccBigQueryJob_bigqueryJobCopyTableReferenceExample(t *testing.T) {
 				ResourceName:            "google_bigquery_job.job",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"etag", "copy.0.destination_table.0.table_id", "copy.0.source_tables.0.table_id", "copy.0.source_tables.1.table_id", "status.0.state"},
+				ImportStateVerifyIgnore: []string{"copy.0.destination_table.0.table_id", "copy.0.source_tables.0.table_id", "copy.0.source_tables.1.table_id", "etag", "labels", "status.0.state", "terraform_labels"},
 			},
 		},
 	})
@@ -645,9 +710,13 @@ func TestAccBigQueryJob_bigqueryJobCopyTableReferenceExample(t *testing.T) {
 
 func testAccBigQueryJob_bigqueryJobCopyTableReferenceExample(context map[string]interface{}) string {
 	return acctest.Nprintf(`
+locals {
+  count = 2
+}
+
 resource "google_bigquery_table" "source" {
   deletion_protection = false
-  count = length(google_bigquery_dataset.source)
+  count = local.count
 
   dataset_id = google_bigquery_dataset.source[count.index].dataset_id
   table_id   = "tf_test_job_copy%{random_suffix}_${count.index}_table"
@@ -671,10 +740,12 @@ resource "google_bigquery_table" "source" {
   }
 ]
 EOF
+
+  depends_on = [google_bigquery_dataset.source]
 }
 
 resource "google_bigquery_dataset" "source" {
-  count = 2
+  count = local.count
 
   dataset_id                  = "tf_test_job_copy%{random_suffix}_${count.index}_dataset"
   friendly_name               = "test"
@@ -708,10 +779,10 @@ resource "google_bigquery_table" "dest" {
 EOF
 
   encryption_configuration {
-    kms_key_name = google_kms_crypto_key.crypto_key.id
+    kms_key_name = "%{kms_key_name}"
   }
 
-  depends_on = ["google_project_iam_member.encrypt_role"]
+  depends_on = ["google_kms_crypto_key_iam_member.encrypt_role"]
 }
 
 resource "google_bigquery_dataset" "dest" {
@@ -721,22 +792,12 @@ resource "google_bigquery_dataset" "dest" {
   location      = "US"
 }
 
-resource "google_kms_crypto_key" "crypto_key" {
-  name     = "tf-test-example-key%{random_suffix}"
-  key_ring = google_kms_key_ring.key_ring.id
-}
-
-resource "google_kms_key_ring" "key_ring" {
-  name     = "tf-test-example-keyring%{random_suffix}"
-  location = "global"
-}
-
 data "google_project" "project" {
   project_id = "%{project}"
 }
 
-resource "google_project_iam_member" "encrypt_role" {
-  project = data.google_project.project.project_id
+resource "google_kms_crypto_key_iam_member" "encrypt_role" {
+  crypto_key_id = "%{kms_key_name}"
   role = "roles/cloudkms.cryptoKeyEncrypterDecrypter"
   member = "serviceAccount:bq-${data.google_project.project.number}@bigquery-encryption.iam.gserviceaccount.com"
 }
@@ -758,11 +819,11 @@ resource "google_bigquery_job" "job" {
     }
 
     destination_encryption_configuration {
-      kms_key_name = google_kms_crypto_key.crypto_key.id
+      kms_key_name = "%{kms_key_name}"
     }
   }
 
-  depends_on = ["google_project_iam_member.encrypt_role"]
+  depends_on = ["google_kms_crypto_key_iam_member.encrypt_role"]
 }
 `, context)
 }
@@ -785,7 +846,7 @@ func TestAccBigQueryJob_bigqueryJobExtractExample(t *testing.T) {
 				ResourceName:            "google_bigquery_job.job",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"etag", "status.0.state"},
+				ImportStateVerifyIgnore: []string{"etag", "labels", "status.0.state", "terraform_labels"},
 			},
 		},
 	})
@@ -869,7 +930,7 @@ func TestAccBigQueryJob_bigqueryJobExtractTableReferenceExample(t *testing.T) {
 				ResourceName:            "google_bigquery_job.job",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"etag", "extract.0.source_table.0.table_id", "status.0.state"},
+				ImportStateVerifyIgnore: []string{"etag", "extract.0.source_table.0.table_id", "labels", "status.0.state", "terraform_labels"},
 			},
 		},
 	})
@@ -929,6 +990,48 @@ resource "google_bigquery_job" "job" {
     destination_format = "NEWLINE_DELIMITED_JSON"
     compression = "GZIP"
   }
+}
+`, context)
+}
+
+func TestAccBigQueryJob_bigqueryJobQueryReservationExample(t *testing.T) {
+	t.Parallel()
+
+	context := map[string]interface{}{
+		"project":       envvar.GetTestProjectFromEnv(),
+		"random_suffix": acctest.RandString(t, 10),
+	}
+
+	acctest.VcrTest(t, resource.TestCase{
+		PreCheck:                 func() { acctest.AccTestPreCheck(t) },
+		ProtoV5ProviderFactories: acctest.ProtoV5ProviderBetaFactories(t),
+		Steps: []resource.TestStep{
+			{
+				Config: testAccBigQueryJob_bigqueryJobQueryReservationExample(context),
+			},
+			{
+				ResourceName:            "google_bigquery_job.job",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"etag", "labels", "status.0.state", "terraform_labels"},
+			},
+		},
+	})
+}
+
+func testAccBigQueryJob_bigqueryJobQueryReservationExample(context map[string]interface{}) string {
+	return acctest.Nprintf(`
+resource "google_bigquery_job" "job" {
+  provider = google-beta
+
+  job_id     = "tf_test_job_query_reservation%{random_suffix}"
+
+  query {
+    query = "SELECT state FROM [lookerdata:cdc.project_tycho_reports]"
+
+  }
+
+  reservation = "projects/%{project}/locations/US/reservations/tf-test-my-reservation%{random_suffix}"
 }
 `, context)
 }

@@ -28,7 +28,6 @@ A basic example of a android api keys key
 resource "google_apikeys_key" "primary" {
   name         = "key"
   display_name = "sample-key"
-  project      = google_project.basic.name
 
   restrictions {
     android_key_restrictions {
@@ -45,12 +44,6 @@ resource "google_apikeys_key" "primary" {
   }
 }
 
-resource "google_project" "basic" {
-  project_id = "app"
-  name       = "app"
-  org_id     = "123456789"
-}
-
 
 ```
 ## Example Usage - basic_key
@@ -59,7 +52,6 @@ A basic example of a api keys key
 resource "google_apikeys_key" "primary" {
   name         = "key"
   display_name = "sample-key"
-  project      = google_project.basic.name
 
   restrictions {
     api_targets {
@@ -73,12 +65,6 @@ resource "google_apikeys_key" "primary" {
   }
 }
 
-resource "google_project" "basic" {
-  project_id = "app"
-  name       = "app"
-  org_id     = "123456789"
-}
-
 
 ```
 ## Example Usage - ios_key
@@ -87,7 +73,6 @@ A basic example of a ios api keys key
 resource "google_apikeys_key" "primary" {
   name         = "key"
   display_name = "sample-key"
-  project      = google_project.basic.name
 
   restrictions {
     api_targets {
@@ -101,12 +86,6 @@ resource "google_apikeys_key" "primary" {
   }
 }
 
-resource "google_project" "basic" {
-  project_id = "app"
-  name       = "app"
-  org_id     = "123456789"
-}
-
 
 ```
 ## Example Usage - minimal_key
@@ -115,13 +94,6 @@ A minimal example of a api keys key
 resource "google_apikeys_key" "primary" {
   name         = "key"
   display_name = "sample-key"
-  project      = google_project.basic.name
-}
-
-resource "google_project" "basic" {
-  project_id = "app"
-  name       = "app"
-  org_id     = "123456789"
 }
 
 
@@ -132,7 +104,6 @@ A basic example of a server api keys key
 resource "google_apikeys_key" "primary" {
   name         = "key"
   display_name = "sample-key"
-  project      = google_project.basic.name
 
   restrictions {
     api_targets {
@@ -146,13 +117,29 @@ resource "google_apikeys_key" "primary" {
   }
 }
 
-resource "google_project" "basic" {
-  project_id = "app"
-  name       = "app"
-  org_id     = "123456789"
+
+```
+## Example Usage - service_account_key
+```hcl
+resource "google_apikeys_key" "primary" {
+  name                  = "key"
+  display_name          = "sample-key"
+  project               = google_project.project.project_id
+  service_account_email = google_service_account.key_service_account.email
 }
 
+resource "google_project" "project" {
+  project_id      = "app"
+  name            = "app"
+  org_id          = "123456789"
+  deletion_policy = "DELETE"
+}
 
+resource "google_service_account" "key_service_account" {
+  account_id   = "app"
+  project      = google_project.project.project_id
+  display_name = "Test Service Account"
+}
 ```
 
 ## Argument Reference
@@ -165,16 +152,6 @@ The following arguments are supported:
   
 
 
-The `allowed_applications` block supports:
-    
-* `package_name` -
-  (Required)
-  The package name of the application.
-    
-* `sha1_fingerprint` -
-  (Required)
-  The SHA1 fingerprint of the application. For example, both sha1 formats are acceptable : DA:39:A3:EE:5E:6B:4B:0D:32:55:BF:EF:95:60:18:90:AF:D8:07:09 or DA39A3EE5E6B4B0D3255BFEF95601890AFD80709. Output format is the latter.
-    
 - - -
 
 * `display_name` -
@@ -188,6 +165,10 @@ The `allowed_applications` block supports:
 * `restrictions` -
   (Optional)
   Key restrictions.
+  
+* `service_account_email` -
+  (Optional)
+  The email of the service account the key is bound to. If this field is specified, the key is a service account bound key and auth enabled. See [Documentation](https://cloud.devsite.corp.google.com/docs/authentication/api-keys?#api-keys-bound-sa) for more details.
   
 
 
@@ -218,6 +199,16 @@ The `android_key_restrictions` block supports:
 * `allowed_applications` -
   (Required)
   A list of Android applications that are allowed to make API calls with this key.
+    
+The `allowed_applications` block supports:
+    
+* `package_name` -
+  (Required)
+  The package name of the application.
+    
+* `sha1_fingerprint` -
+  (Required)
+  The SHA1 fingerprint of the application. For example, both sha1 formats are acceptable : DA:39:A3:EE:5E:6B:4B:0D:32:55:BF:EF:95:60:18:90:AF:D8:07:09 or DA39A3EE5E6B4B0D3255BFEF95601890AFD80709. Output format is the latter.
     
 The `api_targets` block supports:
     
@@ -271,6 +262,21 @@ This resource provides the following
 ## Import
 
 Key can be imported using any of these accepted formats:
+* `projects/{{project}}/locations/global/keys/{{name}}`
+* `{{project}}/{{name}}`
+* `{{name}}`
+
+In Terraform v1.5.0 and later, use an [`import` block](https://developer.hashicorp.com/terraform/language/import) to import Key using one of the formats above. For example:
+
+
+```tf
+import {
+  id = "projects/{{project}}/locations/global/keys/{{name}}"
+  to = google_apikeys_key.default
+}
+```
+
+When using the [`terraform import` command](https://developer.hashicorp.com/terraform/cli/commands/import), Key can be imported using one of the formats above. For example:
 
 ```
 $ terraform import google_apikeys_key.default projects/{{project}}/locations/global/keys/{{name}}

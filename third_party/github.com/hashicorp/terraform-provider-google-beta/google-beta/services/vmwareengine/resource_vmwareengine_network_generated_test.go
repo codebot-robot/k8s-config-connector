@@ -19,39 +19,52 @@ package vmwareengine_test
 
 import (
 	"fmt"
+	"log"
+	"strconv"
 	"strings"
 	"testing"
+	"time"
 
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/terraform"
 
 	"github.com/hashicorp/terraform-provider-google-beta/google-beta/acctest"
 	"github.com/hashicorp/terraform-provider-google-beta/google-beta/envvar"
 	"github.com/hashicorp/terraform-provider-google-beta/google-beta/tpgresource"
 	transport_tpg "github.com/hashicorp/terraform-provider-google-beta/google-beta/transport"
+
+	"google.golang.org/api/googleapi"
 )
 
-func TestAccVmwareengineNetwork_vmwareEngineNetworkLegacyExample(t *testing.T) {
+var (
+	_ = fmt.Sprintf
+	_ = log.Print
+	_ = strconv.Atoi
+	_ = strings.Trim
+	_ = time.Now
+	_ = resource.TestMain
+	_ = terraform.NewState
+	_ = envvar.TestEnvVar
+	_ = tpgresource.SetLabels
+	_ = transport_tpg.Config{}
+	_ = googleapi.Error{}
+)
+
+func TestAccVmwareengineNetwork_vmwareEngineNetworkStandardExample(t *testing.T) {
+	t.Skip("https://github.com/hashicorp/terraform-provider-google/issues/20719")
 	t.Parallel()
 
 	context := map[string]interface{}{
-		"location":        envvar.GetTestRegionFromEnv(),
-		"org_id":          envvar.GetTestOrgFromEnv(t),
-		"billing_account": envvar.GetTestBillingAccountFromEnv(t),
-		"random_suffix":   acctest.RandString(t, 10),
+		"random_suffix": acctest.RandString(t, 10),
 	}
 
 	acctest.VcrTest(t, resource.TestCase{
 		PreCheck:                 func() { acctest.AccTestPreCheck(t) },
-		ProtoV5ProviderFactories: acctest.ProtoV5ProviderBetaFactories(t),
-		ExternalProviders: map[string]resource.ExternalProvider{
-			"random": {},
-			"time":   {},
-		},
-		CheckDestroy: testAccCheckVmwareengineNetworkDestroyProducer(t),
+		ProtoV5ProviderFactories: acctest.ProtoV5ProviderFactories(t),
+		CheckDestroy:             testAccCheckVmwareengineNetworkDestroyProducer(t),
 		Steps: []resource.TestStep{
 			{
-				Config: testAccVmwareengineNetwork_vmwareEngineNetworkLegacyExample(context),
+				Config: testAccVmwareengineNetwork_vmwareEngineNetworkStandardExample(context),
 			},
 			{
 				ResourceName:            "google_vmwareengine_network.vmw-engine-network",
@@ -63,40 +76,13 @@ func TestAccVmwareengineNetwork_vmwareEngineNetworkLegacyExample(t *testing.T) {
 	})
 }
 
-func testAccVmwareengineNetwork_vmwareEngineNetworkLegacyExample(context map[string]interface{}) string {
+func testAccVmwareengineNetwork_vmwareEngineNetworkStandardExample(context map[string]interface{}) string {
 	return acctest.Nprintf(`
 resource "google_vmwareengine_network" "vmw-engine-network" {
-  provider    = google-beta
-  project     = google_project_service.acceptance.project
-  name        = "%{location}-default" #Legacy network IDs are in the format: {region-id}-default
-  location    = "%{location}"
-  type        = "LEGACY"
-  description = "VMwareEngine legacy network sample"
-}
-
-resource "google_project_service" "acceptance" {
-  project  = google_project.acceptance.project_id
-  provider = google-beta
-  service  = "vmwareengine.googleapis.com"
-
-  # Needed for CI tests for permissions to propagate, should not be needed for actual usage
-  depends_on = [time_sleep.wait_60_seconds]
-}
-
-# there can be only 1 Legacy network per region for a given project,
-# so creating new project for isolation in CI.
-resource "google_project" "acceptance" {
-  name            = "tf-test-vmw-proj%{random_suffix}"
-  provider        = google-beta
-  project_id      = "tf-test-vmw-proj%{random_suffix}"
-  org_id          = "%{org_id}"
-  billing_account = "%{billing_account}"
-}
-
-resource "time_sleep" "wait_60_seconds" {
-  depends_on = [google_project.acceptance]
-
-  create_duration = "60s"
+    name              = "standard-nw"
+    location          = "global" # Standard network needs to be global
+    type              = "STANDARD"
+    description       = "VMwareEngine standard network sample"
 }
 `, context)
 }

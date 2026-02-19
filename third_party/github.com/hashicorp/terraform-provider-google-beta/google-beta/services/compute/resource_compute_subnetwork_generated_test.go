@@ -19,15 +19,35 @@ package compute_test
 
 import (
 	"fmt"
+	"log"
+	"strconv"
 	"strings"
 	"testing"
+	"time"
 
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/terraform"
 
 	"github.com/hashicorp/terraform-provider-google-beta/google-beta/acctest"
+	"github.com/hashicorp/terraform-provider-google-beta/google-beta/envvar"
 	"github.com/hashicorp/terraform-provider-google-beta/google-beta/tpgresource"
 	transport_tpg "github.com/hashicorp/terraform-provider-google-beta/google-beta/transport"
+
+	"google.golang.org/api/googleapi"
+)
+
+var (
+	_ = fmt.Sprintf
+	_ = log.Print
+	_ = strconv.Atoi
+	_ = strings.Trim
+	_ = time.Now
+	_ = resource.TestMain
+	_ = terraform.NewState
+	_ = envvar.TestEnvVar
+	_ = tpgresource.SetLabels
+	_ = transport_tpg.Config{}
+	_ = googleapi.Error{}
 )
 
 func TestAccComputeSubnetwork_subnetworkBasicExample(t *testing.T) {
@@ -49,7 +69,7 @@ func TestAccComputeSubnetwork_subnetworkBasicExample(t *testing.T) {
 				ResourceName:            "google_compute_subnetwork.network-with-private-secondary-ip-ranges",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"network", "region"},
+				ImportStateVerifyIgnore: []string{"ip_collection", "network", "params", "region", "reserved_internal_range"},
 			},
 		},
 	})
@@ -94,7 +114,7 @@ func TestAccComputeSubnetwork_subnetworkLoggingConfigExample(t *testing.T) {
 				ResourceName:            "google_compute_subnetwork.subnet-with-logging",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"network", "region"},
+				ImportStateVerifyIgnore: []string{"ip_collection", "network", "params", "region", "reserved_internal_range"},
 			},
 		},
 	})
@@ -141,7 +161,7 @@ func TestAccComputeSubnetwork_subnetworkInternalL7lbExample(t *testing.T) {
 				ResourceName:            "google_compute_subnetwork.network-for-l7lb",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"network", "region"},
+				ImportStateVerifyIgnore: []string{"ip_collection", "network", "params", "region", "reserved_internal_range"},
 			},
 		},
 	})
@@ -188,7 +208,7 @@ func TestAccComputeSubnetwork_subnetworkIpv6Example(t *testing.T) {
 				ResourceName:            "google_compute_subnetwork.subnetwork-ipv6",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"network", "region"},
+				ImportStateVerifyIgnore: []string{"ip_collection", "network", "params", "region", "reserved_internal_range"},
 			},
 		},
 	})
@@ -234,7 +254,7 @@ func TestAccComputeSubnetwork_subnetworkInternalIpv6Example(t *testing.T) {
 				ResourceName:            "google_compute_subnetwork.subnetwork-internal-ipv6",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"network", "region"},
+				ImportStateVerifyIgnore: []string{"ip_collection", "network", "params", "region", "reserved_internal_range"},
 			},
 		},
 	})
@@ -258,6 +278,489 @@ resource "google_compute_network" "custom-test" {
   name                    = "tf-test-internal-ipv6-test-network%{random_suffix}"
   auto_create_subnetworks = false
   enable_ula_internal_ipv6 = true
+}
+`, context)
+}
+
+func TestAccComputeSubnetwork_subnetworkPurposePrivateNatExample(t *testing.T) {
+	t.Parallel()
+
+	context := map[string]interface{}{
+		"random_suffix": acctest.RandString(t, 10),
+	}
+
+	acctest.VcrTest(t, resource.TestCase{
+		PreCheck:                 func() { acctest.AccTestPreCheck(t) },
+		ProtoV5ProviderFactories: acctest.ProtoV5ProviderBetaFactories(t),
+		CheckDestroy:             testAccCheckComputeSubnetworkDestroyProducer(t),
+		Steps: []resource.TestStep{
+			{
+				Config: testAccComputeSubnetwork_subnetworkPurposePrivateNatExample(context),
+			},
+			{
+				ResourceName:            "google_compute_subnetwork.subnetwork-purpose-private-nat",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"ip_collection", "network", "params", "region", "reserved_internal_range"},
+			},
+		},
+	})
+}
+
+func testAccComputeSubnetwork_subnetworkPurposePrivateNatExample(context map[string]interface{}) string {
+	return acctest.Nprintf(`
+resource "google_compute_subnetwork" "subnetwork-purpose-private-nat" {
+  provider         = google-beta
+
+  name             = "tf-test-subnet-purpose-test-subnetwork%{random_suffix}"
+  region           = "us-west2"
+  ip_cidr_range    = "192.168.1.0/24"
+  purpose          = "PRIVATE_NAT"
+  network          = google_compute_network.custom-test.id
+}
+
+resource "google_compute_network" "custom-test" {
+  provider                = google-beta
+
+  name                    = "tf-test-subnet-purpose-test-network%{random_suffix}"
+  auto_create_subnetworks = false
+}
+`, context)
+}
+
+func TestAccComputeSubnetwork_subnetworkResolveSubnetMaskExample(t *testing.T) {
+	t.Parallel()
+
+	context := map[string]interface{}{
+		"random_suffix": acctest.RandString(t, 10),
+	}
+
+	acctest.VcrTest(t, resource.TestCase{
+		PreCheck:                 func() { acctest.AccTestPreCheck(t) },
+		ProtoV5ProviderFactories: acctest.ProtoV5ProviderBetaFactories(t),
+		CheckDestroy:             testAccCheckComputeSubnetworkDestroyProducer(t),
+		Steps: []resource.TestStep{
+			{
+				Config: testAccComputeSubnetwork_subnetworkResolveSubnetMaskExample(context),
+			},
+			{
+				ResourceName:            "google_compute_subnetwork.subnetwork-resolve-subnet-mask",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"ip_collection", "network", "params", "region", "reserved_internal_range"},
+			},
+		},
+	})
+}
+
+func testAccComputeSubnetwork_subnetworkResolveSubnetMaskExample(context map[string]interface{}) string {
+	return acctest.Nprintf(`
+resource "google_compute_subnetwork" "subnetwork-resolve-subnet-mask" {
+  provider         = google-beta
+
+  name             = "tf-test-subnet-resolve-subnet-mask-test-subnetwork%{random_suffix}"
+  region           = "us-west2"
+  ip_cidr_range    = "10.10.0.0/24"
+  purpose          = "PRIVATE"
+  resolve_subnet_mask = "ARP_PRIMARY_RANGE"
+  network          = google_compute_network.custom-test.id
+}
+
+resource "google_compute_network" "custom-test" {
+  provider                = google-beta
+
+  name                    = "tf-test-subnet-resolve-subnet-mask-test-network%{random_suffix}"
+  auto_create_subnetworks = false
+}
+`, context)
+}
+
+func TestAccComputeSubnetwork_subnetworkCidrOverlapExample(t *testing.T) {
+	t.Parallel()
+
+	context := map[string]interface{}{
+		"random_suffix": acctest.RandString(t, 10),
+	}
+
+	acctest.VcrTest(t, resource.TestCase{
+		PreCheck:                 func() { acctest.AccTestPreCheck(t) },
+		ProtoV5ProviderFactories: acctest.ProtoV5ProviderFactories(t),
+		CheckDestroy:             testAccCheckComputeSubnetworkDestroyProducer(t),
+		Steps: []resource.TestStep{
+			{
+				Config: testAccComputeSubnetwork_subnetworkCidrOverlapExample(context),
+			},
+			{
+				ResourceName:            "google_compute_subnetwork.subnetwork-cidr-overlap",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"ip_collection", "network", "params", "region", "reserved_internal_range"},
+			},
+		},
+	})
+}
+
+func testAccComputeSubnetwork_subnetworkCidrOverlapExample(context map[string]interface{}) string {
+	return acctest.Nprintf(`
+resource "google_compute_subnetwork" "subnetwork-cidr-overlap" {
+
+  name                             = "tf-test-subnet-cidr-overlap%{random_suffix}"
+  region                           = "us-west2"
+  ip_cidr_range                    = "192.168.1.0/24"
+  allow_subnet_cidr_routes_overlap = true
+  network                          = google_compute_network.net-cidr-overlap.id
+}
+
+resource "google_compute_network" "net-cidr-overlap" {
+
+  name                    = "tf-test-net-cidr-overlap%{random_suffix}"
+  auto_create_subnetworks = false
+}
+`, context)
+}
+
+func TestAccComputeSubnetwork_subnetworkReservedInternalRangeExample(t *testing.T) {
+	t.Parallel()
+
+	context := map[string]interface{}{
+		"random_suffix": acctest.RandString(t, 10),
+	}
+
+	acctest.VcrTest(t, resource.TestCase{
+		PreCheck:                 func() { acctest.AccTestPreCheck(t) },
+		ProtoV5ProviderFactories: acctest.ProtoV5ProviderBetaFactories(t),
+		CheckDestroy:             testAccCheckComputeSubnetworkDestroyProducer(t),
+		Steps: []resource.TestStep{
+			{
+				Config: testAccComputeSubnetwork_subnetworkReservedInternalRangeExample(context),
+			},
+			{
+				ResourceName:            "google_compute_subnetwork.subnetwork-reserved-internal-range",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"ip_collection", "network", "params", "region", "reserved_internal_range"},
+			},
+		},
+	})
+}
+
+func testAccComputeSubnetwork_subnetworkReservedInternalRangeExample(context map[string]interface{}) string {
+	return acctest.Nprintf(`
+resource "google_compute_subnetwork" "subnetwork-reserved-internal-range" {
+  provider                = google-beta
+  name                    = "tf-test-subnetwork-reserved-internal-range%{random_suffix}"
+  region                  = "us-central1"
+  network                 = google_compute_network.default.id
+  reserved_internal_range = "networkconnectivity.googleapis.com/${google_network_connectivity_internal_range.reserved.id}"
+}
+
+resource "google_compute_network" "default" {
+  provider                = google-beta
+  name                    = "tf-test-network-reserved-internal-range%{random_suffix}"
+  auto_create_subnetworks = false
+}
+
+resource "google_network_connectivity_internal_range" "reserved" {
+  provider          = google-beta
+  name              = "reserved"
+  network           = google_compute_network.default.id
+  usage             = "FOR_VPC"
+  peering           = "FOR_SELF"
+  prefix_length     = 24
+  target_cidr_range = [
+    "10.0.0.0/8"
+  ]
+}
+`, context)
+}
+
+func TestAccComputeSubnetwork_subnetworkReservedSecondaryRangeExample(t *testing.T) {
+	t.Parallel()
+
+	context := map[string]interface{}{
+		"random_suffix": acctest.RandString(t, 10),
+	}
+
+	acctest.VcrTest(t, resource.TestCase{
+		PreCheck:                 func() { acctest.AccTestPreCheck(t) },
+		ProtoV5ProviderFactories: acctest.ProtoV5ProviderBetaFactories(t),
+		CheckDestroy:             testAccCheckComputeSubnetworkDestroyProducer(t),
+		Steps: []resource.TestStep{
+			{
+				Config: testAccComputeSubnetwork_subnetworkReservedSecondaryRangeExample(context),
+			},
+			{
+				ResourceName:            "google_compute_subnetwork.subnetwork-reserved-secondary-range",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"ip_collection", "network", "params", "region", "reserved_internal_range"},
+			},
+		},
+	})
+}
+
+func testAccComputeSubnetwork_subnetworkReservedSecondaryRangeExample(context map[string]interface{}) string {
+	return acctest.Nprintf(`
+resource "google_compute_subnetwork" "subnetwork-reserved-secondary-range" {
+  provider                = google-beta
+  name                    = "tf-test-subnetwork-reserved-secondary-range%{random_suffix}"
+  region                  = "us-central1"
+  network                 = google_compute_network.default.id
+  reserved_internal_range = "networkconnectivity.googleapis.com/${google_network_connectivity_internal_range.reserved.id}"
+
+  secondary_ip_range {
+    range_name              = "secondary"
+    reserved_internal_range = "networkconnectivity.googleapis.com/${google_network_connectivity_internal_range.reserved_secondary.id}"
+  }
+}
+
+resource "google_compute_network" "default" {
+  provider                = google-beta
+  name                    = "tf-test-network-reserved-secondary-range%{random_suffix}"
+  auto_create_subnetworks = false
+}
+
+resource "google_network_connectivity_internal_range" "reserved" {
+  provider          = google-beta
+  name              = "tf-test-reserved-primary%{random_suffix}"
+  network           = google_compute_network.default.id
+  usage             = "FOR_VPC"
+  peering           = "FOR_SELF"
+  prefix_length     = 24
+  target_cidr_range = [
+    "10.0.0.0/8"
+  ]
+}
+
+resource "google_network_connectivity_internal_range" "reserved_secondary" {
+  provider          = google-beta
+  name              = "tf-test-reserved-secondary%{random_suffix}"
+  network           = google_compute_network.default.id
+  usage             = "FOR_VPC"
+  peering           = "FOR_SELF"
+  prefix_length     = 16
+  target_cidr_range = [
+    "10.0.0.0/8"
+  ]
+}
+`, context)
+}
+
+func TestAccComputeSubnetwork_subnetworkIpv6OnlyInternalExample(t *testing.T) {
+	t.Parallel()
+
+	context := map[string]interface{}{
+		"random_suffix": acctest.RandString(t, 10),
+	}
+
+	acctest.VcrTest(t, resource.TestCase{
+		PreCheck:                 func() { acctest.AccTestPreCheck(t) },
+		ProtoV5ProviderFactories: acctest.ProtoV5ProviderFactories(t),
+		CheckDestroy:             testAccCheckComputeSubnetworkDestroyProducer(t),
+		Steps: []resource.TestStep{
+			{
+				Config: testAccComputeSubnetwork_subnetworkIpv6OnlyInternalExample(context),
+			},
+			{
+				ResourceName:            "google_compute_subnetwork.subnetwork-ipv6-only",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"ip_collection", "network", "params", "region", "reserved_internal_range"},
+			},
+		},
+	})
+}
+
+func testAccComputeSubnetwork_subnetworkIpv6OnlyInternalExample(context map[string]interface{}) string {
+	return acctest.Nprintf(`
+resource "google_compute_subnetwork" "subnetwork-ipv6-only" {
+  name          = "tf-test-subnet-ipv6-only%{random_suffix}"
+  region        = "us-central1"
+  network       = google_compute_network.custom-test.id
+  stack_type    = "IPV6_ONLY"
+  ipv6_access_type = "INTERNAL"
+}
+
+resource "google_compute_network" "custom-test" {
+  name                    = "tf-test-network-ipv6-only%{random_suffix}"
+  auto_create_subnetworks = false
+  enable_ula_internal_ipv6 = true
+}
+`, context)
+}
+
+func TestAccComputeSubnetwork_subnetworkWithSubnetModePdpExample(t *testing.T) {
+	t.Parallel()
+
+	context := map[string]interface{}{
+		"ip_collection_url": "projects/tf-static-byoip/regions/us-central1/publicDelegatedPrefixes/tf-test-subnet-mode-pdp",
+		"random_suffix":     acctest.RandString(t, 10),
+	}
+
+	acctest.VcrTest(t, resource.TestCase{
+		PreCheck:                 func() { acctest.AccTestPreCheck(t) },
+		ProtoV5ProviderFactories: acctest.ProtoV5ProviderFactories(t),
+		CheckDestroy:             testAccCheckComputeSubnetworkDestroyProducer(t),
+		Steps: []resource.TestStep{
+			{
+				Config: testAccComputeSubnetwork_subnetworkWithSubnetModePdpExample(context),
+			},
+			{
+				ResourceName:            "google_compute_subnetwork.subnetwork-with-subnet-mode-pdp",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"ip_collection", "network", "params", "region", "reserved_internal_range"},
+			},
+		},
+	})
+}
+
+func testAccComputeSubnetwork_subnetworkWithSubnetModePdpExample(context map[string]interface{}) string {
+	return acctest.Nprintf(`
+resource "google_compute_subnetwork" "subnetwork-with-subnet-mode-pdp" {
+  name             = "tf-test-subnet-mode-pdp-subnet%{random_suffix}"
+  region           = "us-central1"
+  network          = google_compute_network.custom-test-network.id
+  stack_type       = "IPV6_ONLY"
+  ipv6_access_type = "EXTERNAL"
+  ip_collection    = "%{ip_collection_url}"
+}
+
+resource "google_compute_network" "custom-test-network" {
+  name                    = "tf-test-network-byoipv6-external%{random_suffix}"
+  auto_create_subnetworks = false
+}
+`, context)
+}
+
+func TestAccComputeSubnetwork_subnetworkWithInternalSubnetModePdpExample(t *testing.T) {
+	t.Parallel()
+
+	context := map[string]interface{}{
+		"ip_collection_url": "projects/tf-static-byoip/regions/us-central1/publicDelegatedPrefixes/internal-ipv6-subnet-mode-test-sub-pdp",
+		"random_suffix":     acctest.RandString(t, 10),
+	}
+
+	acctest.VcrTest(t, resource.TestCase{
+		PreCheck:                 func() { acctest.AccTestPreCheck(t) },
+		ProtoV5ProviderFactories: acctest.ProtoV5ProviderFactories(t),
+		CheckDestroy:             testAccCheckComputeSubnetworkDestroyProducer(t),
+		Steps: []resource.TestStep{
+			{
+				Config: testAccComputeSubnetwork_subnetworkWithInternalSubnetModePdpExample(context),
+			},
+			{
+				ResourceName:            "google_compute_subnetwork.subnetwork-with-internal-subnet-mode-pdp",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"ip_collection", "network", "params", "region", "reserved_internal_range"},
+			},
+		},
+	})
+}
+
+func testAccComputeSubnetwork_subnetworkWithInternalSubnetModePdpExample(context map[string]interface{}) string {
+	return acctest.Nprintf(`
+resource "google_compute_subnetwork" "subnetwork-with-internal-subnet-mode-pdp" {
+  name             = "tf-test-internal-subnet-mode-pdp-subnet%{random_suffix}"
+  region           = "us-central1"
+  network          = google_compute_network.custom-test-network.id
+  stack_type       = "IPV6_ONLY"
+  ipv6_access_type = "INTERNAL"
+  ip_collection    = "%{ip_collection_url}"
+}
+
+resource "google_compute_network" "custom-test-network" {
+  name                    = "tf-test-network-byoipv6-internal%{random_suffix}"
+  auto_create_subnetworks = false
+}
+`, context)
+}
+
+func TestAccComputeSubnetwork_subnetworkWithInternalSubnetModePdpExplicitIpPrefixExample(t *testing.T) {
+	t.Parallel()
+
+	context := map[string]interface{}{
+		"internal_ipv6_prefix": fmt.Sprintf("2001:db8:1:%d::/64", acctest.RandIntRange(t, 0, 9999)),
+		"ip_collection_url":    "projects/tf-static-byoip/regions/us-central1/publicDelegatedPrefixes/internal-ipv6-subnet-mode-test-sub-pdp-explicit-prefix",
+		"random_suffix":        acctest.RandString(t, 10),
+	}
+
+	acctest.VcrTest(t, resource.TestCase{
+		PreCheck:                 func() { acctest.AccTestPreCheck(t) },
+		ProtoV5ProviderFactories: acctest.ProtoV5ProviderFactories(t),
+		CheckDestroy:             testAccCheckComputeSubnetworkDestroyProducer(t),
+		Steps: []resource.TestStep{
+			{
+				Config: testAccComputeSubnetwork_subnetworkWithInternalSubnetModePdpExplicitIpPrefixExample(context),
+			},
+			{
+				ResourceName:            "google_compute_subnetwork.subnetwork-with-internal-subnet-mode-pdp-explicit-ip-prefix",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"ip_collection", "network", "params", "region", "reserved_internal_range"},
+			},
+		},
+	})
+}
+
+func testAccComputeSubnetwork_subnetworkWithInternalSubnetModePdpExplicitIpPrefixExample(context map[string]interface{}) string {
+	return acctest.Nprintf(`
+resource "google_compute_subnetwork" "subnetwork-with-internal-subnet-mode-pdp-explicit-ip-prefix" {
+  name             = "tf-test-subnet-mode-pdp-subnet-internal-prefix%{random_suffix}"
+  region           = "us-central1"
+  network          = google_compute_network.custom-test-network.id
+  stack_type       = "IPV6_ONLY"
+  ipv6_access_type = "INTERNAL"
+  ip_collection    = "%{ip_collection_url}"
+  internal_ipv6_prefix = "%{internal_ipv6_prefix}"
+}
+
+resource "google_compute_network" "custom-test-network" {
+  name                    = "tf-test-network-byoipv6-internal-prefix%{random_suffix}"
+  auto_create_subnetworks = false
+}
+`, context)
+}
+
+func TestAccComputeSubnetwork_subnetworkIpv6OnlyExternalExample(t *testing.T) {
+	t.Parallel()
+
+	context := map[string]interface{}{
+		"random_suffix": acctest.RandString(t, 10),
+	}
+
+	acctest.VcrTest(t, resource.TestCase{
+		PreCheck:                 func() { acctest.AccTestPreCheck(t) },
+		ProtoV5ProviderFactories: acctest.ProtoV5ProviderFactories(t),
+		CheckDestroy:             testAccCheckComputeSubnetworkDestroyProducer(t),
+		Steps: []resource.TestStep{
+			{
+				Config: testAccComputeSubnetwork_subnetworkIpv6OnlyExternalExample(context),
+			},
+			{
+				ResourceName:            "google_compute_subnetwork.subnetwork-ipv6-only",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"ip_collection", "network", "params", "region", "reserved_internal_range"},
+			},
+		},
+	})
+}
+
+func testAccComputeSubnetwork_subnetworkIpv6OnlyExternalExample(context map[string]interface{}) string {
+	return acctest.Nprintf(`
+resource "google_compute_subnetwork" "subnetwork-ipv6-only" {
+  name          = "tf-test-subnet-ipv6-only%{random_suffix}"
+  region        = "us-central1"
+  network       = google_compute_network.custom-test.id
+  stack_type    = "IPV6_ONLY"
+  ipv6_access_type = "EXTERNAL"
+}
+
+resource "google_compute_network" "custom-test" {
+  name                    = "tf-test-network-ipv6-only%{random_suffix}"
+  auto_create_subnetworks = false
 }
 `, context)
 }

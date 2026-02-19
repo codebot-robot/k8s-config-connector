@@ -19,16 +19,35 @@ package iamworkforcepool_test
 
 import (
 	"fmt"
+	"log"
+	"strconv"
 	"strings"
 	"testing"
+	"time"
 
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/terraform"
 
 	"github.com/hashicorp/terraform-provider-google-beta/google-beta/acctest"
 	"github.com/hashicorp/terraform-provider-google-beta/google-beta/envvar"
 	"github.com/hashicorp/terraform-provider-google-beta/google-beta/tpgresource"
 	transport_tpg "github.com/hashicorp/terraform-provider-google-beta/google-beta/transport"
+
+	"google.golang.org/api/googleapi"
+)
+
+var (
+	_ = fmt.Sprintf
+	_ = log.Print
+	_ = strconv.Atoi
+	_ = strings.Trim
+	_ = time.Now
+	_ = resource.TestMain
+	_ = terraform.NewState
+	_ = envvar.TestEnvVar
+	_ = tpgresource.SetLabels
+	_ = transport_tpg.Config{}
+	_ = googleapi.Error{}
 )
 
 func TestAccIAMWorkforcePoolWorkforcePoolProvider_iamWorkforcePoolProviderSamlBasicExample(t *testing.T) {
@@ -51,7 +70,7 @@ func TestAccIAMWorkforcePoolWorkforcePoolProvider_iamWorkforcePoolProviderSamlBa
 				ResourceName:            "google_iam_workforce_pool_provider.example",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"location", "workforce_pool_id", "provider_id"},
+				ImportStateVerifyIgnore: []string{"location", "provider_id", "workforce_pool_id"},
 			},
 		},
 	})
@@ -99,7 +118,7 @@ func TestAccIAMWorkforcePoolWorkforcePoolProvider_iamWorkforcePoolProviderSamlFu
 				ResourceName:            "google_iam_workforce_pool_provider.example",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"location", "workforce_pool_id", "provider_id"},
+				ImportStateVerifyIgnore: []string{"extra_attributes_oauth2_client.0.client_secret.0.value.0.plain_text", "location", "provider_id", "workforce_pool_id"},
 			},
 		},
 	})
@@ -121,7 +140,20 @@ resource "google_iam_workforce_pool_provider" "example" {
     "google.subject"  = "assertion.sub"
   }
   saml {
-    idp_metadata_xml  = "<?xml version=\"1.0\"?><md:EntityDescriptor xmlns:md=\"urn:oasis:names:tc:SAML:2.0:metadata\" entityID=\"https://test.com\"><md:IDPSSODescriptor protocolSupportEnumeration=\"urn:oasis:names:tc:SAML:2.0:protocol\"> <md:KeyDescriptor use=\"signing\"><ds:KeyInfo xmlns:ds=\"http://www.w3.org/2000/09/xmldsig#\"><ds:X509Data><ds:X509Certificate>MIIDpDCCAoygAwIBAgIGAX7/5qPhMA0GCSqGSIb3DQEBCwUAMIGSMQswCQYDVQQGEwJVUzETMBEGA1UECAwKQ2FsaWZvcm5pYTEWMBQGA1UEBwwNU2FuIEZyYW5jaXNjbzENMAsGA1UECgwET2t0YTEUMBIGA1UECwwLU1NPUHJvdmlkZXIxEzARBgNVBAMMCmRldi00NTg0MjExHDAaBgkqhkiG9w0BCQEWDWluZm9Ab2t0YS5jb20wHhcNMjIwMjE2MDAxOTEyWhcNMzIwMjE2MDAyMDEyWjCBkjELMAkGA1UEBhMCVVMxEzARBgNVBAgMCkNhbGlmb3JuaWExFjAUBgNVBAcMDVNhbiBGcmFuY2lzY28xDTALBgNVBAoMBE9rdGExFDASBgNVBAsMC1NTT1Byb3ZpZGVyMRMwEQYDVQQDDApkZXYtNDU4NDIxMRwwGgYJKoZIhvcNAQkBFg1pbmZvQG9rdGEuY29tMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAxrBl7GKz52cRpxF9xCsirnRuMxnhFBaUrsHqAQrLqWmdlpNYZTVg+T9iQ+aq/iE68L+BRZcZniKIvW58wqqS0ltXVvIkXuDSvnvnkkI5yMIVErR20K8jSOKQm1FmK+fgAJ4koshFiu9oLiqu0Ejc0DuL3/XRsb4RuxjktKTb1khgBBtb+7idEk0sFR0RPefAweXImJkDHDm7SxjDwGJUubbqpdTxasPr0W+AHI1VUzsUsTiHAoyb0XDkYqHfDzhj/ZdIEl4zHQ3bEZvlD984ztAnmX2SuFLLKfXeAAGHei8MMixJvwxYkkPeYZ/5h8WgBZPP4heS2CPjwYExt29L8QIDAQABMA0GCSqGSIb3DQEBCwUAA4IBAQARjJFz++a9Z5IQGFzsZMrX2EDR5ML4xxUiQkbhld1S1PljOLcYFARDmUC2YYHOueU4ee8Jid9nPGEUebV/4Jok+b+oQh+dWMgiWjSLI7h5q4OYZ3VJtdlVwgMFt2iz+/4yBKMUZ50g3Qgg36vE34us+eKitg759JgCNsibxn0qtJgSPm0sgP2L6yTaLnoEUbXBRxCwynTSkp9ZijZqEzbhN0e2dWv7Rx/nfpohpDP6vEiFImKFHpDSv3M/5de1ytQzPFrZBYt9WlzlYwE1aD9FHCxdd+rWgYMVVoRaRmndpV/Rq3QUuDuFJtaoX11bC7ExkOpg9KstZzA63i3VcfYv</ds:X509Certificate></ds:X509Data></ds:KeyInfo></md:KeyDescriptor><md:SingleSignOnService Binding=\"urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Redirect\" Location=\"https://test.com/sso\"/></md:IDPSSODescriptor></md:EntityDescriptor>"
+    idp_metadata_xml  = "<?xml version=\"1.0\"?><md:EntityDescriptor xmlns:md=\"urn:oasis:names:tc:SAML:2.0:metadata\" entityID=\"https://sts.windows.net/826602fe-2101-470c-9d71-ee1343668989\"><md:IDPSSODescriptor protocolSupportEnumeration=\"urn:oasis:names:tc:SAML:2.0:protocol\"> <md:KeyDescriptor use=\"signing\"><ds:KeyInfo xmlns:ds=\"http://www.w3.org/2000/09/xmldsig#\"><ds:X509Data><ds:X509Certificate>MIIDpDCCAoygAwIBAgIGAX7/5qPhMA0GCSqGSIb3DQEBCwUAMIGSMQswCQYDVQQGEwJVUzETMBEGA1UECAwKQ2FsaWZvcm5pYTEWMBQGA1UEBwwNU2FuIEZyYW5jaXNjbzENMAsGA1UECgwET2t0YTEUMBIGA1UECwwLU1NPUHJvdmlkZXIxEzARBgNVBAMMCmRldi00NTg0MjExHDAaBgkqhkiG9w0BCQEWDWluZm9Ab2t0YS5jb20wHhcNMjIwMjE2MDAxOTEyWhcNMzIwMjE2MDAyMDEyWjCBkjELMAkGA1UEBhMCVVMxEzARBgNVBAgMCkNhbGlmb3JuaWExFjAUBgNVBAcMDVNhbiBGcmFuY2lzY28xDTALBgNVBAoMBE9rdGExFDASBgNVBAsMC1NTT1Byb3ZpZGVyMRMwEQYDVQQDDApkZXYtNDU4NDIxMRwwGgYJKoZIhvcNAQkBFg1pbmZvQG9rdGEuY29tMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAxrBl7GKz52cRpxF9xCsirnRuMxnhFBaUrsHqAQrLqWmdlpNYZTVg+T9iQ+aq/iE68L+BRZcZniKIvW58wqqS0ltXVvIkXuDSvnvnkkI5yMIVErR20K8jSOKQm1FmK+fgAJ4koshFiu9oLiqu0Ejc0DuL3/XRsb4RuxjktKTb1khgBBtb+7idEk0sFR0RPefAweXImJkDHDm7SxjDwGJUubbqpdTxasPr0W+AHI1VUzsUsTiHAoyb0XDkYqHfDzhj/ZdIEl4zHQ3bEZvlD984ztAnmX2SuFLLKfXeAAGHei8MMixJvwxYkkPeYZ/5h8WgBZPP4heS2CPjwYExt29L8QIDAQABMA0GCSqGSIb3DQEBCwUAA4IBAQARjJFz++a9Z5IQGFzsZMrX2EDR5ML4xxUiQkbhld1S1PljOLcYFARDmUC2YYHOueU4ee8Jid9nPGEUebV/4Jok+b+oQh+dWMgiWjSLI7h5q4OYZ3VJtdlVwgMFt2iz+/4yBKMUZ50g3Qgg36vE34us+eKitg759JgCNsibxn0qtJgSPm0sgP2L6yTaLnoEUbXBRxCwynTSkp9ZijZqEzbhN0e2dWv7Rx/nfpohpDP6vEiFImKFHpDSv3M/5de1ytQzPFrZBYt9WlzlYwE1aD9FHCxdd+rWgYMVVoRaRmndpV/Rq3QUuDuFJtaoX11bC7ExkOpg9KstZzA63i3VcfYv</ds:X509Certificate></ds:X509Data></ds:KeyInfo></md:KeyDescriptor><md:SingleSignOnService Binding=\"urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Redirect\" Location=\"https://test.com/sso\"/></md:IDPSSODescriptor></md:EntityDescriptor>"
+  }
+  extra_attributes_oauth2_client {
+    issuer_uri       = "https://login.microsoftonline.com/826602fe-2101-470c-9d71-ee1343668989/v2.0"
+    client_id        = "client-id"
+    client_secret {
+        value {
+          plain_text = "client-secret"
+        }
+      }
+    attributes_type = "AZURE_AD_GROUPS_ID"
+    query_parameters {
+        filter      = "mail:gcp"
+    }
   }
   display_name        = "Display name"
   description         = "A sample SAML workforce pool provider."
@@ -151,7 +183,7 @@ func TestAccIAMWorkforcePoolWorkforcePoolProvider_iamWorkforcePoolProviderOidcBa
 				ResourceName:            "google_iam_workforce_pool_provider.example",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"location", "workforce_pool_id", "provider_id", "oidc.0.client_secret.0.value.0.plain_text"},
+				ImportStateVerifyIgnore: []string{"location", "oidc.0.client_secret.0.value.0.plain_text", "provider_id", "workforce_pool_id"},
 			},
 		},
 	})
@@ -209,7 +241,7 @@ func TestAccIAMWorkforcePoolWorkforcePoolProvider_iamWorkforcePoolProviderOidcFu
 				ResourceName:            "google_iam_workforce_pool_provider.example",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"location", "workforce_pool_id", "provider_id", "oidc.0.client_secret.0.value.0.plain_text"},
+				ImportStateVerifyIgnore: []string{"extra_attributes_oauth2_client.0.client_secret.0.value.0.plain_text", "location", "oidc.0.client_secret.0.value.0.plain_text", "provider_id", "workforce_pool_id"},
 			},
 		},
 	})
@@ -231,7 +263,7 @@ resource "google_iam_workforce_pool_provider" "example" {
     "google.subject"  = "assertion.sub"
   }
   oidc {
-    issuer_uri        = "https://accounts.thirdparty.com"
+    issuer_uri        = "https://login.microsoftonline.com/826602fe-2101-470c-9d71-ee1343668989/v2.0"
     client_id         = "client-id"
     client_secret {
       value {
@@ -242,6 +274,19 @@ resource "google_iam_workforce_pool_provider" "example" {
       response_type             = "CODE"
       assertion_claims_behavior = "MERGE_USER_INFO_OVER_ID_TOKEN_CLAIMS"
       additional_scopes         = ["groups", "roles"]
+    }
+  }
+  extra_attributes_oauth2_client {
+    issuer_uri       = "https://login.microsoftonline.com/826602fe-2101-470c-9d71-ee1343668989/v2.0"
+    client_id        = "client-id"
+    client_secret {
+        value {
+          plain_text = "client-secret"
+        }
+      }
+    attributes_type = "AZURE_AD_GROUPS_MAIL"
+    query_parameters {
+        filter      = "mail:sales"
     }
   }
   display_name        = "Display name"
@@ -262,7 +307,7 @@ func TestAccIAMWorkforcePoolWorkforcePoolProvider_iamWorkforcePoolProviderOidcUp
 
 	acctest.VcrTest(t, resource.TestCase{
 		PreCheck:                 func() { acctest.AccTestPreCheck(t) },
-		ProtoV5ProviderFactories: acctest.ProtoV5ProviderBetaFactories(t),
+		ProtoV5ProviderFactories: acctest.ProtoV5ProviderFactories(t),
 		CheckDestroy:             testAccCheckIAMWorkforcePoolWorkforcePoolProviderDestroyProducer(t),
 		Steps: []resource.TestStep{
 			{
@@ -272,7 +317,7 @@ func TestAccIAMWorkforcePoolWorkforcePoolProvider_iamWorkforcePoolProviderOidcUp
 				ResourceName:            "google_iam_workforce_pool_provider.example",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"location", "workforce_pool_id", "provider_id", "oidc.0.client_secret.0.value.0.plain_text"},
+				ImportStateVerifyIgnore: []string{"location", "oidc.0.client_secret.0.value.0.plain_text", "provider_id", "workforce_pool_id"},
 			},
 		},
 	})
@@ -281,16 +326,12 @@ func TestAccIAMWorkforcePoolWorkforcePoolProvider_iamWorkforcePoolProviderOidcUp
 func testAccIAMWorkforcePoolWorkforcePoolProvider_iamWorkforcePoolProviderOidcUploadKeyExample(context map[string]interface{}) string {
 	return acctest.Nprintf(`
 resource "google_iam_workforce_pool" "pool" {
-  provider = google-beta
-
   workforce_pool_id = "tf-test-example-pool%{random_suffix}"
   parent            = "organizations/%{org_id}"
   location          = "global"
 }
 
 resource "google_iam_workforce_pool_provider" "example" {
-  provider = google-beta
-
   workforce_pool_id  = google_iam_workforce_pool.pool.workforce_pool_id
   location           = google_iam_workforce_pool.pool.location
   provider_id        = "tf-test-example-prvdr%{random_suffix}"
@@ -310,6 +351,284 @@ resource "google_iam_workforce_pool_provider" "example" {
       assertion_claims_behavior = "ONLY_ID_TOKEN_CLAIMS"
     }
     jwks_json        = "{\"keys\":[{\"kty\":\"RSA\",\"e\":\"AQAB\",\"use\":\"sig\",\"kid\":\"1i-PmZZrF1j2rOUAxkcQaaz3MnOXcwwziuch_XWjvqI\",\"alg\":\"RS256\",\"n\":\"kFpYE2Zm32y--cnUiFLm4cYmFO8tR4-5KU5-aqhRwiHPP0FkgdQZSoSyp_1DO6PruYfluRMviwOpbmM6LH7KemxVdxLKqLDkHSG0XC3dZkACRFNvBBOdFrvJ0ABXv3vVx592lFE0m-Je5-FerRSQCml6E7icNiTSxizEmvDsTIe8mvArjsODDrgWP25bEFwDPBd5cCl3_2gtW6YdaCRewLXdzuB5Wmp_vOu6trTUzEKbnQlWFtDDCPfOpywYXF8dY1Lbwas5iwwIZozwD2_CuTiyXa3T2_4oa119_rQrIC2BAv7q_S1Xoa2lk3q2GZUSVQ5i3gIbJuDHmp-6yh3k4w\"}]}"
+  }
+}
+`, context)
+}
+
+func TestAccIAMWorkforcePoolWorkforcePoolProvider_iamWorkforcePoolProviderExtraAttributesOauth2ConfigClientBasicExample(t *testing.T) {
+	t.Parallel()
+
+	context := map[string]interface{}{
+		"org_id":        envvar.GetTestOrgFromEnv(t),
+		"random_suffix": acctest.RandString(t, 10),
+	}
+
+	acctest.VcrTest(t, resource.TestCase{
+		PreCheck:                 func() { acctest.AccTestPreCheck(t) },
+		ProtoV5ProviderFactories: acctest.ProtoV5ProviderFactories(t),
+		CheckDestroy:             testAccCheckIAMWorkforcePoolWorkforcePoolProviderDestroyProducer(t),
+		Steps: []resource.TestStep{
+			{
+				Config: testAccIAMWorkforcePoolWorkforcePoolProvider_iamWorkforcePoolProviderExtraAttributesOauth2ConfigClientBasicExample(context),
+			},
+			{
+				ResourceName:            "google_iam_workforce_pool_provider.example",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"extra_attributes_oauth2_client.0.client_secret.0.value.0.plain_text", "location", "oidc.0.client_secret.0.value.0.plain_text", "provider_id", "workforce_pool_id"},
+			},
+		},
+	})
+}
+
+func testAccIAMWorkforcePoolWorkforcePoolProvider_iamWorkforcePoolProviderExtraAttributesOauth2ConfigClientBasicExample(context map[string]interface{}) string {
+	return acctest.Nprintf(`
+resource "google_iam_workforce_pool" "pool" {
+  workforce_pool_id = "tf-test-example-pool%{random_suffix}"
+  parent            = "organizations/%{org_id}"
+  location          = "global"
+}
+
+resource "google_iam_workforce_pool_provider" "example" {
+  workforce_pool_id  = google_iam_workforce_pool.pool.workforce_pool_id
+  location           = google_iam_workforce_pool.pool.location
+  provider_id        = "tf-test-example-prvdr%{random_suffix}"
+  attribute_mapping  = {
+    "google.subject" = "assertion.sub"
+  }
+  oidc {
+    issuer_uri        = "https://sts.windows.net/826602fe-2101-470c-9d71-ee1343668989/"
+    client_id         = "https://analysis.windows.net/powerbi/connector/GoogleBigQuery"
+    web_sso_config {
+      response_type             = "CODE"
+      assertion_claims_behavior = "MERGE_USER_INFO_OVER_ID_TOKEN_CLAIMS"
+    }
+    client_secret {
+        value {
+          plain_text = "client-secret"
+        }
+      }
+  }
+  extra_attributes_oauth2_client {
+    issuer_uri       = "https://login.microsoftonline.com/826602fe-2101-470c-9d71-ee1343668989/v2.0"
+    client_id        = "client-id"
+    client_secret {
+        value {
+          plain_text = "client-secret"
+        }
+      }
+    attributes_type = "AZURE_AD_GROUPS_MAIL"
+  }
+}
+`, context)
+}
+
+func TestAccIAMWorkforcePoolWorkforcePoolProvider_iamWorkforcePoolProviderExtraAttributesOauth2ConfigClientFullExample(t *testing.T) {
+	t.Parallel()
+
+	context := map[string]interface{}{
+		"org_id":        envvar.GetTestOrgFromEnv(t),
+		"random_suffix": acctest.RandString(t, 10),
+	}
+
+	acctest.VcrTest(t, resource.TestCase{
+		PreCheck:                 func() { acctest.AccTestPreCheck(t) },
+		ProtoV5ProviderFactories: acctest.ProtoV5ProviderFactories(t),
+		CheckDestroy:             testAccCheckIAMWorkforcePoolWorkforcePoolProviderDestroyProducer(t),
+		Steps: []resource.TestStep{
+			{
+				Config: testAccIAMWorkforcePoolWorkforcePoolProvider_iamWorkforcePoolProviderExtraAttributesOauth2ConfigClientFullExample(context),
+			},
+			{
+				ResourceName:            "google_iam_workforce_pool_provider.example",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"extra_attributes_oauth2_client.0.client_secret.0.value.0.plain_text", "location", "oidc.0.client_secret.0.value.0.plain_text", "provider_id", "workforce_pool_id"},
+			},
+		},
+	})
+}
+
+func testAccIAMWorkforcePoolWorkforcePoolProvider_iamWorkforcePoolProviderExtraAttributesOauth2ConfigClientFullExample(context map[string]interface{}) string {
+	return acctest.Nprintf(`
+resource "google_iam_workforce_pool" "pool" {
+  workforce_pool_id = "tf-test-example-pool%{random_suffix}"
+  parent            = "organizations/%{org_id}"
+  location          = "global"
+}
+
+resource "google_iam_workforce_pool_provider" "example" {
+  workforce_pool_id  = google_iam_workforce_pool.pool.workforce_pool_id
+  location           = google_iam_workforce_pool.pool.location
+  provider_id        = "tf-test-example-prvdr%{random_suffix}"
+  attribute_mapping  = {
+    "google.subject" = "assertion.sub"
+  }
+  oidc {
+    issuer_uri        = "https://sts.windows.net/826602fe-2101-470c-9d71-ee1343668989/"
+    client_id         = "https://analysis.windows.net/powerbi/connector/GoogleBigQuery"
+    client_secret {
+      value {
+        plain_text = "client-secret"
+      }
+    }
+    web_sso_config {
+      response_type             = "CODE"
+      assertion_claims_behavior = "MERGE_USER_INFO_OVER_ID_TOKEN_CLAIMS"
+    }
+  }
+  extra_attributes_oauth2_client {
+    issuer_uri       = "https://login.microsoftonline.com/826602fe-2101-470c-9d71-ee1343668989/v2.0"
+    client_id        = "client-id"
+    client_secret {
+        value {
+          plain_text = "client-secret"
+        }
+      }
+    attributes_type = "AZURE_AD_GROUPS_MAIL"
+    query_parameters {
+        filter      = "mail:gcp"
+    }
+  }
+}
+`, context)
+}
+
+func TestAccIAMWorkforcePoolWorkforcePoolProvider_iamWorkforcePoolProviderExtendedAttributesOauth2ConfigClientBasicExample(t *testing.T) {
+	t.Parallel()
+
+	context := map[string]interface{}{
+		"org_id":        envvar.GetTestOrgFromEnv(t),
+		"random_suffix": acctest.RandString(t, 10),
+	}
+
+	acctest.VcrTest(t, resource.TestCase{
+		PreCheck:                 func() { acctest.AccTestPreCheck(t) },
+		ProtoV5ProviderFactories: acctest.ProtoV5ProviderFactories(t),
+		CheckDestroy:             testAccCheckIAMWorkforcePoolWorkforcePoolProviderDestroyProducer(t),
+		Steps: []resource.TestStep{
+			{
+				Config: testAccIAMWorkforcePoolWorkforcePoolProvider_iamWorkforcePoolProviderExtendedAttributesOauth2ConfigClientBasicExample(context),
+			},
+			{
+				ResourceName:            "google_iam_workforce_pool_provider.example",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"extended_attributes_oauth2_client.0.client_secret.0.value.0.plain_text", "location", "oidc.0.client_secret.0.value.0.plain_text", "provider_id", "workforce_pool_id"},
+			},
+		},
+	})
+}
+
+func testAccIAMWorkforcePoolWorkforcePoolProvider_iamWorkforcePoolProviderExtendedAttributesOauth2ConfigClientBasicExample(context map[string]interface{}) string {
+	return acctest.Nprintf(`
+resource "google_iam_workforce_pool" "pool" {
+  workforce_pool_id = "tf-test-example-pool%{random_suffix}"
+  parent            = "organizations/%{org_id}"
+  location          = "global"
+}
+
+resource "google_iam_workforce_pool_provider" "example" {
+  workforce_pool_id  = google_iam_workforce_pool.pool.workforce_pool_id
+  location           = google_iam_workforce_pool.pool.location
+  provider_id        = "tf-test-example-prvdr%{random_suffix}"
+  attribute_mapping  = {
+    "google.subject" = "assertion.sub"
+  }
+  oidc {
+    issuer_uri        = "https://login.microsoftonline.com/826602fe-2101-470c-9d71-ee1343668989/v2.0"
+    client_id         = "https://analysis.windows.net/powerbi/connector/GoogleBigQuery"
+    web_sso_config {
+      response_type             = "CODE"
+      assertion_claims_behavior = "MERGE_USER_INFO_OVER_ID_TOKEN_CLAIMS"
+    }
+    client_secret {
+        value {
+          plain_text = "client-secret"
+        }
+      }
+  }
+  extended_attributes_oauth2_client {
+    issuer_uri       = "https://login.microsoftonline.com/826602fe-2101-470c-9d71-ee1343668989/v2.0"
+    client_id        = "client-id"
+    client_secret {
+        value {
+          plain_text = "client-secret"
+        }
+      }
+    attributes_type = "AZURE_AD_GROUPS_ID"
+  }
+}
+`, context)
+}
+
+func TestAccIAMWorkforcePoolWorkforcePoolProvider_iamWorkforcePoolProviderExtendedAttributesOauth2ConfigClientFullExample(t *testing.T) {
+	t.Parallel()
+
+	context := map[string]interface{}{
+		"org_id":        envvar.GetTestOrgFromEnv(t),
+		"random_suffix": acctest.RandString(t, 10),
+	}
+
+	acctest.VcrTest(t, resource.TestCase{
+		PreCheck:                 func() { acctest.AccTestPreCheck(t) },
+		ProtoV5ProviderFactories: acctest.ProtoV5ProviderFactories(t),
+		CheckDestroy:             testAccCheckIAMWorkforcePoolWorkforcePoolProviderDestroyProducer(t),
+		Steps: []resource.TestStep{
+			{
+				Config: testAccIAMWorkforcePoolWorkforcePoolProvider_iamWorkforcePoolProviderExtendedAttributesOauth2ConfigClientFullExample(context),
+			},
+			{
+				ResourceName:            "google_iam_workforce_pool_provider.example",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"extended_attributes_oauth2_client.0.client_secret.0.value.0.plain_text", "location", "oidc.0.client_secret.0.value.0.plain_text", "provider_id", "workforce_pool_id"},
+			},
+		},
+	})
+}
+
+func testAccIAMWorkforcePoolWorkforcePoolProvider_iamWorkforcePoolProviderExtendedAttributesOauth2ConfigClientFullExample(context map[string]interface{}) string {
+	return acctest.Nprintf(`
+resource "google_iam_workforce_pool" "pool" {
+  workforce_pool_id = "tf-test-example-pool%{random_suffix}"
+  parent            = "organizations/%{org_id}"
+  location          = "global"
+}
+
+resource "google_iam_workforce_pool_provider" "example" {
+  workforce_pool_id  = google_iam_workforce_pool.pool.workforce_pool_id
+  location           = google_iam_workforce_pool.pool.location
+  provider_id        = "tf-test-example-prvdr%{random_suffix}"
+  attribute_mapping  = {
+    "google.subject" = "assertion.sub"
+  }
+  oidc {
+    issuer_uri        = "https://login.microsoftonline.com/826602fe-2101-470c-9d71-ee1343668989/v2.0"
+    client_id         = "https://analysis.windows.net/powerbi/connector/GoogleBigQuery"
+    client_secret {
+      value {
+        plain_text = "client-secret"
+      }
+    }
+    web_sso_config {
+      response_type             = "CODE"
+      assertion_claims_behavior = "MERGE_USER_INFO_OVER_ID_TOKEN_CLAIMS"
+    }
+  }
+  extended_attributes_oauth2_client {
+    issuer_uri       = "https://login.microsoftonline.com/826602fe-2101-470c-9d71-ee1343668989/v2.0"
+    client_id        = "client-id"
+    client_secret {
+        value {
+          plain_text = "client-secret"
+        }
+      }
+    attributes_type = "AZURE_AD_GROUPS_ID"
+    query_parameters {
+        filter      = "mail:gcp"
+    }
   }
 }
 `, context)

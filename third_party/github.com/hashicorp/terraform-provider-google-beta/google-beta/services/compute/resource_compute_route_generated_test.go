@@ -19,15 +19,35 @@ package compute_test
 
 import (
 	"fmt"
+	"log"
+	"strconv"
 	"strings"
 	"testing"
+	"time"
 
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/terraform"
 
 	"github.com/hashicorp/terraform-provider-google-beta/google-beta/acctest"
+	"github.com/hashicorp/terraform-provider-google-beta/google-beta/envvar"
 	"github.com/hashicorp/terraform-provider-google-beta/google-beta/tpgresource"
 	transport_tpg "github.com/hashicorp/terraform-provider-google-beta/google-beta/transport"
+
+	"google.golang.org/api/googleapi"
+)
+
+var (
+	_ = fmt.Sprintf
+	_ = log.Print
+	_ = strconv.Atoi
+	_ = strings.Trim
+	_ = time.Now
+	_ = resource.TestMain
+	_ = terraform.NewState
+	_ = envvar.TestEnvVar
+	_ = tpgresource.SetLabels
+	_ = transport_tpg.Config{}
+	_ = googleapi.Error{}
 )
 
 func TestAccComputeRoute_routeBasicExample(t *testing.T) {
@@ -49,7 +69,7 @@ func TestAccComputeRoute_routeBasicExample(t *testing.T) {
 				ResourceName:            "google_compute_route.default",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"network", "next_hop_instance", "next_hop_vpn_tunnel"},
+				ImportStateVerifyIgnore: []string{"network", "next_hop_instance", "next_hop_vpn_tunnel", "params"},
 			},
 		},
 	})
@@ -90,7 +110,7 @@ func TestAccComputeRoute_routeIlbExample(t *testing.T) {
 				ResourceName:            "google_compute_route.route-ilb",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"network", "next_hop_instance", "next_hop_vpn_tunnel"},
+				ImportStateVerifyIgnore: []string{"network", "next_hop_instance", "next_hop_vpn_tunnel", "params"},
 			},
 		},
 	})
@@ -166,7 +186,7 @@ func TestAccComputeRoute_routeIlbVipExample(t *testing.T) {
 				ResourceName:            "google_compute_route.route-ilb",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"network", "next_hop_instance", "next_hop_vpn_tunnel"},
+				ImportStateVerifyIgnore: []string{"network", "next_hop_instance", "next_hop_vpn_tunnel", "params"},
 			},
 		},
 	})

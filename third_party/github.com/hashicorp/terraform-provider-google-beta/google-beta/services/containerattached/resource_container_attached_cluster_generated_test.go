@@ -19,15 +19,35 @@ package containerattached_test
 
 import (
 	"fmt"
+	"log"
+	"strconv"
 	"strings"
 	"testing"
+	"time"
 
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/terraform"
 
 	"github.com/hashicorp/terraform-provider-google-beta/google-beta/acctest"
+	"github.com/hashicorp/terraform-provider-google-beta/google-beta/envvar"
 	"github.com/hashicorp/terraform-provider-google-beta/google-beta/tpgresource"
 	transport_tpg "github.com/hashicorp/terraform-provider-google-beta/google-beta/transport"
+
+	"google.golang.org/api/googleapi"
+)
+
+var (
+	_ = fmt.Sprintf
+	_ = log.Print
+	_ = strconv.Atoi
+	_ = strings.Trim
+	_ = time.Now
+	_ = resource.TestMain
+	_ = terraform.NewState
+	_ = envvar.TestEnvVar
+	_ = tpgresource.SetLabels
+	_ = transport_tpg.Config{}
+	_ = googleapi.Error{}
 )
 
 func TestAccContainerAttachedCluster_containerAttachedClusterBasicExample(t *testing.T) {
@@ -49,7 +69,7 @@ func TestAccContainerAttachedCluster_containerAttachedClusterBasicExample(t *tes
 				ResourceName:            "google_container_attached_cluster.primary",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"location"},
+				ImportStateVerifyIgnore: []string{"annotations", "location"},
 			},
 		},
 	})
@@ -101,7 +121,7 @@ func TestAccContainerAttachedCluster_containerAttachedClusterFullExample(t *test
 				ResourceName:            "google_container_attached_cluster.primary",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"location"},
+				ImportStateVerifyIgnore: []string{"annotations", "location"},
 			},
 		},
 	})
@@ -128,6 +148,7 @@ resource "google_container_attached_cluster" "primary" {
   }
   authorization {
     admin_users = [ "user1@example.com", "user2@example.com"]
+    admin_groups = [ "group1@example.com", "group2@example.com"]
   }
   oidc_config {
       issuer_url = "https://oidc.issuer.url"
@@ -149,6 +170,12 @@ resource "google_container_attached_cluster" "primary" {
   }
   binary_authorization {
     evaluation_mode = "PROJECT_SINGLETON_POLICY_ENFORCE"
+  }
+  proxy_config {
+    kubernetes_secret {
+      name = "proxy-config"
+      namespace = "default"
+    }
   }
 }
 `, context)
@@ -173,7 +200,7 @@ func TestAccContainerAttachedCluster_containerAttachedClusterIgnoreErrorsExample
 				ResourceName:            "google_container_attached_cluster.primary",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"location", "deletion_policy"},
+				ImportStateVerifyIgnore: []string{"annotations", "deletion_policy", "location"},
 			},
 		},
 	})

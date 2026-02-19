@@ -19,15 +19,35 @@ package privateca_test
 
 import (
 	"fmt"
+	"log"
+	"strconv"
 	"strings"
 	"testing"
+	"time"
 
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/terraform"
 
 	"github.com/hashicorp/terraform-provider-google-beta/google-beta/acctest"
+	"github.com/hashicorp/terraform-provider-google-beta/google-beta/envvar"
 	"github.com/hashicorp/terraform-provider-google-beta/google-beta/tpgresource"
 	transport_tpg "github.com/hashicorp/terraform-provider-google-beta/google-beta/transport"
+
+	"google.golang.org/api/googleapi"
+)
+
+var (
+	_ = fmt.Sprintf
+	_ = log.Print
+	_ = strconv.Atoi
+	_ = strings.Trim
+	_ = time.Now
+	_ = resource.TestMain
+	_ = terraform.NewState
+	_ = envvar.TestEnvVar
+	_ = tpgresource.SetLabels
+	_ = transport_tpg.Config{}
+	_ = googleapi.Error{}
 )
 
 func TestAccPrivatecaCaPool_privatecaCapoolBasicExample(t *testing.T) {
@@ -49,7 +69,7 @@ func TestAccPrivatecaCaPool_privatecaCapoolBasicExample(t *testing.T) {
 				ResourceName:            "google_privateca_ca_pool.default",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"name", "location"},
+				ImportStateVerifyIgnore: []string{"labels", "location", "name", "terraform_labels"},
 			},
 		},
 	})
@@ -76,12 +96,13 @@ func TestAccPrivatecaCaPool_privatecaCapoolAllFieldsExample(t *testing.T) {
 	t.Parallel()
 
 	context := map[string]interface{}{
+		"cloud_kms_key": acctest.BootstrapKMSKeyWithPurposeInLocation(t, "ENCRYPT_DECRYPT", "us-central1").CryptoKey.Name,
 		"random_suffix": acctest.RandString(t, 10),
 	}
 
 	acctest.VcrTest(t, resource.TestCase{
 		PreCheck:                 func() { acctest.AccTestPreCheck(t) },
-		ProtoV5ProviderFactories: acctest.ProtoV5ProviderFactories(t),
+		ProtoV5ProviderFactories: acctest.ProtoV5ProviderBetaFactories(t),
 		CheckDestroy:             testAccCheckPrivatecaCaPoolDestroyProducer(t),
 		Steps: []resource.TestStep{
 			{
@@ -91,7 +112,7 @@ func TestAccPrivatecaCaPool_privatecaCapoolAllFieldsExample(t *testing.T) {
 				ResourceName:            "google_privateca_ca_pool.default",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"name", "location"},
+				ImportStateVerifyIgnore: []string{"labels", "location", "name", "terraform_labels"},
 			},
 		},
 	})
@@ -99,7 +120,20 @@ func TestAccPrivatecaCaPool_privatecaCapoolAllFieldsExample(t *testing.T) {
 
 func testAccPrivatecaCaPool_privatecaCapoolAllFieldsExample(context map[string]interface{}) string {
 	return acctest.Nprintf(`
+resource "google_project_service_identity" "privateca_sa" {
+  provider = google-beta
+  service = "privateca.googleapis.com"
+}
+
+resource "google_kms_crypto_key_iam_member" "privateca_sa_keyuser_encrypterdecrypter" {
+  provider = google-beta
+  crypto_key_id = "%{cloud_kms_key}"
+  role          = "roles/cloudkms.cryptoKeyEncrypterDecrypter"
+  member = google_project_service_identity.privateca_sa.member
+}
+
 resource "google_privateca_ca_pool" "default" {
+  provider = google-beta
   name = "tf-test-my-pool%{random_suffix}"
   location = "us-central1"
   tier = "ENTERPRISE"
@@ -110,6 +144,9 @@ resource "google_privateca_ca_pool" "default" {
   }
   labels = {
     foo = "bar"
+  }
+  encryption_spec {
+    cloud_kms_key = "%{cloud_kms_key}"
   }
   issuance_policy {
     allowed_key_types {
@@ -123,6 +160,7 @@ resource "google_privateca_ca_pool" "default" {
         max_modulus_size = 10
       }
     }
+    backdate_duration = "3600s"
     maximum_lifetime = "50000s"
     allowed_issuance_modes {
       allow_csr_based_issuance = true
@@ -187,6 +225,10 @@ resource "google_privateca_ca_pool" "default" {
       }
     }
   }
+
+  depends_on = [
+    google_kms_crypto_key_iam_member.privateca_sa_keyuser_encrypterdecrypter,
+  ]
 }
 `, context)
 }

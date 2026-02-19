@@ -24,6 +24,7 @@ import (
 	"log"
 	"time"
 
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/customdiff"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 
 	dcl "github.com/GoogleCloudPlatform/declarative-resource-client-library/dcl"
@@ -50,6 +51,9 @@ func ResourceGkeHubFeatureMembership() *schema.Resource {
 			Update: schema.DefaultTimeout(20 * time.Minute),
 			Delete: schema.DefaultTimeout(20 * time.Minute),
 		},
+		CustomizeDiff: customdiff.All(
+			tpgresource.DefaultProviderProject,
+		),
 
 		Schema: map[string]*schema.Schema{
 			"feature": {
@@ -83,12 +87,27 @@ func ResourceGkeHubFeatureMembership() *schema.Resource {
 				Elem:        GkeHubFeatureMembershipConfigmanagementSchema(),
 			},
 
+			"membership_location": {
+				Type:        schema.TypeString,
+				Optional:    true,
+				ForceNew:    true,
+				Description: "The location of the membership",
+			},
+
 			"mesh": {
 				Type:        schema.TypeList,
 				Optional:    true,
 				Description: "Manage Mesh Features",
 				MaxItems:    1,
 				Elem:        GkeHubFeatureMembershipMeshSchema(),
+			},
+
+			"policycontroller": {
+				Type:        schema.TypeList,
+				Optional:    true,
+				Description: "Policy Controller-specific spec.",
+				MaxItems:    1,
+				Elem:        GkeHubFeatureMembershipPolicycontrollerSchema(),
 			},
 
 			"project": {
@@ -106,14 +125,6 @@ func ResourceGkeHubFeatureMembership() *schema.Resource {
 func GkeHubFeatureMembershipConfigmanagementSchema() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{
-			"binauthz": {
-				Type:        schema.TypeList,
-				Optional:    true,
-				Description: "Binauthz configuration for the cluster.",
-				MaxItems:    1,
-				Elem:        GkeHubFeatureMembershipConfigmanagementBinauthzSchema(),
-			},
-
 			"config_sync": {
 				Type:        schema.TypeList,
 				Optional:    true,
@@ -130,10 +141,17 @@ func GkeHubFeatureMembershipConfigmanagementSchema() *schema.Resource {
 				Elem:        GkeHubFeatureMembershipConfigmanagementHierarchyControllerSchema(),
 			},
 
+			"management": {
+				Type:        schema.TypeString,
+				Computed:    true,
+				Optional:    true,
+				Description: "Set this field to MANAGEMENT_AUTOMATIC to enable Config Sync auto-upgrades, and set this field to MANAGEMENT_MANUAL or MANAGEMENT_UNSPECIFIED to disable Config Sync auto-upgrades.",
+			},
+
 			"policy_controller": {
 				Type:        schema.TypeList,
 				Optional:    true,
-				Description: "Policy Controller configuration for the cluster.",
+				Description: "**DEPRECATED** Configuring Policy Controller through the configmanagement feature is no longer recommended. Use the policycontroller feature instead.",
 				MaxItems:    1,
 				Elem:        GkeHubFeatureMembershipConfigmanagementPolicyControllerSchema(),
 			},
@@ -148,27 +166,35 @@ func GkeHubFeatureMembershipConfigmanagementSchema() *schema.Resource {
 	}
 }
 
-func GkeHubFeatureMembershipConfigmanagementBinauthzSchema() *schema.Resource {
-	return &schema.Resource{
-		Schema: map[string]*schema.Schema{
-			"enabled": {
-				Type:        schema.TypeBool,
-				Optional:    true,
-				Description: "Whether binauthz is enabled in this cluster.",
-			},
-		},
-	}
-}
-
 func GkeHubFeatureMembershipConfigmanagementConfigSyncSchema() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{
+			"deployment_overrides": {
+				Type:        schema.TypeList,
+				Optional:    true,
+				Description: "The override configurations for the Config Sync Deployments.",
+				Elem:        GkeHubFeatureMembershipConfigmanagementConfigSyncDeploymentOverridesSchema(),
+			},
+
+			"enabled": {
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Description: "Enables the installation of ConfigSync. If set to true, ConfigSync resources will be created and the other ConfigSync fields will be applied if exist. If set to false, all other ConfigSync fields will be ignored, ConfigSync resources will be deleted. If omitted, ConfigSync resources will be managed depends on the presence of the git or oci field.",
+			},
+
 			"git": {
 				Type:        schema.TypeList,
 				Optional:    true,
 				Description: "",
 				MaxItems:    1,
 				Elem:        GkeHubFeatureMembershipConfigmanagementConfigSyncGitSchema(),
+			},
+
+			"metrics_gcp_service_account_email": {
+				Type:             schema.TypeString,
+				Optional:         true,
+				DiffSuppressFunc: tpgresource.CompareSelfLinkOrResourceName,
+				Description:      "Deprecated: If Workload Identity Federation for GKE is enabled, Google Cloud Service Account is no longer needed for exporting Config Sync metrics: https://cloud.google.com/kubernetes-engine/enterprise/config-sync/docs/how-to/monitor-config-sync-cloud-monitoring#custom-monitoring.",
 			},
 
 			"oci": {
@@ -190,6 +216,73 @@ func GkeHubFeatureMembershipConfigmanagementConfigSyncSchema() *schema.Resource 
 				Type:        schema.TypeString,
 				Optional:    true,
 				Description: "Specifies whether the Config Sync Repo is in \"hierarchical\" or \"unstructured\" mode.",
+			},
+
+			"stop_syncing": {
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Description: "Set to true to stop syncing configs for a single cluster. Default: false.",
+			},
+		},
+	}
+}
+
+func GkeHubFeatureMembershipConfigmanagementConfigSyncDeploymentOverridesSchema() *schema.Resource {
+	return &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			"containers": {
+				Type:        schema.TypeList,
+				Optional:    true,
+				Description: "The override configurations for the containers in the Deployment.",
+				Elem:        GkeHubFeatureMembershipConfigmanagementConfigSyncDeploymentOverridesContainersSchema(),
+			},
+
+			"deployment_name": {
+				Type:        schema.TypeString,
+				Optional:    true,
+				Description: "The name of the Deployment.",
+			},
+
+			"deployment_namespace": {
+				Type:        schema.TypeString,
+				Optional:    true,
+				Description: "The namespace of the Deployment.",
+			},
+		},
+	}
+}
+
+func GkeHubFeatureMembershipConfigmanagementConfigSyncDeploymentOverridesContainersSchema() *schema.Resource {
+	return &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			"container_name": {
+				Type:        schema.TypeString,
+				Optional:    true,
+				Description: "The name of the container.",
+			},
+
+			"cpu_limit": {
+				Type:        schema.TypeString,
+				Optional:    true,
+				Description: "The CPU limit of the container.",
+			},
+
+			"cpu_request": {
+				Type:        schema.TypeString,
+				Optional:    true,
+				Description: "The CPU request of the container.",
+			},
+
+			"memory_limit": {
+				Type:        schema.TypeString,
+				Optional:    true,
+				Description: "The memory limit of the container.",
+			},
+
+			"memory_request": {
+				Type:        schema.TypeString,
+				Optional:    true,
+				Description: "The memory request of the container.",
 			},
 		},
 	}
@@ -305,7 +398,7 @@ func GkeHubFeatureMembershipConfigmanagementHierarchyControllerSchema() *schema.
 			"enabled": {
 				Type:        schema.TypeBool,
 				Optional:    true,
-				Description: "Whether Hierarchy Controller is enabled in this cluster.",
+				Description: "**DEPRECATED** Configuring Hierarchy Controller through the configmanagement feature is no longer recommended. Use https://github.com/kubernetes-sigs/hierarchical-namespaces instead.",
 			},
 		},
 	}
@@ -402,6 +495,298 @@ func GkeHubFeatureMembershipMeshSchema() *schema.Resource {
 	}
 }
 
+func GkeHubFeatureMembershipPolicycontrollerSchema() *schema.Resource {
+	return &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			"policy_controller_hub_config": {
+				Type:        schema.TypeList,
+				Required:    true,
+				Description: "Policy Controller configuration for the cluster.",
+				MaxItems:    1,
+				Elem:        GkeHubFeatureMembershipPolicycontrollerPolicyControllerHubConfigSchema(),
+			},
+
+			"version": {
+				Type:        schema.TypeString,
+				Computed:    true,
+				Optional:    true,
+				Description: "Optional. Version of Policy Controller to install. Defaults to the latest version.",
+			},
+		},
+	}
+}
+
+func GkeHubFeatureMembershipPolicycontrollerPolicyControllerHubConfigSchema() *schema.Resource {
+	return &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			"audit_interval_seconds": {
+				Type:        schema.TypeInt,
+				Optional:    true,
+				Description: "Sets the interval for Policy Controller Audit Scans (in seconds). When set to 0, this disables audit functionality altogether.",
+			},
+
+			"constraint_violation_limit": {
+				Type:        schema.TypeInt,
+				Optional:    true,
+				Description: "The maximum number of audit violations to be stored in a constraint. If not set, the internal default of 20 will be used.",
+			},
+
+			"deployment_configs": {
+				Type:        schema.TypeSet,
+				Computed:    true,
+				Optional:    true,
+				Description: "Map of deployment configs to deployments (\"admission\", \"audit\", \"mutation\").",
+				Elem:        GkeHubFeatureMembershipPolicycontrollerPolicyControllerHubConfigDeploymentConfigsSchema(),
+				Set:         schema.HashResource(GkeHubFeatureMembershipPolicycontrollerPolicyControllerHubConfigDeploymentConfigsSchema()),
+			},
+
+			"exemptable_namespaces": {
+				Type:        schema.TypeList,
+				Optional:    true,
+				Description: "The set of namespaces that are excluded from Policy Controller checks. Namespaces do not need to currently exist on the cluster.",
+				Elem:        &schema.Schema{Type: schema.TypeString},
+			},
+
+			"install_spec": {
+				Type:        schema.TypeString,
+				Optional:    true,
+				Description: "Configures the mode of the Policy Controller installation. Possible values: INSTALL_SPEC_UNSPECIFIED, INSTALL_SPEC_NOT_INSTALLED, INSTALL_SPEC_ENABLED, INSTALL_SPEC_SUSPENDED, INSTALL_SPEC_DETACHED",
+			},
+
+			"log_denies_enabled": {
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Description: "Logs all denies and dry run failures.",
+			},
+
+			"monitoring": {
+				Type:        schema.TypeList,
+				Computed:    true,
+				Optional:    true,
+				Description: "Specifies the backends Policy Controller should export metrics to. For example, to specify metrics should be exported to Cloud Monitoring and Prometheus, specify backends: [\"cloudmonitoring\", \"prometheus\"]. Default: [\"cloudmonitoring\", \"prometheus\"]",
+				MaxItems:    1,
+				Elem:        GkeHubFeatureMembershipPolicycontrollerPolicyControllerHubConfigMonitoringSchema(),
+			},
+
+			"mutation_enabled": {
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Description: "Enables the ability to mutate resources using Policy Controller.",
+			},
+
+			"policy_content": {
+				Type:        schema.TypeList,
+				Computed:    true,
+				Optional:    true,
+				Description: "Specifies the desired policy content on the cluster.",
+				MaxItems:    1,
+				Elem:        GkeHubFeatureMembershipPolicycontrollerPolicyControllerHubConfigPolicyContentSchema(),
+			},
+
+			"referential_rules_enabled": {
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Description: "Enables the ability to use Constraint Templates that reference to objects other than the object currently being evaluated.",
+			},
+		},
+	}
+}
+
+func GkeHubFeatureMembershipPolicycontrollerPolicyControllerHubConfigDeploymentConfigsSchema() *schema.Resource {
+	return &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			"component_name": {
+				Type:        schema.TypeString,
+				Required:    true,
+				Description: "The name for the key in the map for which this object is mapped to in the API",
+			},
+
+			"container_resources": {
+				Type:        schema.TypeList,
+				Optional:    true,
+				Description: "Container resource requirements.",
+				MaxItems:    1,
+				Elem:        GkeHubFeatureMembershipPolicycontrollerPolicyControllerHubConfigDeploymentConfigsContainerResourcesSchema(),
+			},
+
+			"pod_affinity": {
+				Type:        schema.TypeString,
+				Optional:    true,
+				Description: "Pod affinity configuration. Possible values: AFFINITY_UNSPECIFIED, NO_AFFINITY, ANTI_AFFINITY",
+			},
+
+			"pod_tolerations": {
+				Type:        schema.TypeList,
+				Optional:    true,
+				Description: "Pod tolerations of node taints.",
+				Elem:        GkeHubFeatureMembershipPolicycontrollerPolicyControllerHubConfigDeploymentConfigsPodTolerationsSchema(),
+			},
+
+			"replica_count": {
+				Type:        schema.TypeInt,
+				Optional:    true,
+				Description: "Pod replica count.",
+			},
+		},
+	}
+}
+
+func GkeHubFeatureMembershipPolicycontrollerPolicyControllerHubConfigDeploymentConfigsContainerResourcesSchema() *schema.Resource {
+	return &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			"limits": {
+				Type:        schema.TypeList,
+				Optional:    true,
+				Description: "Limits describes the maximum amount of compute resources allowed for use by the running container.",
+				MaxItems:    1,
+				Elem:        GkeHubFeatureMembershipPolicycontrollerPolicyControllerHubConfigDeploymentConfigsContainerResourcesLimitsSchema(),
+			},
+
+			"requests": {
+				Type:        schema.TypeList,
+				Optional:    true,
+				Description: "Requests describes the amount of compute resources reserved for the container by the kube-scheduler.",
+				MaxItems:    1,
+				Elem:        GkeHubFeatureMembershipPolicycontrollerPolicyControllerHubConfigDeploymentConfigsContainerResourcesRequestsSchema(),
+			},
+		},
+	}
+}
+
+func GkeHubFeatureMembershipPolicycontrollerPolicyControllerHubConfigDeploymentConfigsContainerResourcesLimitsSchema() *schema.Resource {
+	return &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			"cpu": {
+				Type:        schema.TypeString,
+				Optional:    true,
+				Description: "CPU requirement expressed in Kubernetes resource units.",
+			},
+
+			"memory": {
+				Type:        schema.TypeString,
+				Optional:    true,
+				Description: "Memory requirement expressed in Kubernetes resource units.",
+			},
+		},
+	}
+}
+
+func GkeHubFeatureMembershipPolicycontrollerPolicyControllerHubConfigDeploymentConfigsContainerResourcesRequestsSchema() *schema.Resource {
+	return &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			"cpu": {
+				Type:        schema.TypeString,
+				Optional:    true,
+				Description: "CPU requirement expressed in Kubernetes resource units.",
+			},
+
+			"memory": {
+				Type:        schema.TypeString,
+				Optional:    true,
+				Description: "Memory requirement expressed in Kubernetes resource units.",
+			},
+		},
+	}
+}
+
+func GkeHubFeatureMembershipPolicycontrollerPolicyControllerHubConfigDeploymentConfigsPodTolerationsSchema() *schema.Resource {
+	return &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			"effect": {
+				Type:        schema.TypeString,
+				Optional:    true,
+				Description: "Matches a taint effect.",
+			},
+
+			"key": {
+				Type:        schema.TypeString,
+				Optional:    true,
+				Description: "Matches a taint key (not necessarily unique).",
+			},
+
+			"operator": {
+				Type:        schema.TypeString,
+				Optional:    true,
+				Description: "Matches a taint operator.",
+			},
+
+			"value": {
+				Type:        schema.TypeString,
+				Optional:    true,
+				Description: "Matches a taint value.",
+			},
+		},
+	}
+}
+
+func GkeHubFeatureMembershipPolicycontrollerPolicyControllerHubConfigMonitoringSchema() *schema.Resource {
+	return &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			"backends": {
+				Type:        schema.TypeList,
+				Computed:    true,
+				Optional:    true,
+				Description: " Specifies the list of backends Policy Controller will export to. Specifying an empty value `[]` disables metrics export.",
+				Elem:        &schema.Schema{Type: schema.TypeString},
+			},
+		},
+	}
+}
+
+func GkeHubFeatureMembershipPolicycontrollerPolicyControllerHubConfigPolicyContentSchema() *schema.Resource {
+	return &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			"bundles": {
+				Type:        schema.TypeSet,
+				Optional:    true,
+				Description: "map of bundle name to BundleInstallSpec. The bundle name maps to the `bundleName` key in the `policycontroller.gke.io/constraintData` annotation on a constraint.",
+				Elem:        GkeHubFeatureMembershipPolicycontrollerPolicyControllerHubConfigPolicyContentBundlesSchema(),
+				Set:         schema.HashResource(GkeHubFeatureMembershipPolicycontrollerPolicyControllerHubConfigPolicyContentBundlesSchema()),
+			},
+
+			"template_library": {
+				Type:        schema.TypeList,
+				Computed:    true,
+				Optional:    true,
+				Description: "Configures the installation of the Template Library.",
+				MaxItems:    1,
+				Elem:        GkeHubFeatureMembershipPolicycontrollerPolicyControllerHubConfigPolicyContentTemplateLibrarySchema(),
+			},
+		},
+	}
+}
+
+func GkeHubFeatureMembershipPolicycontrollerPolicyControllerHubConfigPolicyContentBundlesSchema() *schema.Resource {
+	return &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			"bundle_name": {
+				Type:        schema.TypeString,
+				Required:    true,
+				Description: "The name for the key in the map for which this object is mapped to in the API",
+			},
+
+			"exempted_namespaces": {
+				Type:        schema.TypeList,
+				Optional:    true,
+				Description: "The set of namespaces to be exempted from the bundle.",
+				Elem:        &schema.Schema{Type: schema.TypeString},
+			},
+		},
+	}
+}
+
+func GkeHubFeatureMembershipPolicycontrollerPolicyControllerHubConfigPolicyContentTemplateLibrarySchema() *schema.Resource {
+	return &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			"installation": {
+				Type:        schema.TypeString,
+				Optional:    true,
+				Description: "Configures the manner in which the template library is installed on the cluster. Possible values: INSTALLATION_UNSPECIFIED, NOT_INSTALLED, ALL",
+			},
+		},
+	}
+}
+
 func resourceGkeHubFeatureMembershipCreate(d *schema.ResourceData, meta interface{}) error {
 	config := meta.(*transport_tpg.Config)
 	project, err := tpgresource.GetProject(d, config)
@@ -410,12 +795,14 @@ func resourceGkeHubFeatureMembershipCreate(d *schema.ResourceData, meta interfac
 	}
 
 	obj := &gkehub.FeatureMembership{
-		Feature:          dcl.String(d.Get("feature").(string)),
-		Location:         dcl.String(d.Get("location").(string)),
-		Membership:       dcl.String(d.Get("membership").(string)),
-		Configmanagement: expandGkeHubFeatureMembershipConfigmanagement(d.Get("configmanagement")),
-		Mesh:             expandGkeHubFeatureMembershipMesh(d.Get("mesh")),
-		Project:          dcl.String(project),
+		Feature:            dcl.String(d.Get("feature").(string)),
+		Location:           dcl.String(d.Get("location").(string)),
+		Membership:         dcl.String(d.Get("membership").(string)),
+		Configmanagement:   expandGkeHubFeatureMembershipConfigmanagement(d.Get("configmanagement")),
+		MembershipLocation: dcl.String(d.Get("membership_location").(string)),
+		Mesh:               expandGkeHubFeatureMembershipMesh(d.Get("mesh")),
+		Policycontroller:   expandGkeHubFeatureMembershipPolicycontroller(d.Get("policycontroller")),
+		Project:            dcl.String(project),
 	}
 	lockName, err := tpgresource.ReplaceVarsForId(d, config, "{{project}}/{{location}}/{{feature}}")
 	if err != nil {
@@ -469,12 +856,14 @@ func resourceGkeHubFeatureMembershipRead(d *schema.ResourceData, meta interface{
 	}
 
 	obj := &gkehub.FeatureMembership{
-		Feature:          dcl.String(d.Get("feature").(string)),
-		Location:         dcl.String(d.Get("location").(string)),
-		Membership:       dcl.String(d.Get("membership").(string)),
-		Configmanagement: expandGkeHubFeatureMembershipConfigmanagement(d.Get("configmanagement")),
-		Mesh:             expandGkeHubFeatureMembershipMesh(d.Get("mesh")),
-		Project:          dcl.String(project),
+		Feature:            dcl.String(d.Get("feature").(string)),
+		Location:           dcl.String(d.Get("location").(string)),
+		Membership:         dcl.String(d.Get("membership").(string)),
+		Configmanagement:   expandGkeHubFeatureMembershipConfigmanagement(d.Get("configmanagement")),
+		MembershipLocation: dcl.String(d.Get("membership_location").(string)),
+		Mesh:               expandGkeHubFeatureMembershipMesh(d.Get("mesh")),
+		Policycontroller:   expandGkeHubFeatureMembershipPolicycontroller(d.Get("policycontroller")),
+		Project:            dcl.String(project),
 	}
 
 	userAgent, err := tpgresource.GenerateUserAgentString(d, config.UserAgent)
@@ -511,8 +900,14 @@ func resourceGkeHubFeatureMembershipRead(d *schema.ResourceData, meta interface{
 	if err = d.Set("configmanagement", flattenGkeHubFeatureMembershipConfigmanagement(res.Configmanagement)); err != nil {
 		return fmt.Errorf("error setting configmanagement in state: %s", err)
 	}
+	if err = d.Set("membership_location", res.MembershipLocation); err != nil {
+		return fmt.Errorf("error setting membership_location in state: %s", err)
+	}
 	if err = d.Set("mesh", flattenGkeHubFeatureMembershipMesh(res.Mesh)); err != nil {
 		return fmt.Errorf("error setting mesh in state: %s", err)
+	}
+	if err = d.Set("policycontroller", flattenGkeHubFeatureMembershipPolicycontroller(res.Policycontroller)); err != nil {
+		return fmt.Errorf("error setting policycontroller in state: %s", err)
 	}
 	if err = d.Set("project", res.Project); err != nil {
 		return fmt.Errorf("error setting project in state: %s", err)
@@ -528,12 +923,14 @@ func resourceGkeHubFeatureMembershipUpdate(d *schema.ResourceData, meta interfac
 	}
 
 	obj := &gkehub.FeatureMembership{
-		Feature:          dcl.String(d.Get("feature").(string)),
-		Location:         dcl.String(d.Get("location").(string)),
-		Membership:       dcl.String(d.Get("membership").(string)),
-		Configmanagement: expandGkeHubFeatureMembershipConfigmanagement(d.Get("configmanagement")),
-		Mesh:             expandGkeHubFeatureMembershipMesh(d.Get("mesh")),
-		Project:          dcl.String(project),
+		Feature:            dcl.String(d.Get("feature").(string)),
+		Location:           dcl.String(d.Get("location").(string)),
+		Membership:         dcl.String(d.Get("membership").(string)),
+		Configmanagement:   expandGkeHubFeatureMembershipConfigmanagement(d.Get("configmanagement")),
+		MembershipLocation: dcl.String(d.Get("membership_location").(string)),
+		Mesh:               expandGkeHubFeatureMembershipMesh(d.Get("mesh")),
+		Policycontroller:   expandGkeHubFeatureMembershipPolicycontroller(d.Get("policycontroller")),
+		Project:            dcl.String(project),
 	}
 	lockName, err := tpgresource.ReplaceVarsForId(d, config, "{{project}}/{{location}}/{{feature}}")
 	if err != nil {
@@ -583,12 +980,14 @@ func resourceGkeHubFeatureMembershipDelete(d *schema.ResourceData, meta interfac
 	}
 
 	obj := &gkehub.FeatureMembership{
-		Feature:          dcl.String(d.Get("feature").(string)),
-		Location:         dcl.String(d.Get("location").(string)),
-		Membership:       dcl.String(d.Get("membership").(string)),
-		Configmanagement: expandGkeHubFeatureMembershipConfigmanagement(d.Get("configmanagement")),
-		Mesh:             expandGkeHubFeatureMembershipMesh(d.Get("mesh")),
-		Project:          dcl.String(project),
+		Feature:            dcl.String(d.Get("feature").(string)),
+		Location:           dcl.String(d.Get("location").(string)),
+		Membership:         dcl.String(d.Get("membership").(string)),
+		Configmanagement:   expandGkeHubFeatureMembershipConfigmanagement(d.Get("configmanagement")),
+		MembershipLocation: dcl.String(d.Get("membership_location").(string)),
+		Mesh:               expandGkeHubFeatureMembershipMesh(d.Get("mesh")),
+		Policycontroller:   expandGkeHubFeatureMembershipPolicycontroller(d.Get("policycontroller")),
+		Project:            dcl.String(project),
 	}
 	lockName, err := tpgresource.ReplaceVarsForId(d, config, "{{project}}/{{location}}/{{feature}}")
 	if err != nil {
@@ -653,9 +1052,9 @@ func expandGkeHubFeatureMembershipConfigmanagement(o interface{}) *gkehub.Featur
 	}
 	obj := objArr[0].(map[string]interface{})
 	return &gkehub.FeatureMembershipConfigmanagement{
-		Binauthz:            expandGkeHubFeatureMembershipConfigmanagementBinauthz(obj["binauthz"]),
 		ConfigSync:          expandGkeHubFeatureMembershipConfigmanagementConfigSync(obj["config_sync"]),
 		HierarchyController: expandGkeHubFeatureMembershipConfigmanagementHierarchyController(obj["hierarchy_controller"]),
+		Management:          gkehub.FeatureMembershipConfigmanagementManagementEnumRef(obj["management"].(string)),
 		PolicyController:    expandGkeHubFeatureMembershipConfigmanagementPolicyController(obj["policy_controller"]),
 		Version:             dcl.StringOrNil(obj["version"].(string)),
 	}
@@ -666,37 +1065,11 @@ func flattenGkeHubFeatureMembershipConfigmanagement(obj *gkehub.FeatureMembershi
 		return nil
 	}
 	transformed := map[string]interface{}{
-		"binauthz":             flattenGkeHubFeatureMembershipConfigmanagementBinauthz(obj.Binauthz),
 		"config_sync":          flattenGkeHubFeatureMembershipConfigmanagementConfigSync(obj.ConfigSync),
 		"hierarchy_controller": flattenGkeHubFeatureMembershipConfigmanagementHierarchyController(obj.HierarchyController),
+		"management":           obj.Management,
 		"policy_controller":    flattenGkeHubFeatureMembershipConfigmanagementPolicyController(obj.PolicyController),
 		"version":              obj.Version,
-	}
-
-	return []interface{}{transformed}
-
-}
-
-func expandGkeHubFeatureMembershipConfigmanagementBinauthz(o interface{}) *gkehub.FeatureMembershipConfigmanagementBinauthz {
-	if o == nil {
-		return gkehub.EmptyFeatureMembershipConfigmanagementBinauthz
-	}
-	objArr := o.([]interface{})
-	if len(objArr) == 0 || objArr[0] == nil {
-		return gkehub.EmptyFeatureMembershipConfigmanagementBinauthz
-	}
-	obj := objArr[0].(map[string]interface{})
-	return &gkehub.FeatureMembershipConfigmanagementBinauthz{
-		Enabled: dcl.Bool(obj["enabled"].(bool)),
-	}
-}
-
-func flattenGkeHubFeatureMembershipConfigmanagementBinauthz(obj *gkehub.FeatureMembershipConfigmanagementBinauthz) interface{} {
-	if obj == nil || obj.Empty() {
-		return nil
-	}
-	transformed := map[string]interface{}{
-		"enabled": obj.Enabled,
 	}
 
 	return []interface{}{transformed}
@@ -713,10 +1086,14 @@ func expandGkeHubFeatureMembershipConfigmanagementConfigSync(o interface{}) *gke
 	}
 	obj := objArr[0].(map[string]interface{})
 	return &gkehub.FeatureMembershipConfigmanagementConfigSync{
-		Git:          expandGkeHubFeatureMembershipConfigmanagementConfigSyncGit(obj["git"]),
-		Oci:          expandGkeHubFeatureMembershipConfigmanagementConfigSyncOci(obj["oci"]),
-		PreventDrift: dcl.Bool(obj["prevent_drift"].(bool)),
-		SourceFormat: dcl.String(obj["source_format"].(string)),
+		DeploymentOverrides:           expandGkeHubFeatureMembershipConfigmanagementConfigSyncDeploymentOverridesArray(obj["deployment_overrides"]),
+		Enabled:                       dcl.Bool(obj["enabled"].(bool)),
+		Git:                           expandGkeHubFeatureMembershipConfigmanagementConfigSyncGit(obj["git"]),
+		MetricsGcpServiceAccountEmail: dcl.String(obj["metrics_gcp_service_account_email"].(string)),
+		Oci:                           expandGkeHubFeatureMembershipConfigmanagementConfigSyncOci(obj["oci"]),
+		PreventDrift:                  dcl.Bool(obj["prevent_drift"].(bool)),
+		SourceFormat:                  dcl.String(obj["source_format"].(string)),
+		StopSyncing:                   dcl.Bool(obj["stop_syncing"].(bool)),
 	}
 }
 
@@ -725,13 +1102,139 @@ func flattenGkeHubFeatureMembershipConfigmanagementConfigSync(obj *gkehub.Featur
 		return nil
 	}
 	transformed := map[string]interface{}{
-		"git":           flattenGkeHubFeatureMembershipConfigmanagementConfigSyncGit(obj.Git),
-		"oci":           flattenGkeHubFeatureMembershipConfigmanagementConfigSyncOci(obj.Oci),
-		"prevent_drift": obj.PreventDrift,
-		"source_format": obj.SourceFormat,
+		"deployment_overrides":              flattenGkeHubFeatureMembershipConfigmanagementConfigSyncDeploymentOverridesArray(obj.DeploymentOverrides),
+		"enabled":                           obj.Enabled,
+		"git":                               flattenGkeHubFeatureMembershipConfigmanagementConfigSyncGit(obj.Git),
+		"metrics_gcp_service_account_email": obj.MetricsGcpServiceAccountEmail,
+		"oci":                               flattenGkeHubFeatureMembershipConfigmanagementConfigSyncOci(obj.Oci),
+		"prevent_drift":                     obj.PreventDrift,
+		"source_format":                     obj.SourceFormat,
+		"stop_syncing":                      obj.StopSyncing,
 	}
 
 	return []interface{}{transformed}
+
+}
+func expandGkeHubFeatureMembershipConfigmanagementConfigSyncDeploymentOverridesArray(o interface{}) []gkehub.FeatureMembershipConfigmanagementConfigSyncDeploymentOverrides {
+	if o == nil {
+		return make([]gkehub.FeatureMembershipConfigmanagementConfigSyncDeploymentOverrides, 0)
+	}
+
+	objs := o.([]interface{})
+	if len(objs) == 0 || objs[0] == nil {
+		return make([]gkehub.FeatureMembershipConfigmanagementConfigSyncDeploymentOverrides, 0)
+	}
+
+	items := make([]gkehub.FeatureMembershipConfigmanagementConfigSyncDeploymentOverrides, 0, len(objs))
+	for _, item := range objs {
+		i := expandGkeHubFeatureMembershipConfigmanagementConfigSyncDeploymentOverrides(item)
+		items = append(items, *i)
+	}
+
+	return items
+}
+
+func expandGkeHubFeatureMembershipConfigmanagementConfigSyncDeploymentOverrides(o interface{}) *gkehub.FeatureMembershipConfigmanagementConfigSyncDeploymentOverrides {
+	if o == nil {
+		return gkehub.EmptyFeatureMembershipConfigmanagementConfigSyncDeploymentOverrides
+	}
+
+	obj := o.(map[string]interface{})
+	return &gkehub.FeatureMembershipConfigmanagementConfigSyncDeploymentOverrides{
+		Containers:          expandGkeHubFeatureMembershipConfigmanagementConfigSyncDeploymentOverridesContainersArray(obj["containers"]),
+		DeploymentName:      dcl.String(obj["deployment_name"].(string)),
+		DeploymentNamespace: dcl.String(obj["deployment_namespace"].(string)),
+	}
+}
+
+func flattenGkeHubFeatureMembershipConfigmanagementConfigSyncDeploymentOverridesArray(objs []gkehub.FeatureMembershipConfigmanagementConfigSyncDeploymentOverrides) []interface{} {
+	if objs == nil {
+		return nil
+	}
+
+	items := []interface{}{}
+	for _, item := range objs {
+		i := flattenGkeHubFeatureMembershipConfigmanagementConfigSyncDeploymentOverrides(&item)
+		items = append(items, i)
+	}
+
+	return items
+}
+
+func flattenGkeHubFeatureMembershipConfigmanagementConfigSyncDeploymentOverrides(obj *gkehub.FeatureMembershipConfigmanagementConfigSyncDeploymentOverrides) interface{} {
+	if obj == nil || obj.Empty() {
+		return nil
+	}
+	transformed := map[string]interface{}{
+		"containers":           flattenGkeHubFeatureMembershipConfigmanagementConfigSyncDeploymentOverridesContainersArray(obj.Containers),
+		"deployment_name":      obj.DeploymentName,
+		"deployment_namespace": obj.DeploymentNamespace,
+	}
+
+	return transformed
+
+}
+func expandGkeHubFeatureMembershipConfigmanagementConfigSyncDeploymentOverridesContainersArray(o interface{}) []gkehub.FeatureMembershipConfigmanagementConfigSyncDeploymentOverridesContainers {
+	if o == nil {
+		return make([]gkehub.FeatureMembershipConfigmanagementConfigSyncDeploymentOverridesContainers, 0)
+	}
+
+	objs := o.([]interface{})
+	if len(objs) == 0 || objs[0] == nil {
+		return make([]gkehub.FeatureMembershipConfigmanagementConfigSyncDeploymentOverridesContainers, 0)
+	}
+
+	items := make([]gkehub.FeatureMembershipConfigmanagementConfigSyncDeploymentOverridesContainers, 0, len(objs))
+	for _, item := range objs {
+		i := expandGkeHubFeatureMembershipConfigmanagementConfigSyncDeploymentOverridesContainers(item)
+		items = append(items, *i)
+	}
+
+	return items
+}
+
+func expandGkeHubFeatureMembershipConfigmanagementConfigSyncDeploymentOverridesContainers(o interface{}) *gkehub.FeatureMembershipConfigmanagementConfigSyncDeploymentOverridesContainers {
+	if o == nil {
+		return gkehub.EmptyFeatureMembershipConfigmanagementConfigSyncDeploymentOverridesContainers
+	}
+
+	obj := o.(map[string]interface{})
+	return &gkehub.FeatureMembershipConfigmanagementConfigSyncDeploymentOverridesContainers{
+		ContainerName: dcl.String(obj["container_name"].(string)),
+		CpuLimit:      dcl.String(obj["cpu_limit"].(string)),
+		CpuRequest:    dcl.String(obj["cpu_request"].(string)),
+		MemoryLimit:   dcl.String(obj["memory_limit"].(string)),
+		MemoryRequest: dcl.String(obj["memory_request"].(string)),
+	}
+}
+
+func flattenGkeHubFeatureMembershipConfigmanagementConfigSyncDeploymentOverridesContainersArray(objs []gkehub.FeatureMembershipConfigmanagementConfigSyncDeploymentOverridesContainers) []interface{} {
+	if objs == nil {
+		return nil
+	}
+
+	items := []interface{}{}
+	for _, item := range objs {
+		i := flattenGkeHubFeatureMembershipConfigmanagementConfigSyncDeploymentOverridesContainers(&item)
+		items = append(items, i)
+	}
+
+	return items
+}
+
+func flattenGkeHubFeatureMembershipConfigmanagementConfigSyncDeploymentOverridesContainers(obj *gkehub.FeatureMembershipConfigmanagementConfigSyncDeploymentOverridesContainers) interface{} {
+	if obj == nil || obj.Empty() {
+		return nil
+	}
+	transformed := map[string]interface{}{
+		"container_name": obj.ContainerName,
+		"cpu_limit":      obj.CpuLimit,
+		"cpu_request":    obj.CpuRequest,
+		"memory_limit":   obj.MemoryLimit,
+		"memory_request": obj.MemoryRequest,
+	}
+
+	return transformed
 
 }
 
@@ -932,6 +1435,434 @@ func flattenGkeHubFeatureMembershipMesh(obj *gkehub.FeatureMembershipMesh) inter
 	return []interface{}{transformed}
 
 }
+
+func expandGkeHubFeatureMembershipPolicycontroller(o interface{}) *gkehub.FeatureMembershipPolicycontroller {
+	if o == nil {
+		return gkehub.EmptyFeatureMembershipPolicycontroller
+	}
+	objArr := o.([]interface{})
+	if len(objArr) == 0 || objArr[0] == nil {
+		return gkehub.EmptyFeatureMembershipPolicycontroller
+	}
+	obj := objArr[0].(map[string]interface{})
+	return &gkehub.FeatureMembershipPolicycontroller{
+		PolicyControllerHubConfig: expandGkeHubFeatureMembershipPolicycontrollerPolicyControllerHubConfig(obj["policy_controller_hub_config"]),
+		Version:                   dcl.StringOrNil(obj["version"].(string)),
+	}
+}
+
+func flattenGkeHubFeatureMembershipPolicycontroller(obj *gkehub.FeatureMembershipPolicycontroller) interface{} {
+	if obj == nil || obj.Empty() {
+		return nil
+	}
+	transformed := map[string]interface{}{
+		"policy_controller_hub_config": flattenGkeHubFeatureMembershipPolicycontrollerPolicyControllerHubConfig(obj.PolicyControllerHubConfig),
+		"version":                      obj.Version,
+	}
+
+	return []interface{}{transformed}
+
+}
+
+func expandGkeHubFeatureMembershipPolicycontrollerPolicyControllerHubConfig(o interface{}) *gkehub.FeatureMembershipPolicycontrollerPolicyControllerHubConfig {
+	if o == nil {
+		return gkehub.EmptyFeatureMembershipPolicycontrollerPolicyControllerHubConfig
+	}
+	objArr := o.([]interface{})
+	if len(objArr) == 0 || objArr[0] == nil {
+		return gkehub.EmptyFeatureMembershipPolicycontrollerPolicyControllerHubConfig
+	}
+	obj := objArr[0].(map[string]interface{})
+	return &gkehub.FeatureMembershipPolicycontrollerPolicyControllerHubConfig{
+		AuditIntervalSeconds:     dcl.Int64(int64(obj["audit_interval_seconds"].(int))),
+		ConstraintViolationLimit: dcl.Int64(int64(obj["constraint_violation_limit"].(int))),
+		DeploymentConfigs:        expandGkeHubFeatureMembershipPolicycontrollerPolicyControllerHubConfigDeploymentConfigsMap(obj["deployment_configs"]),
+		ExemptableNamespaces:     tpgdclresource.ExpandStringArray(obj["exemptable_namespaces"]),
+		InstallSpec:              gkehub.FeatureMembershipPolicycontrollerPolicyControllerHubConfigInstallSpecEnumRef(obj["install_spec"].(string)),
+		LogDeniesEnabled:         dcl.Bool(obj["log_denies_enabled"].(bool)),
+		Monitoring:               expandGkeHubFeatureMembershipPolicycontrollerPolicyControllerHubConfigMonitoring(obj["monitoring"]),
+		MutationEnabled:          dcl.Bool(obj["mutation_enabled"].(bool)),
+		PolicyContent:            expandGkeHubFeatureMembershipPolicycontrollerPolicyControllerHubConfigPolicyContent(obj["policy_content"]),
+		ReferentialRulesEnabled:  dcl.Bool(obj["referential_rules_enabled"].(bool)),
+	}
+}
+
+func flattenGkeHubFeatureMembershipPolicycontrollerPolicyControllerHubConfig(obj *gkehub.FeatureMembershipPolicycontrollerPolicyControllerHubConfig) interface{} {
+	if obj == nil || obj.Empty() {
+		return nil
+	}
+	transformed := map[string]interface{}{
+		"audit_interval_seconds":     obj.AuditIntervalSeconds,
+		"constraint_violation_limit": obj.ConstraintViolationLimit,
+		"deployment_configs":         flattenGkeHubFeatureMembershipPolicycontrollerPolicyControllerHubConfigDeploymentConfigsMap(obj.DeploymentConfigs),
+		"exemptable_namespaces":      obj.ExemptableNamespaces,
+		"install_spec":               obj.InstallSpec,
+		"log_denies_enabled":         obj.LogDeniesEnabled,
+		"monitoring":                 flattenGkeHubFeatureMembershipPolicycontrollerPolicyControllerHubConfigMonitoring(obj.Monitoring),
+		"mutation_enabled":           obj.MutationEnabled,
+		"policy_content":             flattenGkeHubFeatureMembershipPolicycontrollerPolicyControllerHubConfigPolicyContent(obj.PolicyContent),
+		"referential_rules_enabled":  obj.ReferentialRulesEnabled,
+	}
+
+	return []interface{}{transformed}
+
+}
+
+func expandGkeHubFeatureMembershipPolicycontrollerPolicyControllerHubConfigDeploymentConfigsMap(o interface{}) map[string]gkehub.FeatureMembershipPolicycontrollerPolicyControllerHubConfigDeploymentConfigs {
+	if o == nil {
+		return nil
+	}
+
+	o = o.(*schema.Set).List()
+
+	objs := o.([]interface{})
+	if len(objs) == 0 || objs[0] == nil {
+		return nil
+	}
+
+	items := make(map[string]gkehub.FeatureMembershipPolicycontrollerPolicyControllerHubConfigDeploymentConfigs)
+	for _, item := range objs {
+		i := expandGkeHubFeatureMembershipPolicycontrollerPolicyControllerHubConfigDeploymentConfigs(item)
+		if item != nil {
+			items[item.(map[string]interface{})["component_name"].(string)] = *i
+		}
+	}
+
+	return items
+}
+
+func expandGkeHubFeatureMembershipPolicycontrollerPolicyControllerHubConfigDeploymentConfigs(o interface{}) *gkehub.FeatureMembershipPolicycontrollerPolicyControllerHubConfigDeploymentConfigs {
+	if o == nil {
+		return nil
+	}
+
+	obj := o.(map[string]interface{})
+	return &gkehub.FeatureMembershipPolicycontrollerPolicyControllerHubConfigDeploymentConfigs{
+		ContainerResources: expandGkeHubFeatureMembershipPolicycontrollerPolicyControllerHubConfigDeploymentConfigsContainerResources(obj["container_resources"]),
+		PodAffinity:        gkehub.FeatureMembershipPolicycontrollerPolicyControllerHubConfigDeploymentConfigsPodAffinityEnumRef(obj["pod_affinity"].(string)),
+		PodTolerations:     expandGkeHubFeatureMembershipPolicycontrollerPolicyControllerHubConfigDeploymentConfigsPodTolerationsArray(obj["pod_tolerations"]),
+		ReplicaCount:       dcl.Int64(int64(obj["replica_count"].(int))),
+	}
+}
+
+func flattenGkeHubFeatureMembershipPolicycontrollerPolicyControllerHubConfigDeploymentConfigsMap(objs map[string]gkehub.FeatureMembershipPolicycontrollerPolicyControllerHubConfigDeploymentConfigs) []interface{} {
+	if objs == nil {
+		return nil
+	}
+
+	items := []interface{}{}
+	for name, item := range objs {
+		i := flattenGkeHubFeatureMembershipPolicycontrollerPolicyControllerHubConfigDeploymentConfigs(&item, name)
+		items = append(items, i)
+	}
+
+	return items
+}
+
+func flattenGkeHubFeatureMembershipPolicycontrollerPolicyControllerHubConfigDeploymentConfigs(obj *gkehub.FeatureMembershipPolicycontrollerPolicyControllerHubConfigDeploymentConfigs, name string) interface{} {
+	if obj == nil {
+		return nil
+	}
+	transformed := map[string]interface{}{
+		"container_resources": flattenGkeHubFeatureMembershipPolicycontrollerPolicyControllerHubConfigDeploymentConfigsContainerResources(obj.ContainerResources),
+		"pod_affinity":        obj.PodAffinity,
+		"pod_tolerations":     flattenGkeHubFeatureMembershipPolicycontrollerPolicyControllerHubConfigDeploymentConfigsPodTolerationsArray(obj.PodTolerations),
+		"replica_count":       obj.ReplicaCount,
+	}
+
+	transformed["component_name"] = name
+
+	return transformed
+
+}
+
+func expandGkeHubFeatureMembershipPolicycontrollerPolicyControllerHubConfigDeploymentConfigsContainerResources(o interface{}) *gkehub.FeatureMembershipPolicycontrollerPolicyControllerHubConfigDeploymentConfigsContainerResources {
+	if o == nil {
+		return gkehub.EmptyFeatureMembershipPolicycontrollerPolicyControllerHubConfigDeploymentConfigsContainerResources
+	}
+	objArr := o.([]interface{})
+	if len(objArr) == 0 || objArr[0] == nil {
+		return gkehub.EmptyFeatureMembershipPolicycontrollerPolicyControllerHubConfigDeploymentConfigsContainerResources
+	}
+	obj := objArr[0].(map[string]interface{})
+	return &gkehub.FeatureMembershipPolicycontrollerPolicyControllerHubConfigDeploymentConfigsContainerResources{
+		Limits:   expandGkeHubFeatureMembershipPolicycontrollerPolicyControllerHubConfigDeploymentConfigsContainerResourcesLimits(obj["limits"]),
+		Requests: expandGkeHubFeatureMembershipPolicycontrollerPolicyControllerHubConfigDeploymentConfigsContainerResourcesRequests(obj["requests"]),
+	}
+}
+
+func flattenGkeHubFeatureMembershipPolicycontrollerPolicyControllerHubConfigDeploymentConfigsContainerResources(obj *gkehub.FeatureMembershipPolicycontrollerPolicyControllerHubConfigDeploymentConfigsContainerResources) interface{} {
+	if obj == nil || obj.Empty() {
+		return nil
+	}
+	transformed := map[string]interface{}{
+		"limits":   flattenGkeHubFeatureMembershipPolicycontrollerPolicyControllerHubConfigDeploymentConfigsContainerResourcesLimits(obj.Limits),
+		"requests": flattenGkeHubFeatureMembershipPolicycontrollerPolicyControllerHubConfigDeploymentConfigsContainerResourcesRequests(obj.Requests),
+	}
+
+	return []interface{}{transformed}
+
+}
+
+func expandGkeHubFeatureMembershipPolicycontrollerPolicyControllerHubConfigDeploymentConfigsContainerResourcesLimits(o interface{}) *gkehub.FeatureMembershipPolicycontrollerPolicyControllerHubConfigDeploymentConfigsContainerResourcesLimits {
+	if o == nil {
+		return gkehub.EmptyFeatureMembershipPolicycontrollerPolicyControllerHubConfigDeploymentConfigsContainerResourcesLimits
+	}
+	objArr := o.([]interface{})
+	if len(objArr) == 0 || objArr[0] == nil {
+		return gkehub.EmptyFeatureMembershipPolicycontrollerPolicyControllerHubConfigDeploymentConfigsContainerResourcesLimits
+	}
+	obj := objArr[0].(map[string]interface{})
+	return &gkehub.FeatureMembershipPolicycontrollerPolicyControllerHubConfigDeploymentConfigsContainerResourcesLimits{
+		Cpu:    dcl.String(obj["cpu"].(string)),
+		Memory: dcl.String(obj["memory"].(string)),
+	}
+}
+
+func flattenGkeHubFeatureMembershipPolicycontrollerPolicyControllerHubConfigDeploymentConfigsContainerResourcesLimits(obj *gkehub.FeatureMembershipPolicycontrollerPolicyControllerHubConfigDeploymentConfigsContainerResourcesLimits) interface{} {
+	if obj == nil || obj.Empty() {
+		return nil
+	}
+	transformed := map[string]interface{}{
+		"cpu":    obj.Cpu,
+		"memory": obj.Memory,
+	}
+
+	return []interface{}{transformed}
+
+}
+
+func expandGkeHubFeatureMembershipPolicycontrollerPolicyControllerHubConfigDeploymentConfigsContainerResourcesRequests(o interface{}) *gkehub.FeatureMembershipPolicycontrollerPolicyControllerHubConfigDeploymentConfigsContainerResourcesRequests {
+	if o == nil {
+		return gkehub.EmptyFeatureMembershipPolicycontrollerPolicyControllerHubConfigDeploymentConfigsContainerResourcesRequests
+	}
+	objArr := o.([]interface{})
+	if len(objArr) == 0 || objArr[0] == nil {
+		return gkehub.EmptyFeatureMembershipPolicycontrollerPolicyControllerHubConfigDeploymentConfigsContainerResourcesRequests
+	}
+	obj := objArr[0].(map[string]interface{})
+	return &gkehub.FeatureMembershipPolicycontrollerPolicyControllerHubConfigDeploymentConfigsContainerResourcesRequests{
+		Cpu:    dcl.String(obj["cpu"].(string)),
+		Memory: dcl.String(obj["memory"].(string)),
+	}
+}
+
+func flattenGkeHubFeatureMembershipPolicycontrollerPolicyControllerHubConfigDeploymentConfigsContainerResourcesRequests(obj *gkehub.FeatureMembershipPolicycontrollerPolicyControllerHubConfigDeploymentConfigsContainerResourcesRequests) interface{} {
+	if obj == nil || obj.Empty() {
+		return nil
+	}
+	transformed := map[string]interface{}{
+		"cpu":    obj.Cpu,
+		"memory": obj.Memory,
+	}
+
+	return []interface{}{transformed}
+
+}
+func expandGkeHubFeatureMembershipPolicycontrollerPolicyControllerHubConfigDeploymentConfigsPodTolerationsArray(o interface{}) []gkehub.FeatureMembershipPolicycontrollerPolicyControllerHubConfigDeploymentConfigsPodTolerations {
+	if o == nil {
+		return make([]gkehub.FeatureMembershipPolicycontrollerPolicyControllerHubConfigDeploymentConfigsPodTolerations, 0)
+	}
+
+	objs := o.([]interface{})
+	if len(objs) == 0 || objs[0] == nil {
+		return make([]gkehub.FeatureMembershipPolicycontrollerPolicyControllerHubConfigDeploymentConfigsPodTolerations, 0)
+	}
+
+	items := make([]gkehub.FeatureMembershipPolicycontrollerPolicyControllerHubConfigDeploymentConfigsPodTolerations, 0, len(objs))
+	for _, item := range objs {
+		i := expandGkeHubFeatureMembershipPolicycontrollerPolicyControllerHubConfigDeploymentConfigsPodTolerations(item)
+		items = append(items, *i)
+	}
+
+	return items
+}
+
+func expandGkeHubFeatureMembershipPolicycontrollerPolicyControllerHubConfigDeploymentConfigsPodTolerations(o interface{}) *gkehub.FeatureMembershipPolicycontrollerPolicyControllerHubConfigDeploymentConfigsPodTolerations {
+	if o == nil {
+		return gkehub.EmptyFeatureMembershipPolicycontrollerPolicyControllerHubConfigDeploymentConfigsPodTolerations
+	}
+
+	obj := o.(map[string]interface{})
+	return &gkehub.FeatureMembershipPolicycontrollerPolicyControllerHubConfigDeploymentConfigsPodTolerations{
+		Effect:   dcl.String(obj["effect"].(string)),
+		Key:      dcl.String(obj["key"].(string)),
+		Operator: dcl.String(obj["operator"].(string)),
+		Value:    dcl.String(obj["value"].(string)),
+	}
+}
+
+func flattenGkeHubFeatureMembershipPolicycontrollerPolicyControllerHubConfigDeploymentConfigsPodTolerationsArray(objs []gkehub.FeatureMembershipPolicycontrollerPolicyControllerHubConfigDeploymentConfigsPodTolerations) []interface{} {
+	if objs == nil {
+		return nil
+	}
+
+	items := []interface{}{}
+	for _, item := range objs {
+		i := flattenGkeHubFeatureMembershipPolicycontrollerPolicyControllerHubConfigDeploymentConfigsPodTolerations(&item)
+		items = append(items, i)
+	}
+
+	return items
+}
+
+func flattenGkeHubFeatureMembershipPolicycontrollerPolicyControllerHubConfigDeploymentConfigsPodTolerations(obj *gkehub.FeatureMembershipPolicycontrollerPolicyControllerHubConfigDeploymentConfigsPodTolerations) interface{} {
+	if obj == nil || obj.Empty() {
+		return nil
+	}
+	transformed := map[string]interface{}{
+		"effect":   obj.Effect,
+		"key":      obj.Key,
+		"operator": obj.Operator,
+		"value":    obj.Value,
+	}
+
+	return transformed
+
+}
+
+func expandGkeHubFeatureMembershipPolicycontrollerPolicyControllerHubConfigMonitoring(o interface{}) *gkehub.FeatureMembershipPolicycontrollerPolicyControllerHubConfigMonitoring {
+	if o == nil {
+		return nil
+	}
+	objArr := o.([]interface{})
+	if len(objArr) == 0 || objArr[0] == nil {
+		return nil
+	}
+	obj := objArr[0].(map[string]interface{})
+	return &gkehub.FeatureMembershipPolicycontrollerPolicyControllerHubConfigMonitoring{
+		Backends: expandGkeHubFeatureMembershipPolicycontrollerPolicyControllerHubConfigMonitoringBackendsArray(obj["backends"]),
+	}
+}
+
+func flattenGkeHubFeatureMembershipPolicycontrollerPolicyControllerHubConfigMonitoring(obj *gkehub.FeatureMembershipPolicycontrollerPolicyControllerHubConfigMonitoring) interface{} {
+	if obj == nil || obj.Empty() {
+		return nil
+	}
+	transformed := map[string]interface{}{
+		"backends": flattenGkeHubFeatureMembershipPolicycontrollerPolicyControllerHubConfigMonitoringBackendsArray(obj.Backends),
+	}
+
+	return []interface{}{transformed}
+
+}
+
+func expandGkeHubFeatureMembershipPolicycontrollerPolicyControllerHubConfigPolicyContent(o interface{}) *gkehub.FeatureMembershipPolicycontrollerPolicyControllerHubConfigPolicyContent {
+	if o == nil {
+		return nil
+	}
+	objArr := o.([]interface{})
+	if len(objArr) == 0 || objArr[0] == nil {
+		return nil
+	}
+	obj := objArr[0].(map[string]interface{})
+	return &gkehub.FeatureMembershipPolicycontrollerPolicyControllerHubConfigPolicyContent{
+		Bundles:         expandGkeHubFeatureMembershipPolicycontrollerPolicyControllerHubConfigPolicyContentBundlesMap(obj["bundles"]),
+		TemplateLibrary: expandGkeHubFeatureMembershipPolicycontrollerPolicyControllerHubConfigPolicyContentTemplateLibrary(obj["template_library"]),
+	}
+}
+
+func flattenGkeHubFeatureMembershipPolicycontrollerPolicyControllerHubConfigPolicyContent(obj *gkehub.FeatureMembershipPolicycontrollerPolicyControllerHubConfigPolicyContent) interface{} {
+	if obj == nil || obj.Empty() {
+		return nil
+	}
+	transformed := map[string]interface{}{
+		"bundles":          flattenGkeHubFeatureMembershipPolicycontrollerPolicyControllerHubConfigPolicyContentBundlesMap(obj.Bundles),
+		"template_library": flattenGkeHubFeatureMembershipPolicycontrollerPolicyControllerHubConfigPolicyContentTemplateLibrary(obj.TemplateLibrary),
+	}
+
+	return []interface{}{transformed}
+
+}
+
+func expandGkeHubFeatureMembershipPolicycontrollerPolicyControllerHubConfigPolicyContentBundlesMap(o interface{}) map[string]gkehub.FeatureMembershipPolicycontrollerPolicyControllerHubConfigPolicyContentBundles {
+	if o == nil {
+		return make(map[string]gkehub.FeatureMembershipPolicycontrollerPolicyControllerHubConfigPolicyContentBundles)
+	}
+
+	o = o.(*schema.Set).List()
+
+	objs := o.([]interface{})
+	if len(objs) == 0 || objs[0] == nil {
+		return make(map[string]gkehub.FeatureMembershipPolicycontrollerPolicyControllerHubConfigPolicyContentBundles)
+	}
+
+	items := make(map[string]gkehub.FeatureMembershipPolicycontrollerPolicyControllerHubConfigPolicyContentBundles)
+	for _, item := range objs {
+		i := expandGkeHubFeatureMembershipPolicycontrollerPolicyControllerHubConfigPolicyContentBundles(item)
+		if item != nil {
+			items[item.(map[string]interface{})["bundle_name"].(string)] = *i
+		}
+	}
+
+	return items
+}
+
+func expandGkeHubFeatureMembershipPolicycontrollerPolicyControllerHubConfigPolicyContentBundles(o interface{}) *gkehub.FeatureMembershipPolicycontrollerPolicyControllerHubConfigPolicyContentBundles {
+	if o == nil {
+		return gkehub.EmptyFeatureMembershipPolicycontrollerPolicyControllerHubConfigPolicyContentBundles
+	}
+
+	obj := o.(map[string]interface{})
+	return &gkehub.FeatureMembershipPolicycontrollerPolicyControllerHubConfigPolicyContentBundles{
+		ExemptedNamespaces: tpgdclresource.ExpandStringArray(obj["exempted_namespaces"]),
+	}
+}
+
+func flattenGkeHubFeatureMembershipPolicycontrollerPolicyControllerHubConfigPolicyContentBundlesMap(objs map[string]gkehub.FeatureMembershipPolicycontrollerPolicyControllerHubConfigPolicyContentBundles) []interface{} {
+	if objs == nil {
+		return nil
+	}
+
+	items := []interface{}{}
+	for name, item := range objs {
+		i := flattenGkeHubFeatureMembershipPolicycontrollerPolicyControllerHubConfigPolicyContentBundles(&item, name)
+		items = append(items, i)
+	}
+
+	return items
+}
+
+func flattenGkeHubFeatureMembershipPolicycontrollerPolicyControllerHubConfigPolicyContentBundles(obj *gkehub.FeatureMembershipPolicycontrollerPolicyControllerHubConfigPolicyContentBundles, name string) interface{} {
+	if obj == nil {
+		return nil
+	}
+	transformed := map[string]interface{}{
+		"exempted_namespaces": obj.ExemptedNamespaces,
+	}
+
+	transformed["bundle_name"] = name
+
+	return transformed
+
+}
+
+func expandGkeHubFeatureMembershipPolicycontrollerPolicyControllerHubConfigPolicyContentTemplateLibrary(o interface{}) *gkehub.FeatureMembershipPolicycontrollerPolicyControllerHubConfigPolicyContentTemplateLibrary {
+	if o == nil {
+		return nil
+	}
+	objArr := o.([]interface{})
+	if len(objArr) == 0 || objArr[0] == nil {
+		return nil
+	}
+	obj := objArr[0].(map[string]interface{})
+	return &gkehub.FeatureMembershipPolicycontrollerPolicyControllerHubConfigPolicyContentTemplateLibrary{
+		Installation: gkehub.FeatureMembershipPolicycontrollerPolicyControllerHubConfigPolicyContentTemplateLibraryInstallationEnumRef(obj["installation"].(string)),
+	}
+}
+
+func flattenGkeHubFeatureMembershipPolicycontrollerPolicyControllerHubConfigPolicyContentTemplateLibrary(obj *gkehub.FeatureMembershipPolicycontrollerPolicyControllerHubConfigPolicyContentTemplateLibrary) interface{} {
+	if obj == nil || obj.Empty() {
+		return nil
+	}
+	transformed := map[string]interface{}{
+		"installation": obj.Installation,
+	}
+
+	return []interface{}{transformed}
+
+}
+
 func flattenGkeHubFeatureMembershipConfigmanagementPolicyControllerMonitoringBackendsArray(obj []gkehub.FeatureMembershipConfigmanagementPolicyControllerMonitoringBackendsEnum) interface{} {
 	if obj == nil {
 		return nil
@@ -947,6 +1878,25 @@ func expandGkeHubFeatureMembershipConfigmanagementPolicyControllerMonitoringBack
 	items := make([]gkehub.FeatureMembershipConfigmanagementPolicyControllerMonitoringBackendsEnum, 0, len(objs))
 	for _, item := range objs {
 		i := gkehub.FeatureMembershipConfigmanagementPolicyControllerMonitoringBackendsEnumRef(item.(string))
+		items = append(items, *i)
+	}
+	return items
+}
+func flattenGkeHubFeatureMembershipPolicycontrollerPolicyControllerHubConfigMonitoringBackendsArray(obj []gkehub.FeatureMembershipPolicycontrollerPolicyControllerHubConfigMonitoringBackendsEnum) interface{} {
+	if obj == nil {
+		return nil
+	}
+	items := []string{}
+	for _, item := range obj {
+		items = append(items, string(item))
+	}
+	return items
+}
+func expandGkeHubFeatureMembershipPolicycontrollerPolicyControllerHubConfigMonitoringBackendsArray(o interface{}) []gkehub.FeatureMembershipPolicycontrollerPolicyControllerHubConfigMonitoringBackendsEnum {
+	objs := o.([]interface{})
+	items := make([]gkehub.FeatureMembershipPolicycontrollerPolicyControllerHubConfigMonitoringBackendsEnum, 0, len(objs))
+	for _, item := range objs {
+		i := gkehub.FeatureMembershipPolicycontrollerPolicyControllerHubConfigMonitoringBackendsEnumRef(item.(string))
 		items = append(items, *i)
 	}
 	return items

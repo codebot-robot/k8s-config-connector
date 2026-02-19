@@ -19,15 +19,35 @@ package compute_test
 
 import (
 	"fmt"
+	"log"
+	"strconv"
 	"strings"
 	"testing"
+	"time"
 
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/terraform"
 
 	"github.com/hashicorp/terraform-provider-google-beta/google-beta/acctest"
+	"github.com/hashicorp/terraform-provider-google-beta/google-beta/envvar"
 	"github.com/hashicorp/terraform-provider-google-beta/google-beta/tpgresource"
 	transport_tpg "github.com/hashicorp/terraform-provider-google-beta/google-beta/transport"
+
+	"google.golang.org/api/googleapi"
+)
+
+var (
+	_ = fmt.Sprintf
+	_ = log.Print
+	_ = strconv.Atoi
+	_ = strings.Trim
+	_ = time.Now
+	_ = resource.TestMain
+	_ = terraform.NewState
+	_ = envvar.TestEnvVar
+	_ = tpgresource.SetLabels
+	_ = transport_tpg.Config{}
+	_ = googleapi.Error{}
 )
 
 func TestAccComputeBackendService_backendServiceBasicExample(t *testing.T) {
@@ -46,9 +66,10 @@ func TestAccComputeBackendService_backendServiceBasicExample(t *testing.T) {
 				Config: testAccComputeBackendService_backendServiceBasicExample(context),
 			},
 			{
-				ResourceName:      "google_compute_backend_service.default",
-				ImportState:       true,
-				ImportStateVerify: true,
+				ResourceName:            "google_compute_backend_service.default",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"iap.0.oauth2_client_secret", "params", "security_settings.0.aws_v4_authentication.0.access_key"},
 			},
 		},
 	})
@@ -70,6 +91,46 @@ resource "google_compute_http_health_check" "default" {
 `, context)
 }
 
+func TestAccComputeBackendService_backendServiceExternalIapExample(t *testing.T) {
+	t.Parallel()
+
+	context := map[string]interface{}{
+		"random_suffix": acctest.RandString(t, 10),
+	}
+
+	acctest.VcrTest(t, resource.TestCase{
+		PreCheck:                 func() { acctest.AccTestPreCheck(t) },
+		ProtoV5ProviderFactories: acctest.ProtoV5ProviderFactories(t),
+		CheckDestroy:             testAccCheckComputeBackendServiceDestroyProducer(t),
+		Steps: []resource.TestStep{
+			{
+				Config: testAccComputeBackendService_backendServiceExternalIapExample(context),
+			},
+			{
+				ResourceName:            "google_compute_backend_service.default",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"iap.0.oauth2_client_secret", "params", "security_settings.0.aws_v4_authentication.0.access_key"},
+			},
+		},
+	})
+}
+
+func testAccComputeBackendService_backendServiceExternalIapExample(context map[string]interface{}) string {
+	return acctest.Nprintf(`
+resource "google_compute_backend_service" "default" {
+  name                  = "tf-test-tf-test-backend-service-external%{random_suffix}"
+  protocol              = "HTTP"
+  load_balancing_scheme = "EXTERNAL"
+  iap {
+    enabled              = true
+    oauth2_client_id     = "abc"
+    oauth2_client_secret = "xyz"
+  }
+}
+`, context)
+}
+
 func TestAccComputeBackendService_backendServiceCacheSimpleExample(t *testing.T) {
 	t.Parallel()
 
@@ -86,9 +147,10 @@ func TestAccComputeBackendService_backendServiceCacheSimpleExample(t *testing.T)
 				Config: testAccComputeBackendService_backendServiceCacheSimpleExample(context),
 			},
 			{
-				ResourceName:      "google_compute_backend_service.default",
-				ImportState:       true,
-				ImportStateVerify: true,
+				ResourceName:            "google_compute_backend_service.default",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"iap.0.oauth2_client_secret", "params", "security_settings.0.aws_v4_authentication.0.access_key"},
 			},
 		},
 	})
@@ -130,9 +192,10 @@ func TestAccComputeBackendService_backendServiceCacheIncludeHttpHeadersExample(t
 				Config: testAccComputeBackendService_backendServiceCacheIncludeHttpHeadersExample(context),
 			},
 			{
-				ResourceName:      "google_compute_backend_service.default",
-				ImportState:       true,
-				ImportStateVerify: true,
+				ResourceName:            "google_compute_backend_service.default",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"iap.0.oauth2_client_secret", "params", "security_settings.0.aws_v4_authentication.0.access_key"},
 			},
 		},
 	})
@@ -172,9 +235,10 @@ func TestAccComputeBackendService_backendServiceCacheIncludeNamedCookiesExample(
 				Config: testAccComputeBackendService_backendServiceCacheIncludeNamedCookiesExample(context),
 			},
 			{
-				ResourceName:      "google_compute_backend_service.default",
-				ImportState:       true,
-				ImportStateVerify: true,
+				ResourceName:            "google_compute_backend_service.default",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"iap.0.oauth2_client_secret", "params", "security_settings.0.aws_v4_authentication.0.access_key"},
 			},
 		},
 	})
@@ -217,9 +281,10 @@ func TestAccComputeBackendService_backendServiceCacheExample(t *testing.T) {
 				Config: testAccComputeBackendService_backendServiceCacheExample(context),
 			},
 			{
-				ResourceName:      "google_compute_backend_service.default",
-				ImportState:       true,
-				ImportStateVerify: true,
+				ResourceName:            "google_compute_backend_service.default",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"iap.0.oauth2_client_secret", "params", "security_settings.0.aws_v4_authentication.0.access_key"},
 			},
 		},
 	})
@@ -266,9 +331,10 @@ func TestAccComputeBackendService_backendServiceCacheBypassCacheOnRequestHeaders
 				Config: testAccComputeBackendService_backendServiceCacheBypassCacheOnRequestHeadersExample(context),
 			},
 			{
-				ResourceName:      "google_compute_backend_service.default",
-				ImportState:       true,
-				ImportStateVerify: true,
+				ResourceName:            "google_compute_backend_service.default",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"iap.0.oauth2_client_secret", "params", "security_settings.0.aws_v4_authentication.0.access_key"},
 			},
 		},
 	})
@@ -323,9 +389,10 @@ func TestAccComputeBackendService_backendServiceTrafficDirectorRoundRobinExample
 				Config: testAccComputeBackendService_backendServiceTrafficDirectorRoundRobinExample(context),
 			},
 			{
-				ResourceName:      "google_compute_backend_service.default",
-				ImportState:       true,
-				ImportStateVerify: true,
+				ResourceName:            "google_compute_backend_service.default",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"iap.0.oauth2_client_secret", "params", "security_settings.0.aws_v4_authentication.0.access_key"},
 			},
 		},
 	})
@@ -369,9 +436,10 @@ func TestAccComputeBackendService_backendServiceTrafficDirectorRingHashExample(t
 				Config: testAccComputeBackendService_backendServiceTrafficDirectorRingHashExample(context),
 			},
 			{
-				ResourceName:      "google_compute_backend_service.default",
-				ImportState:       true,
-				ImportStateVerify: true,
+				ResourceName:            "google_compute_backend_service.default",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"iap.0.oauth2_client_secret", "params", "security_settings.0.aws_v4_authentication.0.access_key"},
 			},
 		},
 	})
@@ -400,8 +468,72 @@ resource "google_compute_backend_service" "default" {
     }
   }
   outlier_detection {
-    consecutive_errors = 2
+    consecutive_errors                    = 2
+    consecutive_gateway_failure           = 5
+    enforcing_consecutive_errors          = 100
+    enforcing_consecutive_gateway_failure = 0
+    enforcing_success_rate                = 100
+    max_ejection_percent                  = 10
+    success_rate_minimum_hosts            = 5
+    success_rate_request_volume           = 100
+    success_rate_stdev_factor             = 1900
   }
+}
+
+resource "google_compute_health_check" "health_check" {
+  provider = google-beta
+
+  name = "tf-test-health-check%{random_suffix}"
+  http_health_check {
+    port = 80
+  }
+}
+`, context)
+}
+
+func TestAccComputeBackendService_backendServiceStatefulSessionAffinityExample(t *testing.T) {
+	t.Parallel()
+
+	context := map[string]interface{}{
+		"random_suffix": acctest.RandString(t, 10),
+	}
+
+	acctest.VcrTest(t, resource.TestCase{
+		PreCheck:                 func() { acctest.AccTestPreCheck(t) },
+		ProtoV5ProviderFactories: acctest.ProtoV5ProviderBetaFactories(t),
+		CheckDestroy:             testAccCheckComputeBackendServiceDestroyProducer(t),
+		Steps: []resource.TestStep{
+			{
+				Config: testAccComputeBackendService_backendServiceStatefulSessionAffinityExample(context),
+			},
+			{
+				ResourceName:            "google_compute_backend_service.default",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"iap.0.oauth2_client_secret", "params", "security_settings.0.aws_v4_authentication.0.access_key"},
+			},
+		},
+	})
+}
+
+func testAccComputeBackendService_backendServiceStatefulSessionAffinityExample(context map[string]interface{}) string {
+	return acctest.Nprintf(`
+resource "google_compute_backend_service" "default" {
+  provider = google-beta
+
+  name                  = "tf-test-backend-service%{random_suffix}"
+  health_checks         = [google_compute_health_check.health_check.id]
+  load_balancing_scheme = "EXTERNAL_MANAGED"
+  locality_lb_policy    = "RING_HASH"
+  session_affinity      = "STRONG_COOKIE_AFFINITY"
+  
+  strong_session_affinity_cookie {
+     ttl {
+       seconds = 11
+       nanos   = 1111
+     }
+     name = "mycookie"
+   }   
 }
 
 resource "google_compute_health_check" "health_check" {
@@ -431,9 +563,10 @@ func TestAccComputeBackendService_backendServiceNetworkEndpointExample(t *testin
 				Config: testAccComputeBackendService_backendServiceNetworkEndpointExample(context),
 			},
 			{
-				ResourceName:      "google_compute_backend_service.default",
-				ImportState:       true,
-				ImportStateVerify: true,
+				ResourceName:            "google_compute_backend_service.default",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"iap.0.oauth2_client_secret", "params", "security_settings.0.aws_v4_authentication.0.access_key"},
 			},
 		},
 	})
@@ -472,6 +605,116 @@ resource "google_compute_backend_service" "default" {
 `, context)
 }
 
+func TestAccComputeBackendService_backendServiceInFlightExample(t *testing.T) {
+	t.Parallel()
+
+	context := map[string]interface{}{
+		"random_suffix": acctest.RandString(t, 10),
+	}
+
+	acctest.VcrTest(t, resource.TestCase{
+		PreCheck:                 func() { acctest.AccTestPreCheck(t) },
+		ProtoV5ProviderFactories: acctest.ProtoV5ProviderBetaFactories(t),
+		CheckDestroy:             testAccCheckComputeBackendServiceDestroyProducer(t),
+		Steps: []resource.TestStep{
+			{
+				Config: testAccComputeBackendService_backendServiceInFlightExample(context),
+			},
+			{
+				ResourceName:            "google_compute_backend_service.default",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"iap.0.oauth2_client_secret", "params", "security_settings.0.aws_v4_authentication.0.access_key"},
+			},
+		},
+	})
+}
+
+func testAccComputeBackendService_backendServiceInFlightExample(context map[string]interface{}) string {
+	return acctest.Nprintf(`
+resource "google_compute_network" "custom" {
+  provider              = google-beta
+  name                    = "custom-vpc"
+  auto_create_subnetworks = false
+}
+
+resource "google_compute_subnetwork" "default" {
+  provider              = google-beta
+  name          = "custom-subnet"
+  ip_cidr_range = "10.0.0.0/24"
+  region        = "us-central1"
+  network       = google_compute_network.custom.id
+}
+
+resource "google_compute_instance_template" "default" {
+  provider              = google-beta
+  name                  = "instance-template"
+  machine_type          = "e2-micro"
+
+  disk {
+    source_image = "debian-cloud/debian-11"
+    auto_delete  = true
+    boot         = true
+  }
+
+  network_interface {
+    network    = google_compute_network.custom.id
+    subnetwork = google_compute_subnetwork.default.id
+  }
+
+  metadata = {
+    startup-script = <<-EOT
+      #!/bin/bash
+      echo "Hello World from MIG VM" > /var/www/html/index.html
+      apt-get update -y
+      apt-get install -y apache2
+      systemctl start apache2
+    EOT
+  }
+}
+
+resource "google_compute_region_instance_group_manager" "foobar" {
+  provider              = google-beta
+  name               = "instance-group-manager"
+  base_instance_name = "vm"
+  region             = "us-central1"
+
+  version {
+    instance_template = google_compute_instance_template.default.id
+  }
+
+  target_size = 1
+}
+
+resource "google_compute_backend_service" "default" {
+  provider              = google-beta
+  name                  = "tf-test-backend-service%{random_suffix}"
+  description           = "Hello World 1234"
+  port_name             = "http"
+  protocol              = "TCP"
+  load_balancing_scheme = "EXTERNAL_MANAGED"
+
+  backend {
+    group                  = google_compute_region_instance_group_manager.foobar.instance_group
+    balancing_mode         = "IN_FLIGHT"
+    max_in_flight_requests = 1000
+    traffic_duration       = "LONG"
+  }
+
+  health_checks = [google_compute_health_check.default.self_link]
+}
+
+resource "google_compute_health_check" "default" {
+  provider              = google-beta
+  name = "tf-test-health-check%{random_suffix}"
+
+  http_health_check {
+    port = 80
+  }
+}
+`, context)
+}
+
 func TestAccComputeBackendService_backendServiceExternalManagedExample(t *testing.T) {
 	t.Parallel()
 
@@ -488,9 +731,10 @@ func TestAccComputeBackendService_backendServiceExternalManagedExample(t *testin
 				Config: testAccComputeBackendService_backendServiceExternalManagedExample(context),
 			},
 			{
-				ResourceName:      "google_compute_backend_service.default",
-				ImportState:       true,
-				ImportStateVerify: true,
+				ResourceName:            "google_compute_backend_service.default",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"iap.0.oauth2_client_secret", "params", "security_settings.0.aws_v4_authentication.0.access_key"},
 			},
 		},
 	})
@@ -502,12 +746,231 @@ resource "google_compute_backend_service" "default" {
   name          = "tf-test-backend-service%{random_suffix}"
   health_checks = [google_compute_health_check.default.id]
   load_balancing_scheme = "EXTERNAL_MANAGED"
+  protocol              = "H2C"
 }
 
 resource "google_compute_health_check" "default" {
   name = "tf-test-health-check%{random_suffix}"
   http_health_check {
     port = 80
+  }
+}
+`, context)
+}
+
+func TestAccComputeBackendService_backendServiceIpAddressSelectionPolicyExample(t *testing.T) {
+	t.Parallel()
+
+	context := map[string]interface{}{
+		"random_suffix": acctest.RandString(t, 10),
+	}
+
+	acctest.VcrTest(t, resource.TestCase{
+		PreCheck:                 func() { acctest.AccTestPreCheck(t) },
+		ProtoV5ProviderFactories: acctest.ProtoV5ProviderFactories(t),
+		CheckDestroy:             testAccCheckComputeBackendServiceDestroyProducer(t),
+		Steps: []resource.TestStep{
+			{
+				Config: testAccComputeBackendService_backendServiceIpAddressSelectionPolicyExample(context),
+			},
+			{
+				ResourceName:            "google_compute_backend_service.default",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"iap.0.oauth2_client_secret", "params", "security_settings.0.aws_v4_authentication.0.access_key"},
+			},
+		},
+	})
+}
+
+func testAccComputeBackendService_backendServiceIpAddressSelectionPolicyExample(context map[string]interface{}) string {
+	return acctest.Nprintf(`
+resource "google_compute_backend_service" "default" {
+  name = "tf-test-backend-service%{random_suffix}"
+  load_balancing_scheme = "EXTERNAL_MANAGED"
+  ip_address_selection_policy = "IPV6_ONLY"
+}
+`, context)
+}
+
+func TestAccComputeBackendService_backendServiceCustomMetricsExample(t *testing.T) {
+	t.Parallel()
+
+	context := map[string]interface{}{
+		"random_suffix": acctest.RandString(t, 10),
+	}
+
+	acctest.VcrTest(t, resource.TestCase{
+		PreCheck:                 func() { acctest.AccTestPreCheck(t) },
+		ProtoV5ProviderFactories: acctest.ProtoV5ProviderFactories(t),
+		CheckDestroy:             testAccCheckComputeBackendServiceDestroyProducer(t),
+		Steps: []resource.TestStep{
+			{
+				Config: testAccComputeBackendService_backendServiceCustomMetricsExample(context),
+			},
+			{
+				ResourceName:            "google_compute_backend_service.default",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"iap.0.oauth2_client_secret", "params", "security_settings.0.aws_v4_authentication.0.access_key"},
+			},
+		},
+	})
+}
+
+func testAccComputeBackendService_backendServiceCustomMetricsExample(context map[string]interface{}) string {
+	return acctest.Nprintf(`
+resource "google_compute_network" "default" {
+  name                    = "network%{random_suffix}"
+}
+
+// Zonal NEG with GCE_VM_IP_PORT
+resource "google_compute_network_endpoint_group" "default" {
+  name                  = "tf-test-network-endpoint%{random_suffix}"
+  network               = google_compute_network.default.id
+  default_port          = "90"
+  zone                  = "us-central1-a"
+  network_endpoint_type = "GCE_VM_IP_PORT"
+}
+
+resource "google_compute_backend_service" "default" {
+  name                  = "tf-test-backend-service%{random_suffix}"
+  health_checks = [google_compute_health_check.default.id]
+
+  # WEIGHTED_ROUND_ROBIN and CUSTOM_METRICS require EXTERNAL_MANAGED.
+  load_balancing_scheme = "EXTERNAL_MANAGED"
+  locality_lb_policy    = "WEIGHTED_ROUND_ROBIN"
+  custom_metrics {
+    name    = "orca.application_utilization"
+    # At least one metric should be not dry_run.
+    dry_run = false
+  }
+  backend {
+    group = google_compute_network_endpoint_group.default.id
+    balancing_mode = "CUSTOM_METRICS"
+    custom_metrics {
+      name    = "orca.cpu_utilization"
+      max_utilization = 0.9
+      dry_run = true
+    }
+    custom_metrics {
+      name    = "orca.named_metrics.foo"
+      # At least one metric should be not dry_run.
+      dry_run = false
+    }
+  }
+  log_config {
+    enable          = true
+    optional_mode   = "CUSTOM"
+    optional_fields = [ "orca_load_report", "tls.protocol" ]
+  }  
+}
+
+resource "google_compute_health_check" "default" {
+  name               = "tf-test-health-check%{random_suffix}"
+  timeout_sec        = 1
+  check_interval_sec = 1
+
+  tcp_health_check {
+    port = "80"
+  }
+}
+`, context)
+}
+
+func TestAccComputeBackendService_backendServiceTlsSettingsExample(t *testing.T) {
+	t.Parallel()
+
+	context := map[string]interface{}{
+		"random_suffix": acctest.RandString(t, 10),
+	}
+
+	acctest.VcrTest(t, resource.TestCase{
+		PreCheck:                 func() { acctest.AccTestPreCheck(t) },
+		ProtoV5ProviderFactories: acctest.ProtoV5ProviderFactories(t),
+		CheckDestroy:             testAccCheckComputeBackendServiceDestroyProducer(t),
+		Steps: []resource.TestStep{
+			{
+				Config: testAccComputeBackendService_backendServiceTlsSettingsExample(context),
+			},
+			{
+				ResourceName:            "google_compute_backend_service.default",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"iap.0.oauth2_client_secret", "params", "security_settings.0.aws_v4_authentication.0.access_key"},
+			},
+		},
+	})
+}
+
+func testAccComputeBackendService_backendServiceTlsSettingsExample(context map[string]interface{}) string {
+	return acctest.Nprintf(`
+resource "google_compute_backend_service" "default" {
+  name          = "tf-test-backend-service%{random_suffix}"
+  health_checks = [google_compute_health_check.default.id]
+  load_balancing_scheme = "EXTERNAL_MANAGED"
+  protocol = "HTTPS"
+  tls_settings {
+    sni = "example.com"
+    subject_alt_names {
+        dns_name = "example.com"
+    }
+    subject_alt_names {
+        uniform_resource_identifier = "https://example.com"
+    }
+    authentication_config = "//networksecurity.googleapis.com/${google_network_security_backend_authentication_config.default.id}"
+  }
+}
+
+resource "google_compute_health_check" "default" {
+  name = "tf-test-health-check%{random_suffix}"
+  http_health_check {
+    port = 80
+  }
+}
+
+resource "google_network_security_backend_authentication_config" "default" {
+  name             = "authentication%{random_suffix}"
+  well_known_roots = "PUBLIC_ROOTS"
+}
+`, context)
+}
+
+func TestAccComputeBackendService_backendServiceDynamicForwardingExample(t *testing.T) {
+	t.Parallel()
+
+	context := map[string]interface{}{
+		"random_suffix": acctest.RandString(t, 10),
+	}
+
+	acctest.VcrTest(t, resource.TestCase{
+		PreCheck:                 func() { acctest.AccTestPreCheck(t) },
+		ProtoV5ProviderFactories: acctest.ProtoV5ProviderBetaFactories(t),
+		CheckDestroy:             testAccCheckComputeBackendServiceDestroyProducer(t),
+		Steps: []resource.TestStep{
+			{
+				Config: testAccComputeBackendService_backendServiceDynamicForwardingExample(context),
+			},
+			{
+				ResourceName:            "google_compute_backend_service.default",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"iap.0.oauth2_client_secret", "params", "security_settings.0.aws_v4_authentication.0.access_key"},
+			},
+		},
+	})
+}
+
+func testAccComputeBackendService_backendServiceDynamicForwardingExample(context map[string]interface{}) string {
+	return acctest.Nprintf(`
+resource "google_compute_backend_service" "default" {
+  provider              = google-beta
+  name                  = "tf-test-backend-service%{random_suffix}"
+  load_balancing_scheme = "INTERNAL_MANAGED"
+  dynamic_forwarding {
+    ip_port_selection {
+      enabled = true
+    }
   }
 }
 `, context)

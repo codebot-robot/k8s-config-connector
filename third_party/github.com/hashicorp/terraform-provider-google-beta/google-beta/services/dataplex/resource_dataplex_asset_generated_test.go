@@ -23,8 +23,8 @@ import (
 	"fmt"
 	dcl "github.com/GoogleCloudPlatform/declarative-resource-client-library/dcl"
 	dataplex "github.com/GoogleCloudPlatform/declarative-resource-client-library/services/google/dataplex/beta"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/terraform"
 	"strings"
 	"testing"
 
@@ -54,7 +54,7 @@ func TestAccDataplexAsset_BasicAssetHandWritten(t *testing.T) {
 				ResourceName:            "google_dataplex_asset.primary",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"resource_spec.0.name"},
+				ImportStateVerifyIgnore: []string{"resource_spec.0.name", "labels", "terraform_labels"},
 			},
 			{
 				Config: testAccDataplexAsset_BasicAssetHandWrittenUpdate0(context),
@@ -63,7 +63,7 @@ func TestAccDataplexAsset_BasicAssetHandWritten(t *testing.T) {
 				ResourceName:            "google_dataplex_asset.primary",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"resource_spec.0.name"},
+				ImportStateVerifyIgnore: []string{"resource_spec.0.name", "labels", "terraform_labels"},
 			},
 		},
 	})
@@ -125,6 +125,12 @@ resource "google_dataplex_asset" "primary" {
     name = "projects/%{project_name}/buckets/tf-test-bucket%{random_suffix}"
     type = "STORAGE_BUCKET"
   }
+
+  labels = {
+    env     = "foo"
+    my-asset = "exists"
+  }
+
  
   project = "%{project_name}"
   depends_on = [
@@ -190,6 +196,12 @@ resource "google_dataplex_asset" "primary" {
     name = "projects/%{project_name}/buckets/tf-test-bucket%{random_suffix}"
     type = "STORAGE_BUCKET"
   }
+
+  labels = {
+    env     = "foo"
+    my-asset = "exists"
+  }
+
  
   project = "%{project_name}"
   depends_on = [

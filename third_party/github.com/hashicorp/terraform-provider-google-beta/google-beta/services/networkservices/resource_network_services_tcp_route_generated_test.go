@@ -19,15 +19,35 @@ package networkservices_test
 
 import (
 	"fmt"
+	"log"
+	"strconv"
 	"strings"
 	"testing"
+	"time"
 
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/terraform"
 
 	"github.com/hashicorp/terraform-provider-google-beta/google-beta/acctest"
+	"github.com/hashicorp/terraform-provider-google-beta/google-beta/envvar"
 	"github.com/hashicorp/terraform-provider-google-beta/google-beta/tpgresource"
 	transport_tpg "github.com/hashicorp/terraform-provider-google-beta/google-beta/transport"
+
+	"google.golang.org/api/googleapi"
+)
+
+var (
+	_ = fmt.Sprintf
+	_ = log.Print
+	_ = strconv.Atoi
+	_ = strings.Trim
+	_ = time.Now
+	_ = resource.TestMain
+	_ = terraform.NewState
+	_ = envvar.TestEnvVar
+	_ = tpgresource.SetLabels
+	_ = transport_tpg.Config{}
+	_ = googleapi.Error{}
 )
 
 func TestAccNetworkServicesTcpRoute_networkServicesTcpRouteBasicExample(t *testing.T) {
@@ -39,7 +59,7 @@ func TestAccNetworkServicesTcpRoute_networkServicesTcpRouteBasicExample(t *testi
 
 	acctest.VcrTest(t, resource.TestCase{
 		PreCheck:                 func() { acctest.AccTestPreCheck(t) },
-		ProtoV5ProviderFactories: acctest.ProtoV5ProviderBetaFactories(t),
+		ProtoV5ProviderFactories: acctest.ProtoV5ProviderFactories(t),
 		CheckDestroy:             testAccCheckNetworkServicesTcpRouteDestroyProducer(t),
 		Steps: []resource.TestStep{
 			{
@@ -49,7 +69,7 @@ func TestAccNetworkServicesTcpRoute_networkServicesTcpRouteBasicExample(t *testi
 				ResourceName:            "google_network_services_tcp_route.default",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"name"},
+				ImportStateVerifyIgnore: []string{"labels", "name", "terraform_labels"},
 			},
 		},
 	})
@@ -58,13 +78,11 @@ func TestAccNetworkServicesTcpRoute_networkServicesTcpRouteBasicExample(t *testi
 func testAccNetworkServicesTcpRoute_networkServicesTcpRouteBasicExample(context map[string]interface{}) string {
 	return acctest.Nprintf(`
 resource "google_compute_backend_service" "default" {
-  provider               = google-beta
   name          = "tf-test-my-backend-service%{random_suffix}"
   health_checks = [google_compute_http_health_check.default.id]
 }
 
 resource "google_compute_http_health_check" "default" {
-  provider               = google-beta
   name               = "tf-test-backend-service-health-check%{random_suffix}"
   request_path       = "/"
   check_interval_sec = 1
@@ -72,7 +90,6 @@ resource "google_compute_http_health_check" "default" {
 }
 
 resource "google_network_services_tcp_route" "default" {
-  provider               = google-beta
   name                   = "tf-test-my-tcp-route%{random_suffix}"
   labels                 = {
     foo = "bar"
@@ -104,7 +121,7 @@ func TestAccNetworkServicesTcpRoute_networkServicesTcpRouteActionsExample(t *tes
 
 	acctest.VcrTest(t, resource.TestCase{
 		PreCheck:                 func() { acctest.AccTestPreCheck(t) },
-		ProtoV5ProviderFactories: acctest.ProtoV5ProviderBetaFactories(t),
+		ProtoV5ProviderFactories: acctest.ProtoV5ProviderFactories(t),
 		CheckDestroy:             testAccCheckNetworkServicesTcpRouteDestroyProducer(t),
 		Steps: []resource.TestStep{
 			{
@@ -114,7 +131,7 @@ func TestAccNetworkServicesTcpRoute_networkServicesTcpRouteActionsExample(t *tes
 				ResourceName:            "google_network_services_tcp_route.default",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"name"},
+				ImportStateVerifyIgnore: []string{"labels", "name", "terraform_labels"},
 			},
 		},
 	})
@@ -123,13 +140,11 @@ func TestAccNetworkServicesTcpRoute_networkServicesTcpRouteActionsExample(t *tes
 func testAccNetworkServicesTcpRoute_networkServicesTcpRouteActionsExample(context map[string]interface{}) string {
 	return acctest.Nprintf(`
 resource "google_compute_backend_service" "default" {
-  provider               = google-beta
   name          = "tf-test-my-backend-service%{random_suffix}"
   health_checks = [google_compute_http_health_check.default.id]
 }
 
 resource "google_compute_http_health_check" "default" {
-  provider               = google-beta
   name               = "tf-test-backend-service-health-check%{random_suffix}"
   request_path       = "/"
   check_interval_sec = 1
@@ -137,7 +152,6 @@ resource "google_compute_http_health_check" "default" {
 }
 
 resource "google_network_services_tcp_route" "default" {
-  provider               = google-beta
   name                   = "tf-test-my-tcp-route%{random_suffix}"
   labels                 = {
     foo = "bar"
@@ -150,6 +164,7 @@ resource "google_network_services_tcp_route" "default" {
         weight = 1
       }
       original_destination = false
+      idle_timeout = "60s"
     }
   }
 }
@@ -165,7 +180,7 @@ func TestAccNetworkServicesTcpRoute_networkServicesTcpRouteMeshBasicExample(t *t
 
 	acctest.VcrTest(t, resource.TestCase{
 		PreCheck:                 func() { acctest.AccTestPreCheck(t) },
-		ProtoV5ProviderFactories: acctest.ProtoV5ProviderBetaFactories(t),
+		ProtoV5ProviderFactories: acctest.ProtoV5ProviderFactories(t),
 		CheckDestroy:             testAccCheckNetworkServicesTcpRouteDestroyProducer(t),
 		Steps: []resource.TestStep{
 			{
@@ -175,7 +190,7 @@ func TestAccNetworkServicesTcpRoute_networkServicesTcpRouteMeshBasicExample(t *t
 				ResourceName:            "google_network_services_tcp_route.default",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"name"},
+				ImportStateVerifyIgnore: []string{"labels", "name", "terraform_labels"},
 			},
 		},
 	})
@@ -184,13 +199,11 @@ func TestAccNetworkServicesTcpRoute_networkServicesTcpRouteMeshBasicExample(t *t
 func testAccNetworkServicesTcpRoute_networkServicesTcpRouteMeshBasicExample(context map[string]interface{}) string {
 	return acctest.Nprintf(`
 resource "google_compute_backend_service" "default" {
-  provider               = google-beta
   name          = "tf-test-my-backend-service%{random_suffix}"
   health_checks = [google_compute_http_health_check.default.id]
 }
 
 resource "google_compute_http_health_check" "default" {
-  provider               = google-beta
   name               = "tf-test-backend-service-health-check%{random_suffix}"
   request_path       = "/"
   check_interval_sec = 1
@@ -198,7 +211,6 @@ resource "google_compute_http_health_check" "default" {
 }
 
 resource "google_network_services_mesh" "default" {
-  provider    = google-beta
   name        = "tf-test-my-tcp-route%{random_suffix}"
   labels      = {
     foo = "bar"
@@ -208,7 +220,6 @@ resource "google_network_services_mesh" "default" {
 
 
 resource "google_network_services_tcp_route" "default" {
-  provider               = google-beta
   name                   = "tf-test-my-tcp-route%{random_suffix}"
   labels                 = {
     foo = "bar"
@@ -243,7 +254,7 @@ func TestAccNetworkServicesTcpRoute_networkServicesTcpRouteGatewayBasicExample(t
 
 	acctest.VcrTest(t, resource.TestCase{
 		PreCheck:                 func() { acctest.AccTestPreCheck(t) },
-		ProtoV5ProviderFactories: acctest.ProtoV5ProviderBetaFactories(t),
+		ProtoV5ProviderFactories: acctest.ProtoV5ProviderFactories(t),
 		CheckDestroy:             testAccCheckNetworkServicesTcpRouteDestroyProducer(t),
 		Steps: []resource.TestStep{
 			{
@@ -253,7 +264,7 @@ func TestAccNetworkServicesTcpRoute_networkServicesTcpRouteGatewayBasicExample(t
 				ResourceName:            "google_network_services_tcp_route.default",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"name"},
+				ImportStateVerifyIgnore: []string{"labels", "name", "terraform_labels"},
 			},
 		},
 	})
@@ -262,13 +273,11 @@ func TestAccNetworkServicesTcpRoute_networkServicesTcpRouteGatewayBasicExample(t
 func testAccNetworkServicesTcpRoute_networkServicesTcpRouteGatewayBasicExample(context map[string]interface{}) string {
 	return acctest.Nprintf(`
 resource "google_compute_backend_service" "default" {
-  provider               = google-beta
   name          = "tf-test-my-backend-service%{random_suffix}"
   health_checks = [google_compute_http_health_check.default.id]
 }
 
 resource "google_compute_http_health_check" "default" {
-  provider               = google-beta
   name               = "tf-test-backend-service-health-check%{random_suffix}"
   request_path       = "/"
   check_interval_sec = 1
@@ -276,7 +285,6 @@ resource "google_compute_http_health_check" "default" {
 }
 
 resource "google_network_services_gateway" "default" {
-  provider    = google-beta
   name        = "tf-test-my-tcp-route%{random_suffix}"
   labels      = {
     foo = "bar"
@@ -289,7 +297,6 @@ resource "google_network_services_gateway" "default" {
 
 
 resource "google_network_services_tcp_route" "default" {
-  provider               = google-beta
   name                   = "tf-test-my-tcp-route%{random_suffix}"
   labels                 = {
     foo = "bar"

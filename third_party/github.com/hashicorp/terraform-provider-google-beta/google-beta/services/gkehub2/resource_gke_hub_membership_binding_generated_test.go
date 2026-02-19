@@ -19,25 +19,47 @@ package gkehub2_test
 
 import (
 	"fmt"
+	"log"
+	"strconv"
 	"strings"
 	"testing"
+	"time"
 
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/terraform"
 
 	"github.com/hashicorp/terraform-provider-google-beta/google-beta/acctest"
 	"github.com/hashicorp/terraform-provider-google-beta/google-beta/envvar"
 	"github.com/hashicorp/terraform-provider-google-beta/google-beta/tpgresource"
 	transport_tpg "github.com/hashicorp/terraform-provider-google-beta/google-beta/transport"
+
+	"google.golang.org/api/googleapi"
+)
+
+var (
+	_ = fmt.Sprintf
+	_ = log.Print
+	_ = strconv.Atoi
+	_ = strings.Trim
+	_ = time.Now
+	_ = resource.TestMain
+	_ = terraform.NewState
+	_ = envvar.TestEnvVar
+	_ = tpgresource.SetLabels
+	_ = transport_tpg.Config{}
+	_ = googleapi.Error{}
 )
 
 func TestAccGKEHub2MembershipBinding_gkehubMembershipBindingBasicExample(t *testing.T) {
 	t.Parallel()
 
 	context := map[string]interface{}{
-		"project":       envvar.GetTestProjectFromEnv(),
-		"location":      envvar.GetTestRegionFromEnv(),
-		"random_suffix": acctest.RandString(t, 10),
+		"location":            envvar.GetTestRegionFromEnv(),
+		"project":             envvar.GetTestProjectFromEnv(),
+		"deletion_protection": false,
+		"network_name":        acctest.BootstrapSharedTestNetwork(t, "gke-cluster"),
+		"subnetwork_name":     acctest.BootstrapSubnet(t, "gke-cluster", acctest.BootstrapSharedTestNetwork(t, "gke-cluster")),
+		"random_suffix":       acctest.RandString(t, 10),
 	}
 
 	acctest.VcrTest(t, resource.TestCase{
@@ -49,10 +71,10 @@ func TestAccGKEHub2MembershipBinding_gkehubMembershipBindingBasicExample(t *test
 				Config: testAccGKEHub2MembershipBinding_gkehubMembershipBindingBasicExample(context),
 			},
 			{
-				ResourceName:            "google_gke_hub_membership_binding.example",
+				ResourceName:            "google_gke_hub_membership_binding.membership_binding",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"membership_binding_id", "scope", "membership_id", "location"},
+				ImportStateVerifyIgnore: []string{"labels", "location", "membership_binding_id", "membership_id", "scope", "terraform_labels"},
 			},
 		},
 	})
@@ -61,12 +83,15 @@ func TestAccGKEHub2MembershipBinding_gkehubMembershipBindingBasicExample(t *test
 func testAccGKEHub2MembershipBinding_gkehubMembershipBindingBasicExample(context map[string]interface{}) string {
 	return acctest.Nprintf(`
 resource "google_container_cluster" "primary" {
-  name               = "basiccluster%{random_suffix}"
+  name               = "tf-test-basic-cluster%{random_suffix}"
   location           = "us-central1-a"
   initial_node_count = 1
+  deletion_protection  = %{deletion_protection}
+  network       = "%{network_name}"
+  subnetwork    = "%{subnetwork_name}"
 }
 
-resource "google_gke_hub_membership" "example" {
+resource "google_gke_hub_membership" "membership" {
   membership_id = "tf-test-membership%{random_suffix}"
   endpoint {
     gke_cluster {
@@ -77,14 +102,14 @@ resource "google_gke_hub_membership" "example" {
   depends_on = [google_container_cluster.primary]
 }
 
-resource "google_gke_hub_scope" "example" {
+resource "google_gke_hub_scope" "scope" {
   scope_id = "tf-test-scope%{random_suffix}"
 }
 
-resource "google_gke_hub_membership_binding" "example" {
+resource "google_gke_hub_membership_binding" "membership_binding" {
   membership_binding_id = "tf-test-membership-binding%{random_suffix}"
-  scope = google_gke_hub_scope.example.name
-  membership_id = "tf-test-membership%{random_suffix}"
+  scope = google_gke_hub_scope.scope.name
+  membership_id = google_gke_hub_membership.membership.membership_id
   location = "global"
   labels = {
       keyb = "valueb"
@@ -92,8 +117,8 @@ resource "google_gke_hub_membership_binding" "example" {
       keyc = "valuec" 
   }
   depends_on = [
-    google_gke_hub_membership.example,
-    google_gke_hub_scope.example
+    google_gke_hub_membership.membership,
+    google_gke_hub_scope.scope
   ]
 }
 `, context)

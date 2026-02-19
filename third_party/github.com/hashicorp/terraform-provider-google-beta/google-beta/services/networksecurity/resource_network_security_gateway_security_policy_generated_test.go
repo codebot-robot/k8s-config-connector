@@ -19,15 +19,35 @@ package networksecurity_test
 
 import (
 	"fmt"
+	"log"
+	"strconv"
 	"strings"
 	"testing"
+	"time"
 
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/terraform"
 
 	"github.com/hashicorp/terraform-provider-google-beta/google-beta/acctest"
+	"github.com/hashicorp/terraform-provider-google-beta/google-beta/envvar"
 	"github.com/hashicorp/terraform-provider-google-beta/google-beta/tpgresource"
 	transport_tpg "github.com/hashicorp/terraform-provider-google-beta/google-beta/transport"
+
+	"google.golang.org/api/googleapi"
+)
+
+var (
+	_ = fmt.Sprintf
+	_ = log.Print
+	_ = strconv.Atoi
+	_ = strings.Trim
+	_ = time.Now
+	_ = resource.TestMain
+	_ = terraform.NewState
+	_ = envvar.TestEnvVar
+	_ = tpgresource.SetLabels
+	_ = transport_tpg.Config{}
+	_ = googleapi.Error{}
 )
 
 func TestAccNetworkSecurityGatewaySecurityPolicy_networkSecurityGatewaySecurityPolicyBasicExample(t *testing.T) {
@@ -49,7 +69,7 @@ func TestAccNetworkSecurityGatewaySecurityPolicy_networkSecurityGatewaySecurityP
 				ResourceName:            "google_network_security_gateway_security_policy.default",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"tls_inspection_policy", "name", "location"},
+				ImportStateVerifyIgnore: []string{"location", "name", "tls_inspection_policy"},
 			},
 		},
 	})
@@ -74,7 +94,7 @@ func TestAccNetworkSecurityGatewaySecurityPolicy_networkSecurityGatewaySecurityP
 
 	acctest.VcrTest(t, resource.TestCase{
 		PreCheck:                 func() { acctest.AccTestPreCheck(t) },
-		ProtoV5ProviderFactories: acctest.ProtoV5ProviderBetaFactories(t),
+		ProtoV5ProviderFactories: acctest.ProtoV5ProviderFactories(t),
 		CheckDestroy:             testAccCheckNetworkSecurityGatewaySecurityPolicyDestroyProducer(t),
 		Steps: []resource.TestStep{
 			{
@@ -84,7 +104,7 @@ func TestAccNetworkSecurityGatewaySecurityPolicy_networkSecurityGatewaySecurityP
 				ResourceName:            "google_network_security_gateway_security_policy.default",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"tls_inspection_policy", "name", "location"},
+				ImportStateVerifyIgnore: []string{"location", "name", "tls_inspection_policy"},
 			},
 		},
 	})
@@ -93,7 +113,6 @@ func TestAccNetworkSecurityGatewaySecurityPolicy_networkSecurityGatewaySecurityP
 func testAccNetworkSecurityGatewaySecurityPolicy_networkSecurityGatewaySecurityPolicyTlsInspectionBasicExample(context map[string]interface{}) string {
 	return acctest.Nprintf(`
 resource "google_privateca_ca_pool" "default" {
-  provider = google-beta
   name      = "tf-test-my-basic-ca-pool%{random_suffix}"
   location  = "us-central1"
   tier     = "DEVOPS"
@@ -117,9 +136,7 @@ resource "google_privateca_ca_pool" "default" {
   }
 }
 
-
 resource "google_privateca_certificate_authority" "default" {
-  provider = google-beta
   pool = google_privateca_ca_pool.default.name
   certificate_authority_id = "tf-test-my-basic-certificate-authority%{random_suffix}"
   location = "us-central1"
@@ -155,22 +172,16 @@ resource "google_privateca_certificate_authority" "default" {
   }
 }
 
-resource "google_project_service_identity" "ns_sa" {
-  provider = google-beta
-
-  service = "networksecurity.googleapis.com"
+data "google_project" "project" {
 }
 
 resource "google_privateca_ca_pool_iam_member" "tls_inspection_permission" {
-  provider = google-beta
-
   ca_pool = google_privateca_ca_pool.default.id
   role = "roles/privateca.certificateManager"
-  member = "serviceAccount:${google_project_service_identity.ns_sa.email}"
+  member = "serviceAccount:service-${data.google_project.project.number}@gcp-sa-networksecurity.iam.gserviceaccount.com"
 }
 
 resource "google_network_security_tls_inspection_policy" "default" {
-  provider = google-beta
   name     = "tf-test-my-tls-inspection-policy%{random_suffix}"
   location = "us-central1"
   ca_pool  = google_privateca_ca_pool.default.id
@@ -178,7 +189,6 @@ resource "google_network_security_tls_inspection_policy" "default" {
 }
 
 resource "google_network_security_gateway_security_policy" "default" {
-  provider    = google-beta
   name        = "tf-test-my-gateway-security-policy%{random_suffix}"
   location    = "us-central1"
   description = "my description"

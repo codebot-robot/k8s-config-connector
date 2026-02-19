@@ -23,7 +23,7 @@ description: |-
 An Anthos cluster running on Azure.
 
 For more information, see:
-* [Multicloud overview](https://cloud.google.com/anthos/clusters/docs/multi-cloud)
+* [Multicloud overview](https://cloud.google.com/kubernetes-engine/multi-cloud/docs)
 ## Example Usage - basic_azure_cluster
 A basic example of a containerazure azure cluster
 ```hcl
@@ -36,6 +36,9 @@ resource "google_container_azure_cluster" "primary" {
   authorization {
     admin_users {
       username = "mmv2@google.com"
+    }
+    admin_groups {
+      group = "group@domain.com"
     }
   }
 
@@ -183,15 +186,13 @@ The following arguments are supported:
 
 The `authorization` block supports:
     
+* `admin_groups` -
+  (Optional)
+  Groups of users that can perform operations as a cluster admin. A managed ClusterRoleBinding will be created to grant the `cluster-admin` ClusterRole to the groups. Up to ten admin groups can be provided. For more info on RBAC, see https://kubernetes.io/docs/reference/access-authn-authz/rbac/#user-facing-roles
+    
 * `admin_users` -
   (Required)
   Users that can perform operations as a cluster admin. A new ClusterRoleBinding will be created to grant the cluster-admin ClusterRole to the users. Up to ten admin users can be provided. For more info on RBAC, see https://kubernetes.io/docs/reference/access-authn-authz/rbac/#user-facing-roles
-    
-The `admin_users` block supports:
-    
-* `username` -
-  (Required)
-  The name of the user, e.g. `my-gcp-id@gmail.com`.
     
 The `control_plane` block supports:
     
@@ -235,12 +236,6 @@ The `control_plane` block supports:
   (Optional)
   Optional. The Azure VM size name. Example: `Standard_DS2_v2`. For available VM sizes, see https://docs.microsoft.com/en-us/azure/virtual-machines/vm-naming-conventions. When unspecified, it defaults to `Standard_DS2_v2`.
     
-The `ssh_config` block supports:
-    
-* `authorized_key` -
-  (Required)
-  The SSH public key data for VMs managed by Anthos. This accepts the authorized_keys file format used in OpenSSH according to the sshd(8) manual page.
-    
 The `fleet` block supports:
     
 * `membership` -
@@ -269,6 +264,9 @@ The `networking` block supports:
 * `annotations` -
   (Optional)
   Optional. Annotations on the cluster. This field has the same restrictions as Kubernetes annotations. The total size of all keys and values combined is limited to 256k. Keys can have 2 segments: prefix (optional) and name (required), separated by a slash (/). Prefix must be a DNS subdomain. Name must be 63 characters or less, begin and end with alphanumerics, with dashes (-), underscores (_), dots (.), and alphanumerics between.
+
+**Note**: This field is non-authoritative, and will only manage the annotations present in your configuration.
+Please refer to the field `effective_annotations` for all of the annotations present on the resource.
   
 * `azure_services_authentication` -
   (Optional)
@@ -292,6 +290,18 @@ The `networking` block supports:
   
 
 
+The `admin_groups` block supports:
+    
+* `group` -
+  (Required)
+  The name of the group, e.g. `my-group@domain.com`.
+    
+The `admin_users` block supports:
+    
+* `username` -
+  (Required)
+  The name of the user, e.g. `my-gcp-id@gmail.com`.
+    
 The `azure_services_authentication` block supports:
     
 * `application_id` -
@@ -340,6 +350,12 @@ The `root_volume` block supports:
   (Optional)
   Optional. The size of the disk, in GiBs. When unspecified, a default value is provided. See the specific reference in the parent resource.
     
+The `ssh_config` block supports:
+    
+* `authorized_key` -
+  (Required)
+  The SSH public key data for VMs managed by Anthos. This accepts the authorized_keys file format used in OpenSSH according to the sshd(8) manual page.
+    
 The `logging_config` block supports:
     
 * `component_config` -
@@ -360,6 +376,9 @@ In addition to the arguments listed above, the following computed attributes are
 
 * `create_time` -
   Output only. The time at which this cluster was created.
+  
+* `effective_annotations` -
+  All of annotations (key/value pairs) present on the resource in GCP, including the annotations configured through Terraform, other clients and services.
   
 * `endpoint` -
   Output only. The endpoint of the cluster's API server.
@@ -394,6 +413,21 @@ This resource provides the following
 ## Import
 
 Cluster can be imported using any of these accepted formats:
+* `projects/{{project}}/locations/{{location}}/azureClusters/{{name}}`
+* `{{project}}/{{location}}/{{name}}`
+* `{{location}}/{{name}}`
+
+In Terraform v1.5.0 and later, use an [`import` block](https://developer.hashicorp.com/terraform/language/import) to import Cluster using one of the formats above. For example:
+
+
+```tf
+import {
+  id = "projects/{{project}}/locations/{{location}}/azureClusters/{{name}}"
+  to = google_container_azure_cluster.default
+}
+```
+
+When using the [`terraform import` command](https://developer.hashicorp.com/terraform/cli/commands/import), Cluster can be imported using one of the formats above. For example:
 
 ```
 $ terraform import google_container_azure_cluster.default projects/{{project}}/locations/{{location}}/azureClusters/{{name}}

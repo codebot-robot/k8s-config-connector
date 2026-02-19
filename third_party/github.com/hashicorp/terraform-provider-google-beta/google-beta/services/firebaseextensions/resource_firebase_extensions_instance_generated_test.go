@@ -19,19 +19,38 @@ package firebaseextensions_test
 
 import (
 	"fmt"
+	"log"
+	"strconv"
 	"strings"
 	"testing"
+	"time"
 
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/terraform"
 
 	"github.com/hashicorp/terraform-provider-google-beta/google-beta/acctest"
 	"github.com/hashicorp/terraform-provider-google-beta/google-beta/envvar"
 	"github.com/hashicorp/terraform-provider-google-beta/google-beta/tpgresource"
 	transport_tpg "github.com/hashicorp/terraform-provider-google-beta/google-beta/transport"
+
+	"google.golang.org/api/googleapi"
 )
 
-func TestAccFirebaseExtensionsInstance_firebaseExtentionsInstanceResizeImageExample(t *testing.T) {
+var (
+	_ = fmt.Sprintf
+	_ = log.Print
+	_ = strconv.Atoi
+	_ = strings.Trim
+	_ = time.Now
+	_ = resource.TestMain
+	_ = terraform.NewState
+	_ = envvar.TestEnvVar
+	_ = tpgresource.SetLabels
+	_ = transport_tpg.Config{}
+	_ = googleapi.Error{}
+)
+
+func TestAccFirebaseExtensionsInstance_firebaseExtensionsInstanceResizeImageExample(t *testing.T) {
 	t.Parallel()
 
 	context := map[string]interface{}{
@@ -46,7 +65,7 @@ func TestAccFirebaseExtensionsInstance_firebaseExtentionsInstanceResizeImageExam
 		CheckDestroy:             testAccCheckFirebaseExtensionsInstanceDestroyProducer(t),
 		Steps: []resource.TestStep{
 			{
-				Config: testAccFirebaseExtensionsInstance_firebaseExtentionsInstanceResizeImageExample(context),
+				Config: testAccFirebaseExtensionsInstance_firebaseExtensionsInstanceResizeImageExample(context),
 			},
 			{
 				ResourceName:            "google_firebase_extensions_instance.resize_image",
@@ -58,7 +77,7 @@ func TestAccFirebaseExtensionsInstance_firebaseExtentionsInstanceResizeImageExam
 	})
 }
 
-func testAccFirebaseExtensionsInstance_firebaseExtentionsInstanceResizeImageExample(context map[string]interface{}) string {
+func testAccFirebaseExtensionsInstance_firebaseExtensionsInstanceResizeImageExample(context map[string]interface{}) string {
 	return acctest.Nprintf(`
 resource "google_storage_bucket" "images" {
   provider                    = google-beta
@@ -77,7 +96,7 @@ resource "google_firebase_extensions_instance" "resize_image" {
   instance_id = "tf-test-storage-resize-images%{random_suffix}"
   config {
     extension_ref = "firebase/storage-resize-images"
-    extension_version = "0.1.37"
+    extension_version = "0.2.10"
 
     # The following params apply to the firebase/storage-resize-images extension. 
     # Different extensions may have different params
@@ -90,18 +109,20 @@ resource "google_firebase_extensions_instance" "resize_image" {
       DO_BACKFILL          = false
       IMG_SIZES            = "200x200"
       IMG_BUCKET           = google_storage_bucket.images.name
-      LOCATION             = "%{location}"
+      BACKFILL_BATCH_SIZE  = 3
+      CONTENT_FILTER_LEVEL = "OFF"
+      REGENERATE_TOKEN     = "true"
     }
 
     system_params = {
+      "firebaseextensions.v1beta.function/location"                   = "%{location}"
       "firebaseextensions.v1beta.function/maxInstances"               = 3000
-      "firebaseextensions.v1beta.function/memory"                     = 256
       "firebaseextensions.v1beta.function/minInstances"               = 0
       "firebaseextensions.v1beta.function/vpcConnectorEgressSettings" = "VPC_CONNECTOR_EGRESS_SETTINGS_UNSPECIFIED"
     }
 
     allowed_event_types = [
-      "firebase.extensions.storage-resize-images.v1.complete"
+      "firebase.extensions.storage-resize-images.v1.onCompletion"
     ]
 
     eventarc_channel = "projects/%{project_id}/locations/%{location}/channels/firebase"

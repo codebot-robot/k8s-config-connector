@@ -19,16 +19,35 @@ package firebasedatabase_test
 
 import (
 	"fmt"
+	"log"
+	"strconv"
 	"strings"
 	"testing"
+	"time"
 
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/terraform"
 
 	"github.com/hashicorp/terraform-provider-google-beta/google-beta/acctest"
 	"github.com/hashicorp/terraform-provider-google-beta/google-beta/envvar"
 	"github.com/hashicorp/terraform-provider-google-beta/google-beta/tpgresource"
 	transport_tpg "github.com/hashicorp/terraform-provider-google-beta/google-beta/transport"
+
+	"google.golang.org/api/googleapi"
+)
+
+var (
+	_ = fmt.Sprintf
+	_ = log.Print
+	_ = strconv.Atoi
+	_ = strings.Trim
+	_ = time.Now
+	_ = resource.TestMain
+	_ = terraform.NewState
+	_ = envvar.TestEnvVar
+	_ = tpgresource.SetLabels
+	_ = transport_tpg.Config{}
+	_ = googleapi.Error{}
 )
 
 func TestAccFirebaseDatabaseInstance_firebaseDatabaseInstanceBasicExample(t *testing.T) {
@@ -51,7 +70,7 @@ func TestAccFirebaseDatabaseInstance_firebaseDatabaseInstanceBasicExample(t *tes
 				ResourceName:            "google_firebase_database_instance.basic",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"region", "instance_id"},
+				ImportStateVerifyIgnore: []string{"instance_id", "region"},
 			},
 		},
 	})
@@ -88,7 +107,7 @@ func TestAccFirebaseDatabaseInstance_firebaseDatabaseInstanceFullExample(t *test
 				ResourceName:            "google_firebase_database_instance.full",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"region", "instance_id", "desired_state"},
+				ImportStateVerifyIgnore: []string{"desired_state", "instance_id", "region"},
 			},
 		},
 	})
@@ -118,7 +137,10 @@ func TestAccFirebaseDatabaseInstance_firebaseDatabaseInstanceDefaultDatabaseExam
 	acctest.VcrTest(t, resource.TestCase{
 		PreCheck:                 func() { acctest.AccTestPreCheck(t) },
 		ProtoV5ProviderFactories: acctest.ProtoV5ProviderBetaFactories(t),
-		CheckDestroy:             testAccCheckFirebaseDatabaseInstanceDestroyProducer(t),
+		ExternalProviders: map[string]resource.ExternalProvider{
+			"time": {},
+		},
+		CheckDestroy: testAccCheckFirebaseDatabaseInstanceDestroyProducer(t),
 		Steps: []resource.TestStep{
 			{
 				Config: testAccFirebaseDatabaseInstance_firebaseDatabaseInstanceDefaultDatabaseExample(context),
@@ -127,7 +149,7 @@ func TestAccFirebaseDatabaseInstance_firebaseDatabaseInstanceDefaultDatabaseExam
 				ResourceName:            "google_firebase_database_instance.default",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"region", "instance_id"},
+				ImportStateVerifyIgnore: []string{"instance_id", "region"},
 			},
 		},
 	})
@@ -140,14 +162,23 @@ resource "google_project" "default" {
   project_id = "tf-test-rtdb-project%{random_suffix}"
   name       = "tf-test-rtdb-project%{random_suffix}"
   org_id     = "%{org_id}"
+  deletion_policy = "DELETE"
   labels     = {
     "firebase" = "enabled"
   }
 }
 
+resource "google_project_service" "firebase" {
+  provider = google-beta
+  project  = google_project.default.project_id
+  service  = "firebase.googleapis.com"
+}
+
 resource "google_firebase_project" "default" {
   provider = google-beta
   project  = google_project.default.project_id
+
+  depends_on = [google_project_service.firebase]
 }
 
 resource "google_project_service" "firebase_database" {
@@ -156,13 +187,18 @@ resource "google_project_service" "firebase_database" {
   service  = "firebasedatabase.googleapis.com"
 }
 
+resource "time_sleep" "wait_60_seconds" {
+  create_duration = "60s"
+  depends_on = [google_project_service.firebase_database]
+}
+
 resource "google_firebase_database_instance" "default" {
   provider = google-beta
   project  = google_firebase_project.default.project
   region   = "us-central1"
   instance_id = "tf-test-rtdb-project%{random_suffix}-default-rtdb"
   type     = "DEFAULT_DATABASE"
-  depends_on = [google_project_service.firebase_database]
+  depends_on = [time_sleep.wait_60_seconds]
 }
 `, context)
 }

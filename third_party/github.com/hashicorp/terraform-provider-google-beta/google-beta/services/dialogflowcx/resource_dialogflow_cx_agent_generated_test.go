@@ -19,15 +19,35 @@ package dialogflowcx_test
 
 import (
 	"fmt"
+	"log"
+	"strconv"
 	"strings"
 	"testing"
+	"time"
 
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/terraform"
 
 	"github.com/hashicorp/terraform-provider-google-beta/google-beta/acctest"
+	"github.com/hashicorp/terraform-provider-google-beta/google-beta/envvar"
 	"github.com/hashicorp/terraform-provider-google-beta/google-beta/tpgresource"
 	transport_tpg "github.com/hashicorp/terraform-provider-google-beta/google-beta/transport"
+
+	"google.golang.org/api/googleapi"
+)
+
+var (
+	_ = fmt.Sprintf
+	_ = log.Print
+	_ = strconv.Atoi
+	_ = strings.Trim
+	_ = time.Now
+	_ = resource.TestMain
+	_ = terraform.NewState
+	_ = envvar.TestEnvVar
+	_ = tpgresource.SetLabels
+	_ = transport_tpg.Config{}
+	_ = googleapi.Error{}
 )
 
 func TestAccDialogflowCXAgent_dialogflowcxAgentFullExample(t *testing.T) {
@@ -49,7 +69,7 @@ func TestAccDialogflowCXAgent_dialogflowcxAgentFullExample(t *testing.T) {
 				ResourceName:            "google_dialogflow_cx_agent.full_agent",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"location"},
+				ImportStateVerifyIgnore: []string{"advanced_settings.0.logging_settings", "advanced_settings.0.logging_settings", "answer_feedback_settings", "enable_stackdriver_logging", "enable_stackdriver_logging", "git_integration_settings.0.github_settings.0.access_token", "git_integration_settings.0.github_settings.0.access_token", "location", "start_playbook"},
 			},
 		},
 	})
@@ -57,6 +77,12 @@ func TestAccDialogflowCXAgent_dialogflowcxAgentFullExample(t *testing.T) {
 
 func testAccDialogflowCXAgent_dialogflowcxAgentFullExample(context map[string]interface{}) string {
 	return acctest.Nprintf(`
+resource "google_storage_bucket" "bucket" {
+  name                        = "tf-test-dialogflowcx-bucket%{random_suffix}"
+  location                    = "US"
+  uniform_bucket_level_access = true
+}
+
 resource "google_dialogflow_cx_agent" "full_agent" {
   display_name = "tf-test-dialogflowcx-agent%{random_suffix}"
   location = "global"
@@ -67,9 +93,94 @@ resource "google_dialogflow_cx_agent" "full_agent" {
   avatar_uri = "https://cloud.google.com/_static/images/cloud/icons/favicons/onecloud/super_cloud.png"
   enable_stackdriver_logging = true
   enable_spell_correction    = true
-	speech_to_text_settings {
-		enable_speech_adaptation = true
-	}
+  speech_to_text_settings {
+    enable_speech_adaptation = true
+  }
+  advanced_settings {
+    audio_export_gcs_destination {
+      uri = "${google_storage_bucket.bucket.url}/prefix-"
+    }
+    speech_settings {
+      endpointer_sensitivity        = 30
+      no_speech_timeout             = "3.500s"
+      use_timeout_based_endpointing = true
+      models = {
+        name : "wrench"
+        mass : "1.3kg"
+        count : "3"
+      }
+    }
+    dtmf_settings {
+      enabled      = true
+      max_digits   = 1
+      finish_digit = "#"
+    }
+    logging_settings {
+      enable_stackdriver_logging     = true
+      enable_interaction_logging     = true
+      enable_consent_based_redaction = true
+    }
+  }
+  git_integration_settings {
+    github_settings {
+      display_name = "Github Repo"
+      repository_uri = "https://api.github.com/repos/githubtraining/hellogitworld"
+      tracking_branch = "main"
+      access_token = "secret-token"
+      branches = ["main"]
+    }
+  }
+  text_to_speech_settings {
+    synthesize_speech_configs = jsonencode({
+      en = {
+        voice = {
+          name = "en-US-Neural2-A"
+        }
+      }
+      fr = {
+        voice = {
+          name = "fr-CA-Neural2-A",
+        }
+      }
+    })
+  }
+  gen_app_builder_settings {
+    engine = "projects/-/locations/-/collections/-/engines/-"
+  }
+  start_playbook = "projects/-/locations/-/agents/-/playbooks/00000000-0000-0000-0000-000000000000"
+  enable_multi_language_training = false
+  locked = false
+  answer_feedback_settings {
+    enable_answer_feedback = false
+  }
+  client_certificate_settings {
+    passphrase      = "projects/example-proj/secrets/example-secret/versions/example-version"
+    private_key     = "projects/example-proj/secrets/example-secret/versions/example-version"
+    ssl_certificate = <<EOT
+-----BEGIN CERTIFICATE-----
+MIIDdDCCAlygAwIBAgIJANg0gKeB5LKmMA0GCSqGSIb3DQEBCwUAMIGSMQswCQYD
+VQQGEwJVUzETMBEGA1UECAwKQ2FsaWZvcm5pYTEWMBQGA1UEBwwNU2FuIEZyYW5j
+aXNjbzEZMBcGA1UECgwQR2l0SHViLCBJbmMuMRkwFwYDVQQLDBBHb3Zlcm5tZW50
+IFRlYW0xGTAXBgNVBAMMEGdvdnN0YWNrLmdpdGh1Yi5pbzAeFw0yMDA1MDUxNzM2
+MzVaFw0zMDA1MDMxNzM2MzVaMIGSMQswCQYDVQQGEwJVUzETMBEGA1UECAwKQ2Fs
+aWZvcm5pYTEWMBQGA1UEBwwNU2FuIEZyYW5jaXNjbzEZMBcGA1UECgwQR2l0SHVi
+LCBJbmMuMRkwFwYDVQQLDBBHb3Zlcm5tZW50IFRlYW0xGTAXBgNVBAMMEGdvdnN0
+YWNrLmdpdGh1Yi5pbzCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBAK5P
+4d9qWZPjZ2eA4eYV2Q8Z3Zp4g8e6g8e6g8e6g8e6g8e6g8e6g8e6g8e6g8e6g8e6
+g8e6g8e6g8e6g8e6g8e6g8e6g8e6g8e6g8e6g8e6g8e6g8e6g8e6g8e6g8e6g8e6
+g8e6g8e6g8e6g8e6g8e6g8e6g8e6g8e6g8e6g8e6g8e6g8e6g8e6g8e6g8e6g8e6
+g8e6g8e6g8e6g8e6g8e6g8e6g8e6g8e6g8e6g8e6g8e6g8e6g8e6g8e6g8e6g8e6
+g8e6g8e6g8e6g8e6g8e6AgMBAAGjggEaMIIBFjAdBgNVHQ4EFgQUCneA9H8fC+tC
+g8e6g8e6g8e6g8e6g8e6g8e6g8e6g8e6g8e6g8e6g8e6g8e6g8e6g8e6g8e6g8e6
+g8e6g8e6g8e6g8e6g8e6g8e6g8e6g8e6g8e6g8e6g8e6g8e6g8e6g8e6g8e6g8e6
+g8e6g8e6g8e6g8e6g8e6g8e6g8e6g8e6g8e6g8e6g8e6g8e6g8e6g8e6g8e6g8e6
+g8e6g8e6g8e6g8e6g8e6g8e6g8e6g8e6g8e6g8e6g8e6g8e6g8e6g8e6g8e6g8e6
+-----END CERTIFICATE-----
+EOT
+  }
+  personalization_settings {
+    default_end_user_metadata = "{\"example-key\": \"example-value\"}"
+  }
 }
 `, context)
 }

@@ -19,15 +19,35 @@ package pubsub_test
 
 import (
 	"fmt"
+	"log"
+	"strconv"
 	"strings"
 	"testing"
+	"time"
 
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/terraform"
 
 	"github.com/hashicorp/terraform-provider-google-beta/google-beta/acctest"
+	"github.com/hashicorp/terraform-provider-google-beta/google-beta/envvar"
 	"github.com/hashicorp/terraform-provider-google-beta/google-beta/tpgresource"
 	transport_tpg "github.com/hashicorp/terraform-provider-google-beta/google-beta/transport"
+
+	"google.golang.org/api/googleapi"
+)
+
+var (
+	_ = fmt.Sprintf
+	_ = log.Print
+	_ = strconv.Atoi
+	_ = strings.Trim
+	_ = time.Now
+	_ = resource.TestMain
+	_ = terraform.NewState
+	_ = envvar.TestEnvVar
+	_ = tpgresource.SetLabels
+	_ = transport_tpg.Config{}
+	_ = googleapi.Error{}
 )
 
 func TestAccPubsubSubscription_pubsubSubscriptionPushExample(t *testing.T) {
@@ -49,7 +69,7 @@ func TestAccPubsubSubscription_pubsubSubscriptionPushExample(t *testing.T) {
 				ResourceName:            "google_pubsub_subscription.example",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"topic"},
+				ImportStateVerifyIgnore: []string{"labels", "tags", "terraform_labels", "topic"},
 			},
 		},
 	})
@@ -63,7 +83,7 @@ resource "google_pubsub_topic" "example" {
 
 resource "google_pubsub_subscription" "example" {
   name  = "tf-test-example-subscription%{random_suffix}"
-  topic = google_pubsub_topic.example.name
+  topic = google_pubsub_topic.example.id
 
   ack_deadline_seconds = 20
 
@@ -101,7 +121,7 @@ func TestAccPubsubSubscription_pubsubSubscriptionPullExample(t *testing.T) {
 				ResourceName:            "google_pubsub_subscription.example",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"topic"},
+				ImportStateVerifyIgnore: []string{"labels", "tags", "terraform_labels", "topic"},
 			},
 		},
 	})
@@ -115,7 +135,7 @@ resource "google_pubsub_topic" "example" {
 
 resource "google_pubsub_subscription" "example" {
   name  = "tf-test-example-subscription%{random_suffix}"
-  topic = google_pubsub_topic.example.name
+  topic = google_pubsub_topic.example.id
 
   labels = {
     foo = "bar"
@@ -139,6 +159,55 @@ resource "google_pubsub_subscription" "example" {
 `, context)
 }
 
+func TestAccPubsubSubscription_pubsubSubscriptionPullFilterExample(t *testing.T) {
+	t.Parallel()
+
+	context := map[string]interface{}{
+		"random_suffix": acctest.RandString(t, 10),
+	}
+
+	acctest.VcrTest(t, resource.TestCase{
+		PreCheck:                 func() { acctest.AccTestPreCheck(t) },
+		ProtoV5ProviderFactories: acctest.ProtoV5ProviderFactories(t),
+		CheckDestroy:             testAccCheckPubsubSubscriptionDestroyProducer(t),
+		Steps: []resource.TestStep{
+			{
+				Config: testAccPubsubSubscription_pubsubSubscriptionPullFilterExample(context),
+			},
+			{
+				ResourceName:            "google_pubsub_subscription.example",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"labels", "tags", "terraform_labels", "topic"},
+			},
+		},
+	})
+}
+
+func testAccPubsubSubscription_pubsubSubscriptionPullFilterExample(context map[string]interface{}) string {
+	return acctest.Nprintf(`
+resource "google_pubsub_topic" "example" {
+  name = "tf-test-example-topic%{random_suffix}"
+}
+
+resource "google_pubsub_subscription" "example" {
+  name  = "tf-test-example-subscription%{random_suffix}"
+  topic = google_pubsub_topic.example.id
+
+  labels = {
+    foo = "bar"
+  }
+
+  filter = <<EOF
+    attributes.foo = "foo"
+    AND attributes.bar = "bar"
+  EOF
+
+  ack_deadline_seconds = 20
+}
+`, context)
+}
+
 func TestAccPubsubSubscription_pubsubSubscriptionDeadLetterExample(t *testing.T) {
 	t.Parallel()
 
@@ -158,7 +227,7 @@ func TestAccPubsubSubscription_pubsubSubscriptionDeadLetterExample(t *testing.T)
 				ResourceName:            "google_pubsub_subscription.example",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"topic"},
+				ImportStateVerifyIgnore: []string{"labels", "tags", "terraform_labels", "topic"},
 			},
 		},
 	})
@@ -176,7 +245,7 @@ resource "google_pubsub_topic" "example_dead_letter" {
 
 resource "google_pubsub_subscription" "example" {
   name  = "tf-test-example-subscription%{random_suffix}"
-  topic = google_pubsub_topic.example.name
+  topic = google_pubsub_topic.example.id
 
   dead_letter_policy {
     dead_letter_topic = google_pubsub_topic.example_dead_letter.id
@@ -188,6 +257,16 @@ resource "google_pubsub_subscription" "example" {
 
 func TestAccPubsubSubscription_pubsubSubscriptionPushBqExample(t *testing.T) {
 	t.Parallel()
+	acctest.BootstrapIamMembers(t, []acctest.IamMember{
+		{
+			Member: "serviceAccount:service-{project_number}@gcp-sa-pubsub.iam.gserviceaccount.com",
+			Role:   "roles/bigquery.dataEditor",
+		},
+		{
+			Member: "serviceAccount:service-{project_number}@gcp-sa-pubsub.iam.gserviceaccount.com",
+			Role:   "roles/bigquery.metadataViewer",
+		},
+	})
 
 	context := map[string]interface{}{
 		"random_suffix": acctest.RandString(t, 10),
@@ -205,7 +284,7 @@ func TestAccPubsubSubscription_pubsubSubscriptionPushBqExample(t *testing.T) {
 				ResourceName:            "google_pubsub_subscription.example",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"topic"},
+				ImportStateVerifyIgnore: []string{"labels", "tags", "terraform_labels", "topic"},
 			},
 		},
 	})
@@ -219,28 +298,180 @@ resource "google_pubsub_topic" "example" {
 
 resource "google_pubsub_subscription" "example" {
   name  = "tf-test-example-subscription%{random_suffix}"
-  topic = google_pubsub_topic.example.name
+  topic = google_pubsub_topic.example.id
 
   bigquery_config {
     table = "${google_bigquery_table.test.project}.${google_bigquery_table.test.dataset_id}.${google_bigquery_table.test.table_id}"
   }
-
-  depends_on = [google_project_iam_member.viewer, google_project_iam_member.editor]
 }
 
-data "google_project" "project" {
+data "google_project" "project" {}
+
+resource "google_bigquery_dataset" "test" {
+  dataset_id = "tf_test_example_dataset%{random_suffix}"
 }
 
-resource "google_project_iam_member" "viewer" {
+resource "google_bigquery_table" "test" {
+  table_id   = "tf_test_example_table%{random_suffix}"
+  dataset_id = google_bigquery_dataset.test.dataset_id
+
+  schema = <<EOF
+[
+  {
+    "name": "data",
+    "type": "STRING",
+    "mode": "NULLABLE",
+    "description": "The data"
+  }
+]
+EOF
+
+  deletion_protection = false
+}
+`, context)
+}
+
+func TestAccPubsubSubscription_pubsubSubscriptionPushBqTableSchemaExample(t *testing.T) {
+	t.Parallel()
+	acctest.BootstrapIamMembers(t, []acctest.IamMember{
+		{
+			Member: "serviceAccount:service-{project_number}@gcp-sa-pubsub.iam.gserviceaccount.com",
+			Role:   "roles/bigquery.dataEditor",
+		},
+		{
+			Member: "serviceAccount:service-{project_number}@gcp-sa-pubsub.iam.gserviceaccount.com",
+			Role:   "roles/bigquery.metadataViewer",
+		},
+	})
+
+	context := map[string]interface{}{
+		"random_suffix": acctest.RandString(t, 10),
+	}
+
+	acctest.VcrTest(t, resource.TestCase{
+		PreCheck:                 func() { acctest.AccTestPreCheck(t) },
+		ProtoV5ProviderFactories: acctest.ProtoV5ProviderFactories(t),
+		CheckDestroy:             testAccCheckPubsubSubscriptionDestroyProducer(t),
+		Steps: []resource.TestStep{
+			{
+				Config: testAccPubsubSubscription_pubsubSubscriptionPushBqTableSchemaExample(context),
+			},
+			{
+				ResourceName:            "google_pubsub_subscription.example",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"labels", "tags", "terraform_labels", "topic"},
+			},
+		},
+	})
+}
+
+func testAccPubsubSubscription_pubsubSubscriptionPushBqTableSchemaExample(context map[string]interface{}) string {
+	return acctest.Nprintf(`
+resource "google_pubsub_topic" "example" {
+  name = "tf-test-example-topic%{random_suffix}"
+}
+
+resource "google_pubsub_subscription" "example" {
+  name  = "tf-test-example-subscription%{random_suffix}"
+  topic = google_pubsub_topic.example.id
+
+  bigquery_config {
+    table = "${google_bigquery_table.test.project}.${google_bigquery_table.test.dataset_id}.${google_bigquery_table.test.table_id}"
+    use_table_schema = true
+  }
+}
+
+data "google_project" "project" {}
+
+resource "google_bigquery_dataset" "test" {
+  dataset_id = "tf_test_example_dataset%{random_suffix}"
+}
+
+resource "google_bigquery_table" "test" {
+  table_id   = "tf_test_example_table%{random_suffix}"
+  dataset_id = google_bigquery_dataset.test.dataset_id
+
+  schema = <<EOF
+[
+  {
+    "name": "data",
+    "type": "STRING",
+    "mode": "NULLABLE",
+    "description": "The data"
+  }
+]
+EOF
+
+  deletion_protection = false
+}
+`, context)
+}
+
+func TestAccPubsubSubscription_pubsubSubscriptionPushBqServiceAccountExample(t *testing.T) {
+	t.Parallel()
+
+	context := map[string]interface{}{
+		"random_suffix": acctest.RandString(t, 10),
+	}
+
+	acctest.VcrTest(t, resource.TestCase{
+		PreCheck:                 func() { acctest.AccTestPreCheck(t) },
+		ProtoV5ProviderFactories: acctest.ProtoV5ProviderFactories(t),
+		CheckDestroy:             testAccCheckPubsubSubscriptionDestroyProducer(t),
+		Steps: []resource.TestStep{
+			{
+				Config: testAccPubsubSubscription_pubsubSubscriptionPushBqServiceAccountExample(context),
+			},
+			{
+				ResourceName:            "google_pubsub_subscription.example",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"labels", "tags", "terraform_labels", "topic"},
+			},
+		},
+	})
+}
+
+func testAccPubsubSubscription_pubsubSubscriptionPushBqServiceAccountExample(context map[string]interface{}) string {
+	return acctest.Nprintf(`
+resource "google_pubsub_topic" "example" {
+  name = "tf-test-example-topic%{random_suffix}"
+}
+
+resource "google_pubsub_subscription" "example" {
+  name  = "tf-test-example-subscription%{random_suffix}"
+  topic = google_pubsub_topic.example.id
+
+  bigquery_config {
+    table = "${google_bigquery_table.test.project}.${google_bigquery_table.test.dataset_id}.${google_bigquery_table.test.table_id}"
+    service_account_email = google_service_account.bq_write_service_account.email
+  }
+
+  depends_on = [
+    google_service_account.bq_write_service_account,
+    google_project_iam_member.bigquery_metadata_viewer,
+    google_project_iam_member.bigquery_data_editor
+  ]
+}
+
+data "google_project" "project" {}
+
+resource "google_service_account" "bq_write_service_account" {
+  account_id = "tf-test-example-bqw%{random_suffix}"
+  display_name = "BQ Write Service Account"
+}
+
+resource "google_project_iam_member" "bigquery_metadata_viewer" {
   project = data.google_project.project.project_id
   role   = "roles/bigquery.metadataViewer"
-  member = "serviceAccount:service-${data.google_project.project.number}@gcp-sa-pubsub.iam.gserviceaccount.com"
+  member = "serviceAccount:${google_service_account.bq_write_service_account.email}"
 }
 
-resource "google_project_iam_member" "editor" {
+resource "google_project_iam_member" "bigquery_data_editor" {
   project = data.google_project.project.project_id
   role   = "roles/bigquery.dataEditor"
-  member = "serviceAccount:service-${data.google_project.project.number}@gcp-sa-pubsub.iam.gserviceaccount.com"
+  member = "serviceAccount:${google_service_account.bq_write_service_account.email}"
 }
 
 resource "google_bigquery_dataset" "test" {
@@ -285,7 +516,7 @@ func TestAccPubsubSubscription_pubsubSubscriptionPushCloudstorageExample(t *test
 				ResourceName:            "google_pubsub_subscription.example",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"topic"},
+				ImportStateVerifyIgnore: []string{"labels", "tags", "terraform_labels", "topic"},
 			},
 		},
 	})
@@ -305,18 +536,20 @@ resource "google_pubsub_topic" "example" {
 
 resource "google_pubsub_subscription" "example" {
   name  = "tf-test-example-subscription%{random_suffix}"
-  topic = google_pubsub_topic.example.name
+  topic = google_pubsub_topic.example.id
 
   cloud_storage_config {
     bucket = google_storage_bucket.example.name
 
     filename_prefix = "pre-"
     filename_suffix = "-%{random_suffix}"
-  
+    filename_datetime_format = "YYYY-MM-DD/hh_mm_ssZ"
+
     max_bytes = 1000
     max_duration = "300s"
+    max_messages = 1000
   }
-  depends_on = [ 
+  depends_on = [
     google_storage_bucket.example,
     google_storage_bucket_iam_member.admin,
   ]
@@ -352,7 +585,7 @@ func TestAccPubsubSubscription_pubsubSubscriptionPushCloudstorageAvroExample(t *
 				ResourceName:            "google_pubsub_subscription.example",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"topic"},
+				ImportStateVerifyIgnore: []string{"labels", "tags", "terraform_labels", "topic"},
 			},
 		},
 	})
@@ -372,22 +605,25 @@ resource "google_pubsub_topic" "example" {
 
 resource "google_pubsub_subscription" "example" {
   name  = "tf-test-example-subscription%{random_suffix}"
-  topic = google_pubsub_topic.example.name
+  topic = google_pubsub_topic.example.id
 
   cloud_storage_config {
     bucket = google_storage_bucket.example.name
 
     filename_prefix = "pre-"
     filename_suffix = "-%{random_suffix}"
-  
+    filename_datetime_format = "YYYY-MM-DD/hh_mm_ssZ"
+
     max_bytes = 1000
     max_duration = "300s"
-  
+    max_messages = 1000
+
     avro_config {
       write_metadata = true
+      use_topic_schema = true
     }
   }
-  depends_on = [ 
+  depends_on = [
     google_storage_bucket.example,
     google_storage_bucket_iam_member.admin,
   ]
@@ -400,6 +636,257 @@ resource "google_storage_bucket_iam_member" "admin" {
   bucket = google_storage_bucket.example.name
   role   = "roles/storage.admin"
   member = "serviceAccount:service-${data.google_project.project.number}@gcp-sa-pubsub.iam.gserviceaccount.com"
+}
+`, context)
+}
+
+func TestAccPubsubSubscription_pubsubSubscriptionPushCloudstorageServiceAccountExample(t *testing.T) {
+	t.Parallel()
+
+	context := map[string]interface{}{
+		"random_suffix": acctest.RandString(t, 10),
+	}
+
+	acctest.VcrTest(t, resource.TestCase{
+		PreCheck:                 func() { acctest.AccTestPreCheck(t) },
+		ProtoV5ProviderFactories: acctest.ProtoV5ProviderFactories(t),
+		CheckDestroy:             testAccCheckPubsubSubscriptionDestroyProducer(t),
+		Steps: []resource.TestStep{
+			{
+				Config: testAccPubsubSubscription_pubsubSubscriptionPushCloudstorageServiceAccountExample(context),
+			},
+			{
+				ResourceName:            "google_pubsub_subscription.example",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"labels", "tags", "terraform_labels", "topic"},
+			},
+		},
+	})
+}
+
+func testAccPubsubSubscription_pubsubSubscriptionPushCloudstorageServiceAccountExample(context map[string]interface{}) string {
+	return acctest.Nprintf(`
+resource "google_storage_bucket" "example" {
+  name  = "tf-test-example-bucket%{random_suffix}"
+  location = "US"
+  uniform_bucket_level_access = true
+}
+
+resource "google_pubsub_topic" "example" {
+  name = "tf-test-example-topic%{random_suffix}"
+}
+
+resource "google_pubsub_subscription" "example" {
+  name  = "tf-test-example-subscription%{random_suffix}"
+  topic = google_pubsub_topic.example.id
+
+  cloud_storage_config {
+    bucket = google_storage_bucket.example.name
+
+    filename_prefix = "pre-"
+    filename_suffix = "-%{random_suffix}"
+    filename_datetime_format = "YYYY-MM-DD/hh_mm_ssZ"
+
+    max_bytes = 1000
+    max_duration = "300s"
+
+    service_account_email = google_service_account.storage_write_service_account.email
+  }
+  depends_on = [
+    google_service_account.storage_write_service_account,
+    google_storage_bucket.example,
+    google_storage_bucket_iam_member.admin,
+  ]
+}
+
+data "google_project" "project" {
+}
+
+resource "google_service_account" "storage_write_service_account" {
+  account_id = "tf-test-example-stw%{random_suffix}"
+  display_name = "Storage Write Service Account"
+}
+
+resource "google_storage_bucket_iam_member" "admin" {
+  bucket = google_storage_bucket.example.name
+  role   = "roles/storage.admin"
+  member = "serviceAccount:${google_service_account.storage_write_service_account.email}"
+}
+`, context)
+}
+
+func TestAccPubsubSubscription_pubsubSubscriptionSingleSmtExample(t *testing.T) {
+	t.Parallel()
+
+	context := map[string]interface{}{
+		"random_suffix": acctest.RandString(t, 10),
+	}
+
+	acctest.VcrTest(t, resource.TestCase{
+		PreCheck:                 func() { acctest.AccTestPreCheck(t) },
+		ProtoV5ProviderFactories: acctest.ProtoV5ProviderFactories(t),
+		CheckDestroy:             testAccCheckPubsubSubscriptionDestroyProducer(t),
+		Steps: []resource.TestStep{
+			{
+				Config: testAccPubsubSubscription_pubsubSubscriptionSingleSmtExample(context),
+			},
+			{
+				ResourceName:            "google_pubsub_subscription.example",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"labels", "tags", "terraform_labels", "topic"},
+			},
+		},
+	})
+}
+
+func testAccPubsubSubscription_pubsubSubscriptionSingleSmtExample(context map[string]interface{}) string {
+	return acctest.Nprintf(`
+resource "google_pubsub_topic" "example" {
+  name = "tf-test-example-topic%{random_suffix}"
+}
+
+resource "google_pubsub_subscription" "example" {
+  name  = "tf-test-example-subscription%{random_suffix}"
+  topic = google_pubsub_topic.example.id
+
+  message_transforms {
+    javascript_udf {
+      function_name = "isYearEven"
+      code = <<EOF
+function isYearEven(message, metadata) {
+  const data = JSON.parse(message.data);
+  return message.year %2 === 0;
+}
+EOF
+    }
+  }
+}
+`, context)
+}
+
+func TestAccPubsubSubscription_pubsubSubscriptionMultipleSmtsExample(t *testing.T) {
+	t.Parallel()
+
+	context := map[string]interface{}{
+		"random_suffix": acctest.RandString(t, 10),
+	}
+
+	acctest.VcrTest(t, resource.TestCase{
+		PreCheck:                 func() { acctest.AccTestPreCheck(t) },
+		ProtoV5ProviderFactories: acctest.ProtoV5ProviderFactories(t),
+		CheckDestroy:             testAccCheckPubsubSubscriptionDestroyProducer(t),
+		Steps: []resource.TestStep{
+			{
+				Config: testAccPubsubSubscription_pubsubSubscriptionMultipleSmtsExample(context),
+			},
+			{
+				ResourceName:            "google_pubsub_subscription.example",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"labels", "tags", "terraform_labels", "topic"},
+			},
+		},
+	})
+}
+
+func testAccPubsubSubscription_pubsubSubscriptionMultipleSmtsExample(context map[string]interface{}) string {
+	return acctest.Nprintf(`
+resource "google_pubsub_topic" "example" {
+  name = "tf-test-example-topic%{random_suffix}"
+}
+
+resource "google_pubsub_subscription" "example" {
+  name  = "tf-test-example-subscription%{random_suffix}"
+  topic = google_pubsub_topic.example.id
+
+  message_transforms {
+    javascript_udf {
+      function_name = "redactSSN"
+      code = <<EOF
+function redactSSN(message, metadata) {
+  const data = JSON.parse(message.data);
+  delete data['ssn'];
+  message.data = JSON.stringify(data);
+  return message;
+}
+EOF
+    }
+  }
+
+  message_transforms {
+    javascript_udf {
+      function_name = "otherFunc"
+      code = <<EOF
+function otherFunc(message, metadata) {
+  return null;
+}
+EOF
+    }
+  }
+
+  message_transforms {
+    disabled = true
+    javascript_udf {
+      function_name = "someSMTWeDisabled"
+      code = "..."
+    }
+  }
+}
+`, context)
+}
+
+func TestAccPubsubSubscription_pubsubSubscriptionTagsExample(t *testing.T) {
+	t.Parallel()
+
+	context := map[string]interface{}{
+		"random_suffix": acctest.RandString(t, 10),
+	}
+
+	acctest.VcrTest(t, resource.TestCase{
+		PreCheck:                 func() { acctest.AccTestPreCheck(t) },
+		ProtoV5ProviderFactories: acctest.ProtoV5ProviderFactories(t),
+		CheckDestroy:             testAccCheckPubsubSubscriptionDestroyProducer(t),
+		Steps: []resource.TestStep{
+			{
+				Config: testAccPubsubSubscription_pubsubSubscriptionTagsExample(context),
+			},
+			{
+				ResourceName:            "google_pubsub_subscription.example",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"labels", "tags", "terraform_labels", "topic"},
+			},
+		},
+	})
+}
+
+func testAccPubsubSubscription_pubsubSubscriptionTagsExample(context map[string]interface{}) string {
+	return acctest.Nprintf(`
+resource "google_pubsub_topic" "example" {
+  name = "tf-test-example-topic%{random_suffix}"
+}
+
+resource "google_pubsub_subscription" "example" {
+  name  = "tf-test-example-subscription%{random_suffix}"
+  topic = google_pubsub_topic.example.id
+  tags = {
+    (google_tags_tag_key.tag_key.namespaced_name) = google_tags_tag_value.tag_value.short_name
+  }
+}
+
+data "google_project" "project" {}
+
+resource "google_tags_tag_key" "tag_key" {
+  parent     = data.google_project.project.id
+  short_name = "tf_test_tag_key%{random_suffix}"
+  depends_on = [google_pubsub_topic.example]
+}
+
+resource "google_tags_tag_value" "tag_value" {
+  parent     = google_tags_tag_key.tag_key.id
+  short_name = "tf_test_tag_value%{random_suffix}"
 }
 `, context)
 }

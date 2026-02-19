@@ -24,6 +24,7 @@ import (
 	"log"
 	"time"
 
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/customdiff"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 
 	dcl "github.com/GoogleCloudPlatform/declarative-resource-client-library/dcl"
@@ -50,6 +51,10 @@ func ResourceCloudbuildWorkerPool() *schema.Resource {
 			Update: schema.DefaultTimeout(20 * time.Minute),
 			Delete: schema.DefaultTimeout(20 * time.Minute),
 		},
+		CustomizeDiff: customdiff.All(
+			tpgresource.DefaultProviderProject,
+			tpgresource.SetAnnotationsDiff,
+		),
 
 		Schema: map[string]*schema.Schema{
 			"location": {
@@ -66,26 +71,36 @@ func ResourceCloudbuildWorkerPool() *schema.Resource {
 				Description: "User-defined name of the `WorkerPool`.",
 			},
 
-			"annotations": {
-				Type:        schema.TypeMap,
-				Optional:    true,
-				Description: "User specified annotations. See https://google.aip.dev/128#annotations for more details such as format and size limitations.",
-				Elem:        &schema.Schema{Type: schema.TypeString},
-			},
-
 			"display_name": {
 				Type:        schema.TypeString,
 				Optional:    true,
 				Description: "A user-specified, human-readable name for the `WorkerPool`. If provided, this value must be 1-63 characters.",
 			},
 
+			"effective_annotations": {
+				Type:        schema.TypeMap,
+				Computed:    true,
+				Description: "All of annotations (key/value pairs) present on the resource in GCP, including the annotations configured through Terraform, other clients and services.",
+			},
+
 			"network_config": {
-				Type:        schema.TypeList,
-				Optional:    true,
-				ForceNew:    true,
-				Description: "Network configuration for the `WorkerPool`.",
-				MaxItems:    1,
-				Elem:        CloudbuildWorkerPoolNetworkConfigSchema(),
+				Type:          schema.TypeList,
+				Optional:      true,
+				ForceNew:      true,
+				Description:   "Network configuration for the `WorkerPool`.",
+				MaxItems:      1,
+				Elem:          CloudbuildWorkerPoolNetworkConfigSchema(),
+				ConflictsWith: []string{"private_service_connect"},
+			},
+
+			"private_service_connect": {
+				Type:          schema.TypeList,
+				Optional:      true,
+				ForceNew:      true,
+				Description:   "Private Service Connect configuration for the pool.",
+				MaxItems:      1,
+				Elem:          CloudbuildWorkerPoolPrivateServiceConnectSchema(),
+				ConflictsWith: []string{"network_config"},
 			},
 
 			"project": {
@@ -104,6 +119,13 @@ func ResourceCloudbuildWorkerPool() *schema.Resource {
 				Description: "Configuration to be used for a creating workers in the `WorkerPool`.",
 				MaxItems:    1,
 				Elem:        CloudbuildWorkerPoolWorkerConfigSchema(),
+			},
+
+			"annotations": {
+				Type:        schema.TypeMap,
+				Optional:    true,
+				Description: "User specified annotations. See https://google.aip.dev/128#annotations for more details such as format and size limitations.\n\n**Note**: This field is non-authoritative, and will only manage the annotations present in your configuration.\nPlease refer to the field `effective_annotations` for all of the annotations present on the resource.",
+				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
 
 			"create_time": {
@@ -160,6 +182,27 @@ func CloudbuildWorkerPoolNetworkConfigSchema() *schema.Resource {
 	}
 }
 
+func CloudbuildWorkerPoolPrivateServiceConnectSchema() *schema.Resource {
+	return &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			"network_attachment": {
+				Type:             schema.TypeString,
+				Required:         true,
+				ForceNew:         true,
+				DiffSuppressFunc: tpgresource.CompareSelfLinkOrResourceName,
+				Description:      "Required. Immutable. The network attachment that the worker network interface is connected to. Must be in the format `projects/{project}/regions/{region}/networkAttachments/{networkAttachment}`. The region of network attachment must be the same as the worker pool. See [Network Attachments](https://cloud.google.com/vpc/docs/about-network-attachments)",
+			},
+
+			"route_all_traffic": {
+				Type:        schema.TypeBool,
+				Optional:    true,
+				ForceNew:    true,
+				Description: "Immutable. Route all traffic through PSC interface. Enable this if you want full control of traffic in the private pool. Configure Cloud NAT for the subnet of network attachment if you need to access public Internet. If false, Only route private IPs, e.g. 10.0.0.0/8, 172.16.0.0/12, and 192.168.0.0/16 through PSC interface.",
+			},
+		},
+	}
+}
+
 func CloudbuildWorkerPoolWorkerConfigSchema() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{
@@ -167,6 +210,12 @@ func CloudbuildWorkerPoolWorkerConfigSchema() *schema.Resource {
 				Type:        schema.TypeInt,
 				Optional:    true,
 				Description: "Size of the disk attached to the worker, in GB. See [Worker pool config file](https://cloud.google.com/cloud-build/docs/custom-workers/worker-pool-config-file). Specify a value of up to 1000. If `0` is specified, Cloud Build will use a standard disk size.",
+			},
+
+			"enable_nested_virtualization": {
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Description: "Enable nested virtualization on the worker, if supported by the machine type. See [Worker pool config file](https://cloud.google.com/build/docs/private-pools/worker-pool-config-file-schema). If left blank, Cloud Build will set this to false.",
 			},
 
 			"machine_type": {
@@ -193,13 +242,14 @@ func resourceCloudbuildWorkerPoolCreate(d *schema.ResourceData, meta interface{}
 	}
 
 	obj := &cloudbuild.WorkerPool{
-		Location:      dcl.String(d.Get("location").(string)),
-		Name:          dcl.String(d.Get("name").(string)),
-		Annotations:   tpgresource.CheckStringMap(d.Get("annotations")),
-		DisplayName:   dcl.String(d.Get("display_name").(string)),
-		NetworkConfig: expandCloudbuildWorkerPoolNetworkConfig(d.Get("network_config")),
-		Project:       dcl.String(project),
-		WorkerConfig:  expandCloudbuildWorkerPoolWorkerConfig(d.Get("worker_config")),
+		Location:              dcl.String(d.Get("location").(string)),
+		Name:                  dcl.String(d.Get("name").(string)),
+		DisplayName:           dcl.String(d.Get("display_name").(string)),
+		Annotations:           tpgresource.CheckStringMap(d.Get("effective_annotations")),
+		NetworkConfig:         expandCloudbuildWorkerPoolNetworkConfig(d.Get("network_config")),
+		PrivateServiceConnect: expandCloudbuildWorkerPoolPrivateServiceConnect(d.Get("private_service_connect")),
+		Project:               dcl.String(project),
+		WorkerConfig:          expandCloudbuildWorkerPoolWorkerConfig(d.Get("worker_config")),
 	}
 
 	id, err := obj.ID()
@@ -247,13 +297,14 @@ func resourceCloudbuildWorkerPoolRead(d *schema.ResourceData, meta interface{}) 
 	}
 
 	obj := &cloudbuild.WorkerPool{
-		Location:      dcl.String(d.Get("location").(string)),
-		Name:          dcl.String(d.Get("name").(string)),
-		Annotations:   tpgresource.CheckStringMap(d.Get("annotations")),
-		DisplayName:   dcl.String(d.Get("display_name").(string)),
-		NetworkConfig: expandCloudbuildWorkerPoolNetworkConfig(d.Get("network_config")),
-		Project:       dcl.String(project),
-		WorkerConfig:  expandCloudbuildWorkerPoolWorkerConfig(d.Get("worker_config")),
+		Location:              dcl.String(d.Get("location").(string)),
+		Name:                  dcl.String(d.Get("name").(string)),
+		DisplayName:           dcl.String(d.Get("display_name").(string)),
+		Annotations:           tpgresource.CheckStringMap(d.Get("effective_annotations")),
+		NetworkConfig:         expandCloudbuildWorkerPoolNetworkConfig(d.Get("network_config")),
+		PrivateServiceConnect: expandCloudbuildWorkerPoolPrivateServiceConnect(d.Get("private_service_connect")),
+		Project:               dcl.String(project),
+		WorkerConfig:          expandCloudbuildWorkerPoolWorkerConfig(d.Get("worker_config")),
 	}
 
 	userAgent, err := tpgresource.GenerateUserAgentString(d, config.UserAgent)
@@ -284,20 +335,26 @@ func resourceCloudbuildWorkerPoolRead(d *schema.ResourceData, meta interface{}) 
 	if err = d.Set("name", res.Name); err != nil {
 		return fmt.Errorf("error setting name in state: %s", err)
 	}
-	if err = d.Set("annotations", res.Annotations); err != nil {
-		return fmt.Errorf("error setting annotations in state: %s", err)
-	}
 	if err = d.Set("display_name", res.DisplayName); err != nil {
 		return fmt.Errorf("error setting display_name in state: %s", err)
 	}
+	if err = d.Set("effective_annotations", res.Annotations); err != nil {
+		return fmt.Errorf("error setting effective_annotations in state: %s", err)
+	}
 	if err = d.Set("network_config", flattenCloudbuildWorkerPoolNetworkConfig(res.NetworkConfig)); err != nil {
 		return fmt.Errorf("error setting network_config in state: %s", err)
+	}
+	if err = d.Set("private_service_connect", flattenCloudbuildWorkerPoolPrivateServiceConnect(res.PrivateServiceConnect)); err != nil {
+		return fmt.Errorf("error setting private_service_connect in state: %s", err)
 	}
 	if err = d.Set("project", res.Project); err != nil {
 		return fmt.Errorf("error setting project in state: %s", err)
 	}
 	if err = d.Set("worker_config", flattenCloudbuildWorkerPoolWorkerConfig(res.WorkerConfig)); err != nil {
 		return fmt.Errorf("error setting worker_config in state: %s", err)
+	}
+	if err = d.Set("annotations", flattenCloudbuildWorkerPoolAnnotations(res.Annotations, d)); err != nil {
+		return fmt.Errorf("error setting annotations in state: %s", err)
 	}
 	if err = d.Set("create_time", res.CreateTime); err != nil {
 		return fmt.Errorf("error setting create_time in state: %s", err)
@@ -325,13 +382,14 @@ func resourceCloudbuildWorkerPoolUpdate(d *schema.ResourceData, meta interface{}
 	}
 
 	obj := &cloudbuild.WorkerPool{
-		Location:      dcl.String(d.Get("location").(string)),
-		Name:          dcl.String(d.Get("name").(string)),
-		Annotations:   tpgresource.CheckStringMap(d.Get("annotations")),
-		DisplayName:   dcl.String(d.Get("display_name").(string)),
-		NetworkConfig: expandCloudbuildWorkerPoolNetworkConfig(d.Get("network_config")),
-		Project:       dcl.String(project),
-		WorkerConfig:  expandCloudbuildWorkerPoolWorkerConfig(d.Get("worker_config")),
+		Location:              dcl.String(d.Get("location").(string)),
+		Name:                  dcl.String(d.Get("name").(string)),
+		DisplayName:           dcl.String(d.Get("display_name").(string)),
+		Annotations:           tpgresource.CheckStringMap(d.Get("effective_annotations")),
+		NetworkConfig:         expandCloudbuildWorkerPoolNetworkConfig(d.Get("network_config")),
+		PrivateServiceConnect: expandCloudbuildWorkerPoolPrivateServiceConnect(d.Get("private_service_connect")),
+		Project:               dcl.String(project),
+		WorkerConfig:          expandCloudbuildWorkerPoolWorkerConfig(d.Get("worker_config")),
 	}
 	directive := tpgdclresource.UpdateDirective
 	userAgent, err := tpgresource.GenerateUserAgentString(d, config.UserAgent)
@@ -374,13 +432,14 @@ func resourceCloudbuildWorkerPoolDelete(d *schema.ResourceData, meta interface{}
 	}
 
 	obj := &cloudbuild.WorkerPool{
-		Location:      dcl.String(d.Get("location").(string)),
-		Name:          dcl.String(d.Get("name").(string)),
-		Annotations:   tpgresource.CheckStringMap(d.Get("annotations")),
-		DisplayName:   dcl.String(d.Get("display_name").(string)),
-		NetworkConfig: expandCloudbuildWorkerPoolNetworkConfig(d.Get("network_config")),
-		Project:       dcl.String(project),
-		WorkerConfig:  expandCloudbuildWorkerPoolWorkerConfig(d.Get("worker_config")),
+		Location:              dcl.String(d.Get("location").(string)),
+		Name:                  dcl.String(d.Get("name").(string)),
+		DisplayName:           dcl.String(d.Get("display_name").(string)),
+		Annotations:           tpgresource.CheckStringMap(d.Get("effective_annotations")),
+		NetworkConfig:         expandCloudbuildWorkerPoolNetworkConfig(d.Get("network_config")),
+		PrivateServiceConnect: expandCloudbuildWorkerPoolPrivateServiceConnect(d.Get("private_service_connect")),
+		Project:               dcl.String(project),
+		WorkerConfig:          expandCloudbuildWorkerPoolWorkerConfig(d.Get("worker_config")),
 	}
 
 	log.Printf("[DEBUG] Deleting WorkerPool %q", d.Id())
@@ -457,6 +516,34 @@ func flattenCloudbuildWorkerPoolNetworkConfig(obj *cloudbuild.WorkerPoolNetworkC
 
 }
 
+func expandCloudbuildWorkerPoolPrivateServiceConnect(o interface{}) *cloudbuild.WorkerPoolPrivateServiceConnect {
+	if o == nil {
+		return cloudbuild.EmptyWorkerPoolPrivateServiceConnect
+	}
+	objArr := o.([]interface{})
+	if len(objArr) == 0 || objArr[0] == nil {
+		return cloudbuild.EmptyWorkerPoolPrivateServiceConnect
+	}
+	obj := objArr[0].(map[string]interface{})
+	return &cloudbuild.WorkerPoolPrivateServiceConnect{
+		NetworkAttachment: dcl.String(obj["network_attachment"].(string)),
+		RouteAllTraffic:   dcl.Bool(obj["route_all_traffic"].(bool)),
+	}
+}
+
+func flattenCloudbuildWorkerPoolPrivateServiceConnect(obj *cloudbuild.WorkerPoolPrivateServiceConnect) interface{} {
+	if obj == nil || obj.Empty() {
+		return nil
+	}
+	transformed := map[string]interface{}{
+		"network_attachment": obj.NetworkAttachment,
+		"route_all_traffic":  obj.RouteAllTraffic,
+	}
+
+	return []interface{}{transformed}
+
+}
+
 func expandCloudbuildWorkerPoolWorkerConfig(o interface{}) *cloudbuild.WorkerPoolWorkerConfig {
 	if o == nil {
 		return nil
@@ -467,9 +554,10 @@ func expandCloudbuildWorkerPoolWorkerConfig(o interface{}) *cloudbuild.WorkerPoo
 	}
 	obj := objArr[0].(map[string]interface{})
 	return &cloudbuild.WorkerPoolWorkerConfig{
-		DiskSizeGb:   dcl.Int64(int64(obj["disk_size_gb"].(int))),
-		MachineType:  dcl.String(obj["machine_type"].(string)),
-		NoExternalIP: dcl.Bool(obj["no_external_ip"].(bool)),
+		DiskSizeGb:                 dcl.Int64(int64(obj["disk_size_gb"].(int))),
+		EnableNestedVirtualization: dcl.Bool(obj["enable_nested_virtualization"].(bool)),
+		MachineType:                dcl.String(obj["machine_type"].(string)),
+		NoExternalIP:               dcl.Bool(obj["no_external_ip"].(bool)),
 	}
 }
 
@@ -478,11 +566,27 @@ func flattenCloudbuildWorkerPoolWorkerConfig(obj *cloudbuild.WorkerPoolWorkerCon
 		return nil
 	}
 	transformed := map[string]interface{}{
-		"disk_size_gb":   obj.DiskSizeGb,
-		"machine_type":   obj.MachineType,
-		"no_external_ip": obj.NoExternalIP,
+		"disk_size_gb":                 obj.DiskSizeGb,
+		"enable_nested_virtualization": obj.EnableNestedVirtualization,
+		"machine_type":                 obj.MachineType,
+		"no_external_ip":               obj.NoExternalIP,
 	}
 
 	return []interface{}{transformed}
 
+}
+
+func flattenCloudbuildWorkerPoolAnnotations(v map[string]string, d *schema.ResourceData) interface{} {
+	if v == nil {
+		return nil
+	}
+
+	transformed := make(map[string]interface{})
+	if l, ok := d.Get("annotations").(map[string]interface{}); ok {
+		for k := range l {
+			transformed[k] = v[k]
+		}
+	}
+
+	return transformed
 }

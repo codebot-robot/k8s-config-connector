@@ -19,24 +19,43 @@ package iam2_test
 
 import (
 	"fmt"
+	"log"
+	"strconv"
 	"strings"
 	"testing"
+	"time"
 
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/terraform"
 
 	"github.com/hashicorp/terraform-provider-google-beta/google-beta/acctest"
 	"github.com/hashicorp/terraform-provider-google-beta/google-beta/envvar"
 	"github.com/hashicorp/terraform-provider-google-beta/google-beta/tpgresource"
 	transport_tpg "github.com/hashicorp/terraform-provider-google-beta/google-beta/transport"
+
+	"google.golang.org/api/googleapi"
+)
+
+var (
+	_ = fmt.Sprintf
+	_ = log.Print
+	_ = strconv.Atoi
+	_ = strings.Trim
+	_ = time.Now
+	_ = resource.TestMain
+	_ = terraform.NewState
+	_ = envvar.TestEnvVar
+	_ = tpgresource.SetLabels
+	_ = transport_tpg.Config{}
+	_ = googleapi.Error{}
 )
 
 func TestAccIAM2DenyPolicy_iamDenyPolicyBasicExample(t *testing.T) {
 	t.Parallel()
 
 	context := map[string]interface{}{
-		"org_id":          envvar.GetTestOrgFromEnv(t),
 		"billing_account": envvar.GetTestBillingAccountFromEnv(t),
+		"org_id":          envvar.GetTestOrgFromEnv(t),
 		"random_suffix":   acctest.RandString(t, 10),
 	}
 
@@ -65,6 +84,7 @@ resource "google_project" "project" {
   name            = "tf-test-my-project%{random_suffix}"
   org_id          = "%{org_id}"
   billing_account = "%{billing_account}"
+  deletion_policy = "DELETE"
 }
 
 resource "google_iam_deny_policy" "example" {
@@ -79,7 +99,7 @@ resource "google_iam_deny_policy" "example" {
         title = "Some expr"
         expression = "!resource.matchTag('12345678/env', 'test')"
       }
-      denied_permissions = ["cloudresourcemanager.googleapis.com/projects.delete"]
+      denied_permissions = ["cloudresourcemanager.googleapis.com/projects.update"]
     }
   }
   rules {
@@ -90,7 +110,7 @@ resource "google_iam_deny_policy" "example" {
         title = "Some expr"
         expression = "!resource.matchTag('12345678/env', 'test')"
       }
-      denied_permissions = ["cloudresourcemanager.googleapis.com/projects.delete"]
+      denied_permissions = ["cloudresourcemanager.googleapis.com/projects.update"]
       exception_principals = ["principal://iam.googleapis.com/projects/-/serviceAccounts/${google_service_account.test-account.email}"]
     }
   }

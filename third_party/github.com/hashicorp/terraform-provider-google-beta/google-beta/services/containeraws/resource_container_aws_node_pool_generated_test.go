@@ -23,8 +23,8 @@ import (
 	"fmt"
 	dcl "github.com/GoogleCloudPlatform/declarative-resource-client-library/dcl"
 	containeraws "github.com/GoogleCloudPlatform/declarative-resource-client-library/services/google/containeraws/beta"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/terraform"
 	"strings"
 	"testing"
 
@@ -63,7 +63,7 @@ func TestAccContainerAwsNodePool_BasicHandWritten(t *testing.T) {
 				ResourceName:            "google_container_aws_node_pool.primary",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"fleet.0.project", "management.#", "management.0.%", "management.0.auto_repair"},
+				ImportStateVerifyIgnore: []string{"fleet.0.project", "management.#", "management.0.%", "management.0.auto_repair", "annotations"},
 			},
 			{
 				Config: testAccContainerAwsNodePool_BasicHandWrittenUpdate0(context),
@@ -72,7 +72,7 @@ func TestAccContainerAwsNodePool_BasicHandWritten(t *testing.T) {
 				ResourceName:            "google_container_aws_node_pool.primary",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"fleet.0.project", "management.#", "management.0.%", "management.0.auto_repair"},
+				ImportStateVerifyIgnore: []string{"fleet.0.project", "management.#", "management.0.%", "management.0.auto_repair", "annotations"},
 			},
 		},
 	})
@@ -107,7 +107,7 @@ func TestAccContainerAwsNodePool_BasicEnumHandWritten(t *testing.T) {
 				ResourceName:            "google_container_aws_node_pool.primary",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"fleet.0.project", "management.#", "management.0.%", "management.0.auto_repair"},
+				ImportStateVerifyIgnore: []string{"fleet.0.project", "management.#", "management.0.%", "management.0.auto_repair", "annotations"},
 			},
 			{
 				Config: testAccContainerAwsNodePool_BasicEnumHandWrittenUpdate0(context),
@@ -116,7 +116,7 @@ func TestAccContainerAwsNodePool_BasicEnumHandWritten(t *testing.T) {
 				ResourceName:            "google_container_aws_node_pool.primary",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"fleet.0.project", "management.#", "management.0.%", "management.0.auto_repair"},
+				ImportStateVerifyIgnore: []string{"fleet.0.project", "management.#", "management.0.%", "management.0.auto_repair", "annotations"},
 			},
 		},
 	})
@@ -152,7 +152,7 @@ func TestAccContainerAwsNodePool_BetaBasicHandWritten(t *testing.T) {
 				ResourceName:            "google_container_aws_node_pool.primary",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"fleet.0.project", "management.#", "management.0.%", "management.0.auto_repair"},
+				ImportStateVerifyIgnore: []string{"fleet.0.project", "management.#", "management.0.%", "management.0.auto_repair", "annotations"},
 			},
 			{
 				Config: testAccContainerAwsNodePool_BetaBasicHandWrittenUpdate0(context),
@@ -161,7 +161,7 @@ func TestAccContainerAwsNodePool_BetaBasicHandWritten(t *testing.T) {
 				ResourceName:            "google_container_aws_node_pool.primary",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"fleet.0.project", "management.#", "management.0.%", "management.0.auto_repair"},
+				ImportStateVerifyIgnore: []string{"fleet.0.project", "management.#", "management.0.%", "management.0.auto_repair", "annotations"},
 			},
 		},
 	})
@@ -197,7 +197,7 @@ func TestAccContainerAwsNodePool_BetaBasicEnumHandWritten(t *testing.T) {
 				ResourceName:            "google_container_aws_node_pool.primary",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"fleet.0.project", "management.#", "management.0.%", "management.0.auto_repair"},
+				ImportStateVerifyIgnore: []string{"fleet.0.project", "management.#", "management.0.%", "management.0.auto_repair", "annotations"},
 			},
 			{
 				Config: testAccContainerAwsNodePool_BetaBasicEnumHandWrittenUpdate0(context),
@@ -206,7 +206,7 @@ func TestAccContainerAwsNodePool_BetaBasicEnumHandWritten(t *testing.T) {
 				ResourceName:            "google_container_aws_node_pool.primary",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"fleet.0.project", "management.#", "management.0.%", "management.0.auto_repair"},
+				ImportStateVerifyIgnore: []string{"fleet.0.project", "management.#", "management.0.%", "management.0.auto_repair", "annotations"},
 			},
 		},
 	})
@@ -366,9 +366,15 @@ resource "google_container_aws_node_pool" "primary" {
     auto_repair = true
   }
 
+  kubelet_config {
+    cpu_manager_policy    = "none"
+    cpu_cfs_quota         = true
+    cpu_cfs_quota_period  = "100ms"
+    pod_pids_limit        = 1024
+  }
+
   project = "%{project_name}"
 }
-
 
 `, context)
 }
@@ -526,9 +532,15 @@ resource "google_container_aws_node_pool" "primary" {
     auto_repair = false
   }
 
+  kubelet_config {
+    cpu_manager_policy    = "none"
+    cpu_cfs_quota         = true
+    cpu_cfs_quota_period  = "100ms"
+    pod_pids_limit        = 1024
+  }
+
   project = "%{project_name}"
 }
-
 
 `, context)
 }
@@ -1004,14 +1016,27 @@ resource "google_container_aws_node_pool" "primary" {
   management {
     auto_repair = true
   }
+  
+  kubelet_config {
+    cpu_manager_policy    = "none"
+    cpu_cfs_quota         = true
+    cpu_cfs_quota_period  = "100ms"
+    pod_pids_limit        = 1024
+  }
 
   annotations = {
     label-one = "value-one"
   }
 
+  update_settings {
+    surge_settings {
+      max_surge = 1
+      max_unavailable = 0
+    }
+  }
+
   project = "%{project_name}"
 }
-
 
 `, context)
 }
@@ -1174,13 +1199,26 @@ resource "google_container_aws_node_pool" "primary" {
     auto_repair = false
   }
 
+  kubelet_config {
+    cpu_manager_policy    = "none"
+    cpu_cfs_quota         = true
+    cpu_cfs_quota_period  = "100ms"
+    pod_pids_limit        = 1024
+  }
+
   annotations = {
     label-two = "value-two"
   }
 
+  update_settings {
+    surge_settings {
+      max_surge = 1
+      max_unavailable = 0
+    }
+  }
+
   project = "%{project_name}"
 }
-
 
 `, context)
 }

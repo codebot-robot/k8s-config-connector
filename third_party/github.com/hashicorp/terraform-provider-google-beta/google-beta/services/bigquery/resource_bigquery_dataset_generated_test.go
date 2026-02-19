@@ -19,16 +19,35 @@ package bigquery_test
 
 import (
 	"fmt"
+	"log"
+	"strconv"
 	"strings"
 	"testing"
+	"time"
 
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/terraform"
 
 	"github.com/hashicorp/terraform-provider-google-beta/google-beta/acctest"
 	"github.com/hashicorp/terraform-provider-google-beta/google-beta/envvar"
 	"github.com/hashicorp/terraform-provider-google-beta/google-beta/tpgresource"
 	transport_tpg "github.com/hashicorp/terraform-provider-google-beta/google-beta/transport"
+
+	"google.golang.org/api/googleapi"
+)
+
+var (
+	_ = fmt.Sprintf
+	_ = log.Print
+	_ = strconv.Atoi
+	_ = strings.Trim
+	_ = time.Now
+	_ = resource.TestMain
+	_ = terraform.NewState
+	_ = envvar.TestEnvVar
+	_ = tpgresource.SetLabels
+	_ = transport_tpg.Config{}
+	_ = googleapi.Error{}
 )
 
 func TestAccBigQueryDataset_bigqueryDatasetBasicExample(t *testing.T) {
@@ -47,9 +66,10 @@ func TestAccBigQueryDataset_bigqueryDatasetBasicExample(t *testing.T) {
 				Config: testAccBigQueryDataset_bigqueryDatasetBasicExample(context),
 			},
 			{
-				ResourceName:      "google_bigquery_dataset.dataset",
-				ImportState:       true,
-				ImportStateVerify: true,
+				ResourceName:            "google_bigquery_dataset.dataset",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"labels", "terraform_labels"},
 			},
 		},
 	})
@@ -69,7 +89,7 @@ resource "google_bigquery_dataset" "dataset" {
   }
 
   access {
-    role          = "OWNER"
+    role          = "roles/bigquery.dataOwner"
     user_by_email = google_service_account.bqowner.email
   }
 
@@ -101,9 +121,10 @@ func TestAccBigQueryDataset_bigqueryDatasetWithMaxTimeTravelHoursExample(t *test
 				Config: testAccBigQueryDataset_bigqueryDatasetWithMaxTimeTravelHoursExample(context),
 			},
 			{
-				ResourceName:      "google_bigquery_dataset.dataset",
-				ImportState:       true,
-				ImportStateVerify: true,
+				ResourceName:            "google_bigquery_dataset.dataset",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"labels", "terraform_labels"},
 			},
 		},
 	})
@@ -156,9 +177,10 @@ func TestAccBigQueryDataset_bigqueryDatasetAuthorizedDatasetExample(t *testing.T
 				Config: testAccBigQueryDataset_bigqueryDatasetAuthorizedDatasetExample(context),
 			},
 			{
-				ResourceName:      "google_bigquery_dataset.dataset",
-				ImportState:       true,
-				ImportStateVerify: true,
+				ResourceName:            "google_bigquery_dataset.dataset",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"labels", "terraform_labels"},
 			},
 		},
 	})
@@ -243,9 +265,10 @@ func TestAccBigQueryDataset_bigqueryDatasetAuthorizedRoutineExample(t *testing.T
 				Config: testAccBigQueryDataset_bigqueryDatasetAuthorizedRoutineExample(context),
 			},
 			{
-				ResourceName:      "google_bigquery_dataset.private",
-				ImportState:       true,
-				ImportStateVerify: true,
+				ResourceName:            "google_bigquery_dataset.private",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"labels", "terraform_labels"},
 			},
 		},
 	})
@@ -310,9 +333,10 @@ func TestAccBigQueryDataset_bigqueryDatasetCaseInsensitiveNamesExample(t *testin
 				Config: testAccBigQueryDataset_bigqueryDatasetCaseInsensitiveNamesExample(context),
 			},
 			{
-				ResourceName:      "google_bigquery_dataset.dataset",
-				ImportState:       true,
-				ImportStateVerify: true,
+				ResourceName:            "google_bigquery_dataset.dataset",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"labels", "terraform_labels"},
 			},
 		},
 	})
@@ -365,9 +389,10 @@ func TestAccBigQueryDataset_bigqueryDatasetDefaultCollationSetExample(t *testing
 				Config: testAccBigQueryDataset_bigqueryDatasetDefaultCollationSetExample(context),
 			},
 			{
-				ResourceName:      "google_bigquery_dataset.dataset",
-				ImportState:       true,
-				ImportStateVerify: true,
+				ResourceName:            "google_bigquery_dataset.dataset",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"labels", "terraform_labels"},
 			},
 		},
 	})
@@ -400,6 +425,112 @@ resource "google_bigquery_dataset" "dataset" {
 
 resource "google_service_account" "bqowner" {
   account_id = "bqowner%{random_suffix}"
+}
+`, context)
+}
+
+func TestAccBigQueryDataset_bigqueryDatasetExternalCatalogDatasetOptionsExample(t *testing.T) {
+	t.Parallel()
+
+	context := map[string]interface{}{
+		"random_suffix": acctest.RandString(t, 10),
+	}
+
+	acctest.VcrTest(t, resource.TestCase{
+		PreCheck:                 func() { acctest.AccTestPreCheck(t) },
+		ProtoV5ProviderFactories: acctest.ProtoV5ProviderFactories(t),
+		CheckDestroy:             testAccCheckBigQueryDatasetDestroyProducer(t),
+		Steps: []resource.TestStep{
+			{
+				Config: testAccBigQueryDataset_bigqueryDatasetExternalCatalogDatasetOptionsExample(context),
+			},
+			{
+				ResourceName:            "google_bigquery_dataset.dataset",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"labels", "terraform_labels"},
+			},
+		},
+	})
+}
+
+func testAccBigQueryDataset_bigqueryDatasetExternalCatalogDatasetOptionsExample(context map[string]interface{}) string {
+	return acctest.Nprintf(`
+resource "google_bigquery_dataset" "dataset" {
+  dataset_id    = "tf_test_example_dataset%{random_suffix}"
+  friendly_name = "test"
+  description   = "This is a test description"
+  location      = "US"
+
+  external_catalog_dataset_options {
+    parameters = {
+      "dataset_owner" = "test_dataset_owner"
+    }
+    default_storage_location_uri = "gs://test_dataset/tables"
+  }
+}
+`, context)
+}
+
+func TestAccBigQueryDataset_bigqueryDatasetResourceTagsExample(t *testing.T) {
+	t.Parallel()
+
+	context := map[string]interface{}{
+		"random_suffix": acctest.RandString(t, 10),
+	}
+
+	acctest.VcrTest(t, resource.TestCase{
+		PreCheck:                 func() { acctest.AccTestPreCheck(t) },
+		ProtoV5ProviderFactories: acctest.ProtoV5ProviderFactories(t),
+		CheckDestroy:             testAccCheckBigQueryDatasetDestroyProducer(t),
+		Steps: []resource.TestStep{
+			{
+				Config: testAccBigQueryDataset_bigqueryDatasetResourceTagsExample(context),
+			},
+			{
+				ResourceName:            "google_bigquery_dataset.dataset",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"labels", "terraform_labels"},
+			},
+		},
+	})
+}
+
+func testAccBigQueryDataset_bigqueryDatasetResourceTagsExample(context map[string]interface{}) string {
+	return acctest.Nprintf(`
+data "google_project" "project" {}
+
+resource "google_tags_tag_key" "tag_key1" {
+  parent     = data.google_project.project.id
+  short_name = "tf_test_tag_key1%{random_suffix}"
+}
+
+resource "google_tags_tag_value" "tag_value1" {
+  parent     = google_tags_tag_key.tag_key1.id
+  short_name = "tf_test_tag_value1%{random_suffix}"
+}
+
+resource "google_tags_tag_key" "tag_key2" {
+  parent     = data.google_project.project.id
+  short_name = "tf_test_tag_key2%{random_suffix}"
+}
+
+resource "google_tags_tag_value" "tag_value2" {
+  parent     = google_tags_tag_key.tag_key2.id
+  short_name = "tf_test_tag_value2%{random_suffix}"
+}
+
+resource "google_bigquery_dataset" "dataset" {
+  dataset_id    = "dataset%{random_suffix}"
+  friendly_name = "test"
+  description   = "This is a test description"
+  location      = "EU"
+
+  resource_tags = {
+    (google_tags_tag_key.tag_key1.namespaced_name) = google_tags_tag_value.tag_value1.short_name
+    (google_tags_tag_key.tag_key2.namespaced_name) = google_tags_tag_value.tag_value2.short_name
+  }
 }
 `, context)
 }

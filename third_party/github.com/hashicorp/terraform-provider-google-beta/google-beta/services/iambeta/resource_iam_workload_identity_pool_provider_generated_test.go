@@ -19,15 +19,35 @@ package iambeta_test
 
 import (
 	"fmt"
+	"log"
+	"strconv"
 	"strings"
 	"testing"
+	"time"
 
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/terraform"
 
 	"github.com/hashicorp/terraform-provider-google-beta/google-beta/acctest"
+	"github.com/hashicorp/terraform-provider-google-beta/google-beta/envvar"
 	"github.com/hashicorp/terraform-provider-google-beta/google-beta/tpgresource"
 	transport_tpg "github.com/hashicorp/terraform-provider-google-beta/google-beta/transport"
+
+	"google.golang.org/api/googleapi"
+)
+
+var (
+	_ = fmt.Sprintf
+	_ = log.Print
+	_ = strconv.Atoi
+	_ = strings.Trim
+	_ = time.Now
+	_ = resource.TestMain
+	_ = terraform.NewState
+	_ = envvar.TestEnvVar
+	_ = tpgresource.SetLabels
+	_ = transport_tpg.Config{}
+	_ = googleapi.Error{}
 )
 
 func TestAccIAMBetaWorkloadIdentityPoolProvider_iamWorkloadIdentityPoolProviderAwsBasicExample(t *testing.T) {
@@ -116,6 +136,62 @@ resource "google_iam_workload_identity_pool_provider" "example" {
   }
   aws {
     account_id = "999999999999"
+  }
+}
+`, context)
+}
+
+func TestAccIAMBetaWorkloadIdentityPoolProvider_iamWorkloadIdentityPoolProviderGithubActionsExample(t *testing.T) {
+	t.Parallel()
+
+	context := map[string]interface{}{
+		"random_suffix": acctest.RandString(t, 10),
+	}
+
+	acctest.VcrTest(t, resource.TestCase{
+		PreCheck:                 func() { acctest.AccTestPreCheck(t) },
+		ProtoV5ProviderFactories: acctest.ProtoV5ProviderFactories(t),
+		CheckDestroy:             testAccCheckIAMBetaWorkloadIdentityPoolProviderDestroyProducer(t),
+		Steps: []resource.TestStep{
+			{
+				Config: testAccIAMBetaWorkloadIdentityPoolProvider_iamWorkloadIdentityPoolProviderGithubActionsExample(context),
+			},
+			{
+				ResourceName:            "google_iam_workload_identity_pool_provider.example",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"workload_identity_pool_id", "workload_identity_pool_provider_id"},
+			},
+		},
+	})
+}
+
+func testAccIAMBetaWorkloadIdentityPoolProvider_iamWorkloadIdentityPoolProviderGithubActionsExample(context map[string]interface{}) string {
+	return acctest.Nprintf(`
+resource "google_iam_workload_identity_pool" "pool" {
+  workload_identity_pool_id = "tf-test-example-pool%{random_suffix}"
+}
+
+resource "google_iam_workload_identity_pool_provider" "example" {
+  workload_identity_pool_id          = google_iam_workload_identity_pool.pool.workload_identity_pool_id
+  workload_identity_pool_provider_id = "tf-test-example-prvdr%{random_suffix}"
+  display_name                       = "Name of provider"
+  description                        = "GitHub Actions identity pool provider for automated test"
+  disabled                           = true
+  attribute_condition = <<EOT
+    assertion.repository_owner_id == "123456789" &&
+    attribute.repository == "gh-org/gh-repo" &&
+    assertion.ref == "refs/heads/main" &&
+    assertion.ref_type == "branch"
+EOT
+  attribute_mapping = {
+    "google.subject"       = "assertion.sub"
+    "attribute.actor"      = "assertion.actor"
+    "attribute.aud"        = "assertion.aud"
+    "attribute.repository" = "assertion.repository"
+  }
+  oidc {
+    issuer_uri = "https://token.actions.githubusercontent.com"
   }
 }
 `, context)
@@ -221,6 +297,101 @@ EOT
 `, context)
 }
 
+func TestAccIAMBetaWorkloadIdentityPoolProvider_iamWorkloadIdentityPoolProviderSamlBasicExample(t *testing.T) {
+	t.Parallel()
+
+	context := map[string]interface{}{
+		"random_suffix": acctest.RandString(t, 10),
+	}
+
+	acctest.VcrTest(t, resource.TestCase{
+		PreCheck:                 func() { acctest.AccTestPreCheck(t) },
+		ProtoV5ProviderFactories: acctest.ProtoV5ProviderFactories(t),
+		CheckDestroy:             testAccCheckIAMBetaWorkloadIdentityPoolProviderDestroyProducer(t),
+		Steps: []resource.TestStep{
+			{
+				Config: testAccIAMBetaWorkloadIdentityPoolProvider_iamWorkloadIdentityPoolProviderSamlBasicExample(context),
+			},
+			{
+				ResourceName:            "google_iam_workload_identity_pool_provider.example",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"workload_identity_pool_id", "workload_identity_pool_provider_id"},
+			},
+		},
+	})
+}
+
+func testAccIAMBetaWorkloadIdentityPoolProvider_iamWorkloadIdentityPoolProviderSamlBasicExample(context map[string]interface{}) string {
+	return acctest.Nprintf(`
+resource "google_iam_workload_identity_pool" "pool" {
+  workload_identity_pool_id = "tf-test-example-pool%{random_suffix}"
+}
+
+resource "google_iam_workload_identity_pool_provider" "example" {
+  workload_identity_pool_id          = google_iam_workload_identity_pool.pool.workload_identity_pool_id
+  workload_identity_pool_provider_id = "tf-test-example-prvdr%{random_suffix}"
+  attribute_mapping                  = {
+    "google.subject"        = "assertion.arn"
+    "attribute.aws_account" = "assertion.account"
+    "attribute.environment" = "assertion.arn.contains(\":instance-profile/Production\") ? \"prod\" : \"test\""
+  }
+  saml {
+    idp_metadata_xml = file("test-fixtures/metadata.xml")
+  }
+}
+`, context)
+}
+
+func TestAccIAMBetaWorkloadIdentityPoolProvider_iamWorkloadIdentityPoolProviderSamlFullExample(t *testing.T) {
+	t.Parallel()
+
+	context := map[string]interface{}{
+		"random_suffix": acctest.RandString(t, 10),
+	}
+
+	acctest.VcrTest(t, resource.TestCase{
+		PreCheck:                 func() { acctest.AccTestPreCheck(t) },
+		ProtoV5ProviderFactories: acctest.ProtoV5ProviderFactories(t),
+		CheckDestroy:             testAccCheckIAMBetaWorkloadIdentityPoolProviderDestroyProducer(t),
+		Steps: []resource.TestStep{
+			{
+				Config: testAccIAMBetaWorkloadIdentityPoolProvider_iamWorkloadIdentityPoolProviderSamlFullExample(context),
+			},
+			{
+				ResourceName:            "google_iam_workload_identity_pool_provider.example",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"workload_identity_pool_id", "workload_identity_pool_provider_id"},
+			},
+		},
+	})
+}
+
+func testAccIAMBetaWorkloadIdentityPoolProvider_iamWorkloadIdentityPoolProviderSamlFullExample(context map[string]interface{}) string {
+	return acctest.Nprintf(`
+resource "google_iam_workload_identity_pool" "pool" {
+  workload_identity_pool_id = "tf-test-example-pool%{random_suffix}"
+}
+
+resource "google_iam_workload_identity_pool_provider" "example" {
+  workload_identity_pool_id          = google_iam_workload_identity_pool.pool.workload_identity_pool_id
+  workload_identity_pool_provider_id = "tf-test-example-prvdr%{random_suffix}"
+  display_name                       = "Name of provider"
+  description                        = "SAML 2.0 identity pool provider for automated test"
+  disabled                           = true
+  attribute_mapping                  = {
+    "google.subject"        = "assertion.arn"
+    "attribute.aws_account" = "assertion.account"
+    "attribute.environment" = "assertion.arn.contains(\":instance-profile/Production\") ? \"prod\" : \"test\""
+  }
+  saml {
+    idp_metadata_xml = file("test-fixtures/metadata.xml")
+  }
+}
+`, context)
+}
+
 func TestAccIAMBetaWorkloadIdentityPoolProvider_iamWorkloadIdentityPoolProviderOidcUploadKeyExample(t *testing.T) {
 	t.Parallel()
 
@@ -273,6 +444,108 @@ EOT
     allowed_audiences = ["https://example.com/gcp-oidc-federation", "example.com/gcp-oidc-federation"]
     issuer_uri        = "https://sts.windows.net/azure-tenant-id"
     jwks_json         = "{\"keys\":[{\"kty\":\"RSA\",\"alg\":\"RS256\",\"kid\":\"sif0AR-F6MuvksAyAOv-Pds08Bcf2eUMlxE30NofddA\",\"use\":\"sig\",\"e\":\"AQAB\",\"n\":\"ylH1Chl1tpfti3lh51E1g5dPogzXDaQseqjsefGLknaNl5W6Wd4frBhHyE2t41Q5zgz_Ll0-NvWm0FlaG6brhrN9QZu6sJP1bM8WPfJVPgXOanxi7d7TXCkeNubGeiLTf5R3UXtS9Lm_guemU7MxDjDTelxnlgGCihOVTcL526suNJUdfXtpwUsvdU6_ZnAp9IpsuYjCtwPm9hPumlcZGMbxstdh07O4y4O90cVQClJOKSGQjAUCKJWXIQ0cqffGS_HuS_725CPzQ85SzYZzaNpgfhAER7kx_9P16ARM3BJz0PI5fe2hECE61J4GYU_BY43sxDfs7HyJpEXKLU9eWw\"}]}"
+  }
+}
+`, context)
+}
+
+func TestAccIAMBetaWorkloadIdentityPoolProvider_iamWorkloadIdentityPoolProviderX509BasicExample(t *testing.T) {
+	t.Parallel()
+
+	context := map[string]interface{}{
+		"random_suffix": acctest.RandString(t, 10),
+	}
+
+	acctest.VcrTest(t, resource.TestCase{
+		PreCheck:                 func() { acctest.AccTestPreCheck(t) },
+		ProtoV5ProviderFactories: acctest.ProtoV5ProviderFactories(t),
+		CheckDestroy:             testAccCheckIAMBetaWorkloadIdentityPoolProviderDestroyProducer(t),
+		Steps: []resource.TestStep{
+			{
+				Config: testAccIAMBetaWorkloadIdentityPoolProvider_iamWorkloadIdentityPoolProviderX509BasicExample(context),
+			},
+			{
+				ResourceName:            "google_iam_workload_identity_pool_provider.example",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"workload_identity_pool_id", "workload_identity_pool_provider_id"},
+			},
+		},
+	})
+}
+
+func testAccIAMBetaWorkloadIdentityPoolProvider_iamWorkloadIdentityPoolProviderX509BasicExample(context map[string]interface{}) string {
+	return acctest.Nprintf(`
+resource "google_iam_workload_identity_pool" "pool" {
+  workload_identity_pool_id = "tf-test-example-pool%{random_suffix}"
+}
+
+resource "google_iam_workload_identity_pool_provider" "example" {
+  workload_identity_pool_id          = google_iam_workload_identity_pool.pool.workload_identity_pool_id
+  workload_identity_pool_provider_id = "tf-test-example-prvdr%{random_suffix}"
+  attribute_mapping                  = {
+    "google.subject"        = "assertion.subject.dn.cn"
+  }
+  x509 {
+    trust_store {
+        trust_anchors {
+            pem_certificate = file("test-fixtures/trust_anchor.pem")
+        }
+    }
+  }
+}
+`, context)
+}
+
+func TestAccIAMBetaWorkloadIdentityPoolProvider_iamWorkloadIdentityPoolProviderX509FullExample(t *testing.T) {
+	t.Parallel()
+
+	context := map[string]interface{}{
+		"random_suffix": acctest.RandString(t, 10),
+	}
+
+	acctest.VcrTest(t, resource.TestCase{
+		PreCheck:                 func() { acctest.AccTestPreCheck(t) },
+		ProtoV5ProviderFactories: acctest.ProtoV5ProviderFactories(t),
+		CheckDestroy:             testAccCheckIAMBetaWorkloadIdentityPoolProviderDestroyProducer(t),
+		Steps: []resource.TestStep{
+			{
+				Config: testAccIAMBetaWorkloadIdentityPoolProvider_iamWorkloadIdentityPoolProviderX509FullExample(context),
+			},
+			{
+				ResourceName:            "google_iam_workload_identity_pool_provider.example",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"workload_identity_pool_id", "workload_identity_pool_provider_id"},
+			},
+		},
+	})
+}
+
+func testAccIAMBetaWorkloadIdentityPoolProvider_iamWorkloadIdentityPoolProviderX509FullExample(context map[string]interface{}) string {
+	return acctest.Nprintf(`
+resource "google_iam_workload_identity_pool" "pool" {
+  workload_identity_pool_id = "tf-test-example-pool%{random_suffix}"
+}
+
+resource "google_iam_workload_identity_pool_provider" "example" {
+  workload_identity_pool_id          = google_iam_workload_identity_pool.pool.workload_identity_pool_id
+  workload_identity_pool_provider_id = "tf-test-example-prvdr%{random_suffix}"
+  display_name                       = "Name of provider"
+  description                        = "X.509 identity pool provider for automated test"
+  disabled                           = true
+  attribute_mapping                  = {
+    "google.subject"        = "assertion.subject.dn.cn"
+  }
+  x509 {
+    trust_store {
+        trust_anchors {
+            pem_certificate = file("test-fixtures/trust_anchor.pem")
+        }
+        intermediate_cas {
+            pem_certificate = file("test-fixtures/intermediate_ca.pem")
+        }
+    }
   }
 }
 `, context)

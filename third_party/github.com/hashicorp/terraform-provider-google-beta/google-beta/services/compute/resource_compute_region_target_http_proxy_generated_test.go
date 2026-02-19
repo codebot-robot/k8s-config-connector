@@ -19,15 +19,35 @@ package compute_test
 
 import (
 	"fmt"
+	"log"
+	"strconv"
 	"strings"
 	"testing"
+	"time"
 
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/terraform"
 
 	"github.com/hashicorp/terraform-provider-google-beta/google-beta/acctest"
+	"github.com/hashicorp/terraform-provider-google-beta/google-beta/envvar"
 	"github.com/hashicorp/terraform-provider-google-beta/google-beta/tpgresource"
 	transport_tpg "github.com/hashicorp/terraform-provider-google-beta/google-beta/transport"
+
+	"google.golang.org/api/googleapi"
+)
+
+var (
+	_ = fmt.Sprintf
+	_ = log.Print
+	_ = strconv.Atoi
+	_ = strings.Trim
+	_ = time.Now
+	_ = resource.TestMain
+	_ = terraform.NewState
+	_ = envvar.TestEnvVar
+	_ = tpgresource.SetLabels
+	_ = transport_tpg.Config{}
+	_ = googleapi.Error{}
 )
 
 func TestAccComputeRegionTargetHttpProxy_regionTargetHttpProxyBasicExample(t *testing.T) {
@@ -49,7 +69,7 @@ func TestAccComputeRegionTargetHttpProxy_regionTargetHttpProxyBasicExample(t *te
 				ResourceName:            "google_compute_region_target_http_proxy.default",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"url_map", "region"},
+				ImportStateVerifyIgnore: []string{"region", "url_map"},
 			},
 		},
 	})
@@ -104,6 +124,83 @@ resource "google_compute_region_health_check" "default" {
 `, context)
 }
 
+func TestAccComputeRegionTargetHttpProxy_regionTargetHttpProxyHttpKeepAliveTimeoutExample(t *testing.T) {
+	t.Parallel()
+
+	context := map[string]interface{}{
+		"random_suffix": acctest.RandString(t, 10),
+	}
+
+	acctest.VcrTest(t, resource.TestCase{
+		PreCheck:                 func() { acctest.AccTestPreCheck(t) },
+		ProtoV5ProviderFactories: acctest.ProtoV5ProviderFactories(t),
+		CheckDestroy:             testAccCheckComputeRegionTargetHttpProxyDestroyProducer(t),
+		Steps: []resource.TestStep{
+			{
+				Config: testAccComputeRegionTargetHttpProxy_regionTargetHttpProxyHttpKeepAliveTimeoutExample(context),
+			},
+			{
+				ResourceName:            "google_compute_region_target_http_proxy.default",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"region", "url_map"},
+			},
+		},
+	})
+}
+
+func testAccComputeRegionTargetHttpProxy_regionTargetHttpProxyHttpKeepAliveTimeoutExample(context map[string]interface{}) string {
+	return acctest.Nprintf(`
+resource "google_compute_region_target_http_proxy" "default" {
+  region                      = "us-central1"
+  name                        = "tf-test-test-http-keep-alive-timeout-proxy%{random_suffix}"
+  http_keep_alive_timeout_sec = 600
+  url_map                     = google_compute_region_url_map.default.id
+}
+
+resource "google_compute_region_url_map" "default" {
+  region          = "us-central1"
+  name            = "tf-test-url-map%{random_suffix}"
+  default_service = google_compute_region_backend_service.default.id
+
+  host_rule {
+    hosts        = ["mysite.com"]
+    path_matcher = "allpaths"
+  }
+
+  path_matcher {
+    name            = "allpaths"
+    default_service = google_compute_region_backend_service.default.id
+
+    path_rule {
+      paths   = ["/*"]
+      service = google_compute_region_backend_service.default.id
+    }
+  }
+}
+
+resource "google_compute_region_backend_service" "default" {
+  region                = "us-central1"
+  name                  = "tf-test-backend-service%{random_suffix}"
+  port_name             = "http"
+  protocol              = "HTTP"
+  timeout_sec           = 10
+  load_balancing_scheme = "INTERNAL_MANAGED"
+
+  health_checks = [google_compute_region_health_check.default.id]
+}
+
+resource "google_compute_region_health_check" "default" {
+  region = "us-central1"
+  name   = "tf-test-http-health-check%{random_suffix}"
+
+  http_health_check {
+    port = 80
+  }
+}
+`, context)
+}
+
 func TestAccComputeRegionTargetHttpProxy_regionTargetHttpProxyHttpsRedirectExample(t *testing.T) {
 	t.Parallel()
 
@@ -123,7 +220,7 @@ func TestAccComputeRegionTargetHttpProxy_regionTargetHttpProxyHttpsRedirectExamp
 				ResourceName:            "google_compute_region_target_http_proxy.default",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"url_map", "region"},
+				ImportStateVerifyIgnore: []string{"region", "url_map"},
 			},
 		},
 	})

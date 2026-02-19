@@ -19,24 +19,44 @@ package firestore_test
 
 import (
 	"fmt"
+	"log"
+	"strconv"
 	"strings"
 	"testing"
+	"time"
 
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/terraform"
 
 	"github.com/hashicorp/terraform-provider-google-beta/google-beta/acctest"
 	"github.com/hashicorp/terraform-provider-google-beta/google-beta/envvar"
 	"github.com/hashicorp/terraform-provider-google-beta/google-beta/tpgresource"
 	transport_tpg "github.com/hashicorp/terraform-provider-google-beta/google-beta/transport"
+
+	"google.golang.org/api/googleapi"
+)
+
+var (
+	_ = fmt.Sprintf
+	_ = log.Print
+	_ = strconv.Atoi
+	_ = strings.Trim
+	_ = time.Now
+	_ = resource.TestMain
+	_ = terraform.NewState
+	_ = envvar.TestEnvVar
+	_ = tpgresource.SetLabels
+	_ = transport_tpg.Config{}
+	_ = googleapi.Error{}
 )
 
 func TestAccFirestoreField_firestoreFieldBasicExample(t *testing.T) {
 	t.Parallel()
 
 	context := map[string]interface{}{
-		"project_id":    envvar.GetTestFirestoreProjectFromEnv(t),
-		"random_suffix": acctest.RandString(t, 10),
+		"project_id":              envvar.GetTestProjectFromEnv(),
+		"delete_protection_state": "DELETE_PROTECTION_DISABLED",
+		"random_suffix":           acctest.RandString(t, 10),
 	}
 
 	acctest.VcrTest(t, resource.TestCase{
@@ -51,7 +71,7 @@ func TestAccFirestoreField_firestoreFieldBasicExample(t *testing.T) {
 				ResourceName:            "google_firestore_field.basic",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"database", "collection", "field"},
+				ImportStateVerifyIgnore: []string{"collection", "database", "field"},
 			},
 		},
 	})
@@ -59,11 +79,21 @@ func TestAccFirestoreField_firestoreFieldBasicExample(t *testing.T) {
 
 func testAccFirestoreField_firestoreFieldBasicExample(context map[string]interface{}) string {
 	return acctest.Nprintf(`
+resource "google_firestore_database" "database" {
+  project     = "%{project_id}"
+  name        = "tf-test-database-id%{random_suffix}"
+  location_id = "nam5"
+  type        = "FIRESTORE_NATIVE"
+
+  delete_protection_state = "%{delete_protection_state}"
+  deletion_policy         = "DELETE"
+}
+
 resource "google_firestore_field" "basic" {
-  project = "%{project_id}"
-  database = "(default)"
+  project    = "%{project_id}"
+  database   = google_firestore_database.database.name
   collection = "chatrooms_%{random_suffix}"
-  field = "basic"
+  field      = "basic"
 
   index_config {
     indexes {
@@ -74,8 +104,6 @@ resource "google_firestore_field" "basic" {
         array_config = "CONTAINS"
     }
   }
-
-  ttl_config {}
 }
 `, context)
 }
@@ -84,8 +112,9 @@ func TestAccFirestoreField_firestoreFieldTimestampExample(t *testing.T) {
 	t.Parallel()
 
 	context := map[string]interface{}{
-		"project_id":    envvar.GetTestFirestoreProjectFromEnv(t),
-		"random_suffix": acctest.RandString(t, 10),
+		"project_id":              envvar.GetTestProjectFromEnv(),
+		"delete_protection_state": "DELETE_PROTECTION_DISABLED",
+		"random_suffix":           acctest.RandString(t, 10),
 	}
 
 	acctest.VcrTest(t, resource.TestCase{
@@ -100,7 +129,7 @@ func TestAccFirestoreField_firestoreFieldTimestampExample(t *testing.T) {
 				ResourceName:            "google_firestore_field.timestamp",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"database", "collection", "field"},
+				ImportStateVerifyIgnore: []string{"collection", "database", "field"},
 			},
 		},
 	})
@@ -108,14 +137,27 @@ func TestAccFirestoreField_firestoreFieldTimestampExample(t *testing.T) {
 
 func testAccFirestoreField_firestoreFieldTimestampExample(context map[string]interface{}) string {
 	return acctest.Nprintf(`
+resource "google_firestore_database" "database" {
+  project     = "%{project_id}"
+  name        = "tf-test-database-id%{random_suffix}"
+  location_id = "nam5"
+  type        = "FIRESTORE_NATIVE"
+
+  delete_protection_state = "%{delete_protection_state}"
+  deletion_policy         = "DELETE"
+}
+
 resource "google_firestore_field" "timestamp" {
-  project = "%{project_id}"
-  collection = "chatrooms_%{random_suffix}"
-  field = "timestamp"
+  project    = "%{project_id}"
+  database   = google_firestore_database.database.name
+  collection = "chatrooms"
+  field      = "timestamp"
+
+  # enables a TTL policy for the document based on the value of entries with this field
+  ttl_config {}
 
   // Disable all single field indexes for the timestamp property.
   index_config {}
-  ttl_config {}
 }
 `, context)
 }
@@ -124,8 +166,9 @@ func TestAccFirestoreField_firestoreFieldMatchOverrideExample(t *testing.T) {
 	t.Parallel()
 
 	context := map[string]interface{}{
-		"project_id":    envvar.GetTestFirestoreProjectFromEnv(t),
-		"random_suffix": acctest.RandString(t, 10),
+		"project_id":              envvar.GetTestProjectFromEnv(),
+		"delete_protection_state": "DELETE_PROTECTION_DISABLED",
+		"random_suffix":           acctest.RandString(t, 10),
 	}
 
 	acctest.VcrTest(t, resource.TestCase{
@@ -140,7 +183,7 @@ func TestAccFirestoreField_firestoreFieldMatchOverrideExample(t *testing.T) {
 				ResourceName:            "google_firestore_field.match_override",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"database", "collection", "field"},
+				ImportStateVerifyIgnore: []string{"collection", "database", "field"},
 			},
 		},
 	})
@@ -148,10 +191,21 @@ func TestAccFirestoreField_firestoreFieldMatchOverrideExample(t *testing.T) {
 
 func testAccFirestoreField_firestoreFieldMatchOverrideExample(context map[string]interface{}) string {
 	return acctest.Nprintf(`
+resource "google_firestore_database" "database" {
+  project     = "%{project_id}"
+  name        = "tf-test-database-id%{random_suffix}"
+  location_id = "nam5"
+  type        = "FIRESTORE_NATIVE"
+
+  delete_protection_state = "%{delete_protection_state}"
+  deletion_policy         = "DELETE"
+}
+
 resource "google_firestore_field" "match_override" {
-  project = "%{project_id}"
+  project    = "%{project_id}"
+  database   = google_firestore_database.database.name
   collection = "chatrooms_%{random_suffix}"
-  field = "field_with_same_configuration_as_ancestor"
+  field      = "field_with_same_configuration_as_ancestor"
 
   index_config {
     indexes {
@@ -165,6 +219,64 @@ resource "google_firestore_field" "match_override" {
     }
   }
 }
+`, context)
+}
+
+func TestAccFirestoreField_firestoreFieldWildcardExample(t *testing.T) {
+	t.Parallel()
+
+	context := map[string]interface{}{
+		"project_id":              envvar.GetTestProjectFromEnv(),
+		"delete_protection_state": "DELETE_PROTECTION_DISABLED",
+		"random_suffix":           acctest.RandString(t, 10),
+	}
+
+	acctest.VcrTest(t, resource.TestCase{
+		PreCheck:                 func() { acctest.AccTestPreCheck(t) },
+		ProtoV5ProviderFactories: acctest.ProtoV5ProviderFactories(t),
+		CheckDestroy:             testAccCheckFirestoreFieldDestroyProducer(t),
+		Steps: []resource.TestStep{
+			{
+				Config: testAccFirestoreField_firestoreFieldWildcardExample(context),
+			},
+			{
+				ResourceName:            "google_firestore_field.wildcard",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"collection", "database", "field"},
+			},
+		},
+	})
+}
+
+func testAccFirestoreField_firestoreFieldWildcardExample(context map[string]interface{}) string {
+	return acctest.Nprintf(`
+resource "google_firestore_database" "database" {
+	project     = "%{project_id}"
+	name        = "tf-test-database-id%{random_suffix}"
+	location_id = "nam5"
+	type        = "FIRESTORE_NATIVE"
+
+	delete_protection_state = "%{delete_protection_state}"
+	deletion_policy         = "DELETE"
+  }
+
+  resource "google_firestore_field" "wildcard" {
+	project    = "%{project_id}"
+	database   = google_firestore_database.database.name
+	collection = "chatrooms_%{random_suffix}"
+	field      = "*"
+
+	index_config {
+	  indexes {
+		  order       = "ASCENDING"
+		  query_scope = "COLLECTION_GROUP"
+	  }
+	  indexes {
+		  array_config = "CONTAINS"
+	  }
+	}
+  }
 `, context)
 }
 
@@ -196,6 +308,15 @@ func testAccCheckFirestoreFieldDestroyProducer(t *testing.T) func(s *terraform.S
 				UserAgent: config.UserAgent,
 			})
 			if err != nil {
+				e := err.(*googleapi.Error)
+				if e.Code == 403 && strings.Contains(e.Message, "Cloud Firestore API has not been used in project") {
+					// The acceptance test has provisioned the resources under test in a new project, and the destroy check is seeing the
+					// effects of the project not existing. This means the service isn't enabled, and that the resource is definitely destroyed.
+					// We do not return the error in this case - destroy was successful
+					return nil
+				}
+
+				// Return err in all other cases
 				return err
 			}
 

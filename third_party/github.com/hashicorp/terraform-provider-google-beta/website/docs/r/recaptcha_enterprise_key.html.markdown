@@ -33,14 +33,14 @@ resource "google_recaptcha_enterprise_key" "primary" {
     allowed_package_names   = []
   }
 
-  labels = {
-    label-one = "value-one"
-  }
-
   project = "my-project-name"
 
   testing_options {
     testing_score = 0.8
+  }
+
+  labels = {
+    label-one = "value-one"
   }
 }
 
@@ -57,14 +57,14 @@ resource "google_recaptcha_enterprise_key" "primary" {
     allowed_bundle_ids   = []
   }
 
-  labels = {
-    label-one = "value-one"
-  }
-
   project = "my-project-name"
 
   testing_options {
     testing_score = 1
+  }
+
+  labels = {
+    label-one = "value-one"
   }
 }
 
@@ -75,12 +75,44 @@ A minimal test of recaptcha enterprise key
 ```hcl
 resource "google_recaptcha_enterprise_key" "primary" {
   display_name = "display-name-one"
-  labels       = {}
   project      = "my-project-name"
 
   web_settings {
     integration_type  = "SCORE"
     allow_all_domains = true
+  }
+
+  labels = {}
+}
+
+
+```
+## Example Usage - waf_key
+A basic test of recaptcha enterprise key that includes WAF settings
+```hcl
+resource "google_recaptcha_enterprise_key" "primary" {
+  display_name = "display-name-one"
+  project      = "my-project-name"
+
+  testing_options {
+    testing_challenge = "NOCAPTCHA"
+    testing_score     = 0.5
+  }
+
+  waf_settings {
+    waf_feature = "CHALLENGE_PAGE"
+    waf_service = "CA"
+  }
+
+  web_settings {
+    integration_type              = "INVISIBLE"
+    allow_all_domains             = true
+    allowed_domains               = []
+    challenge_security_preference = "USABILITY"
+  }
+
+  labels = {
+    label-one = "value-one"
   }
 }
 
@@ -91,12 +123,7 @@ A basic test of recaptcha enterprise key that can be used by websites
 ```hcl
 resource "google_recaptcha_enterprise_key" "primary" {
   display_name = "display-name-one"
-
-  labels = {
-    label-one = "value-one"
-  }
-
-  project = "my-project-name"
+  project      = "my-project-name"
 
   testing_options {
     testing_challenge = "NOCAPTCHA"
@@ -109,6 +136,10 @@ resource "google_recaptcha_enterprise_key" "primary" {
     allowed_domains               = []
     challenge_security_preference = "USABILITY"
   }
+
+  labels = {
+    label-one = "value-one"
+  }
 }
 
 
@@ -118,12 +149,7 @@ A basic test of recaptcha enterprise key with score integration type that can be
 ```hcl
 resource "google_recaptcha_enterprise_key" "primary" {
   display_name = "display-name-one"
-
-  labels = {
-    label-one = "value-one"
-  }
-
-  project = "my-project-name"
+  project      = "my-project-name"
 
   testing_options {
     testing_score = 0.5
@@ -134,6 +160,10 @@ resource "google_recaptcha_enterprise_key" "primary" {
     allow_all_domains = true
     allow_amp_traffic = false
     allowed_domains   = []
+  }
+
+  labels = {
+    label-one = "value-one"
   }
 }
 
@@ -163,6 +193,9 @@ The following arguments are supported:
 * `labels` -
   (Optional)
   See [Creating and managing labels](https://cloud.google.com/recaptcha-enterprise/docs/labels).
+
+**Note**: This field is non-authoritative, and will only manage the labels present in your configuration.
+Please refer to the field `effective_labels` for all of the labels present on the resource.
   
 * `project` -
   (Optional)
@@ -171,6 +204,10 @@ The following arguments are supported:
 * `testing_options` -
   (Optional)
   Options for user acceptance testing.
+  
+* `waf_settings` -
+  (Optional)
+  Settings specific to keys that can be used for WAF (Web Application Firewall).
   
 * `web_settings` -
   (Optional)
@@ -208,6 +245,16 @@ The `testing_options` block supports:
   (Optional)
   All assessments for this Key will return this score. Must be between 0 (likely not legitimate) and 1 (likely legitimate) inclusive.
     
+The `waf_settings` block supports:
+    
+* `waf_feature` -
+  (Required)
+  Supported WAF features. For more information, see https://cloud.google.com/recaptcha-enterprise/docs/usecase#comparison_of_features. Possible values: CHALLENGE_PAGE, SESSION_TOKEN, ACTION_TOKEN, EXPRESS
+    
+* `waf_service` -
+  (Required)
+  The WAF service that uses this key. Possible values: CA, FASTLY
+    
 The `web_settings` block supports:
     
 * `allow_all_domains` -
@@ -239,8 +286,14 @@ In addition to the arguments listed above, the following computed attributes are
 * `create_time` -
   The timestamp corresponding to the creation of this Key.
   
+* `effective_labels` -
+  All of labels (key/value pairs) present on the resource in GCP, including the labels configured through Terraform, other clients and services.
+  
 * `name` -
-  The resource name for the Key in the format "projects/{project}/keys/{key}".
+  The resource id for the Key, which is the same as the Site Key itself.
+  
+* `terraform_labels` -
+  The combination of labels configured directly on the resource and default labels configured on the provider.
   
 ## Timeouts
 
@@ -254,6 +307,21 @@ This resource provides the following
 ## Import
 
 Key can be imported using any of these accepted formats:
+* `projects/{{project}}/keys/{{name}}`
+* `{{project}}/{{name}}`
+* `{{name}}`
+
+In Terraform v1.5.0 and later, use an [`import` block](https://developer.hashicorp.com/terraform/language/import) to import Key using one of the formats above. For example:
+
+
+```tf
+import {
+  id = "projects/{{project}}/keys/{{name}}"
+  to = google_recaptcha_enterprise_key.default
+}
+```
+
+When using the [`terraform import` command](https://developer.hashicorp.com/terraform/cli/commands/import), Key can be imported using one of the formats above. For example:
 
 ```
 $ terraform import google_recaptcha_enterprise_key.default projects/{{project}}/keys/{{name}}
