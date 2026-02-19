@@ -1,0 +1,9 @@
+apiVersion: bigtable.cnrm.cloud.google.com/v1alpha1
+kind: BigtableSchemaBundle
+metadata:
+  name: bigtableschemabundle-${uniqueId}
+spec:
+  tableRef:
+    name: bigtabletable-${uniqueId}
+  protoSchema:
+    protoDescriptors: CoABChNzY2hlbWFfdXBkYXRlLnByb3RvEgdteS50ZXN0IlgKBlBlcnNvbhISCgRuYW1lGAEgASgJUgRuYW1lEg4KAmlkGAIgASgFUgJpZBIUCgVlbWFpbBgDIAEoCVIFZW1haWwSFAoFcGhvbmUYBCABKAlSBXBob25lYgZwcm90bzM=

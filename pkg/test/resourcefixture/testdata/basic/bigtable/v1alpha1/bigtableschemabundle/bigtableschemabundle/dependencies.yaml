@@ -1,0 +1,22 @@
+apiVersion: bigtable.cnrm.cloud.google.com/v1beta1
+kind: BigtableInstance
+metadata:
+  name: bigtableinstance-${uniqueId}
+spec:
+  displayName: Bigtable Instance
+  instanceType: DEVELOPMENT
+  cluster:
+    - clusterId: bigtableinstance-${uniqueId}
+      zone: us-central1-a
+      numNodes: 1
+      storageType: HDD
+---
+apiVersion: bigtable.cnrm.cloud.google.com/v1beta1
+kind: BigtableTable
+metadata:
+  name: bigtabletable-${uniqueId}
+spec:
+  instanceRef:
+    name: bigtableinstance-${uniqueId}
+  columnFamily:
+    - family: cf1
