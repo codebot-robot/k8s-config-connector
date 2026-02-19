@@ -19,15 +19,35 @@ package gkeonprem_test
 
 import (
 	"fmt"
+	"log"
+	"strconv"
 	"strings"
 	"testing"
+	"time"
 
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/terraform"
 
 	"github.com/hashicorp/terraform-provider-google-beta/google-beta/acctest"
+	"github.com/hashicorp/terraform-provider-google-beta/google-beta/envvar"
 	"github.com/hashicorp/terraform-provider-google-beta/google-beta/tpgresource"
 	transport_tpg "github.com/hashicorp/terraform-provider-google-beta/google-beta/transport"
+
+	"google.golang.org/api/googleapi"
+)
+
+var (
+	_ = fmt.Sprintf
+	_ = log.Print
+	_ = strconv.Atoi
+	_ = strings.Trim
+	_ = time.Now
+	_ = resource.TestMain
+	_ = terraform.NewState
+	_ = envvar.TestEnvVar
+	_ = tpgresource.SetLabels
+	_ = transport_tpg.Config{}
+	_ = googleapi.Error{}
 )
 
 func TestAccGkeonpremBareMetalCluster_gkeonpremBareMetalClusterBasicExample(t *testing.T) {
@@ -39,7 +59,7 @@ func TestAccGkeonpremBareMetalCluster_gkeonpremBareMetalClusterBasicExample(t *t
 
 	acctest.VcrTest(t, resource.TestCase{
 		PreCheck:                 func() { acctest.AccTestPreCheck(t) },
-		ProtoV5ProviderFactories: acctest.ProtoV5ProviderBetaFactories(t),
+		ProtoV5ProviderFactories: acctest.ProtoV5ProviderFactories(t),
 		CheckDestroy:             testAccCheckGkeonpremBareMetalClusterDestroyProducer(t),
 		Steps: []resource.TestStep{
 			{
@@ -49,7 +69,7 @@ func TestAccGkeonpremBareMetalCluster_gkeonpremBareMetalClusterBasicExample(t *t
 				ResourceName:            "google_gkeonprem_bare_metal_cluster.cluster-basic",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"name", "location"},
+				ImportStateVerifyIgnore: []string{"annotations", "location", "name"},
 			},
 		},
 	})
@@ -58,7 +78,6 @@ func TestAccGkeonpremBareMetalCluster_gkeonpremBareMetalClusterBasicExample(t *t
 func testAccGkeonpremBareMetalCluster_gkeonpremBareMetalClusterBasicExample(context map[string]interface{}) string {
 	return acctest.Nprintf(`
 resource "google_gkeonprem_bare_metal_cluster" "cluster-basic" {
-  provider = google-beta
   name = "tf-test-my-cluster%{random_suffix}"
   location = "us-west1"
   admin_cluster_membership = "projects/870316890899/locations/global/memberships/gkeonprem-terraform-test"
@@ -141,7 +160,7 @@ func TestAccGkeonpremBareMetalCluster_gkeonpremBareMetalClusterManuallbExample(t
 
 	acctest.VcrTest(t, resource.TestCase{
 		PreCheck:                 func() { acctest.AccTestPreCheck(t) },
-		ProtoV5ProviderFactories: acctest.ProtoV5ProviderBetaFactories(t),
+		ProtoV5ProviderFactories: acctest.ProtoV5ProviderFactories(t),
 		CheckDestroy:             testAccCheckGkeonpremBareMetalClusterDestroyProducer(t),
 		Steps: []resource.TestStep{
 			{
@@ -151,7 +170,7 @@ func TestAccGkeonpremBareMetalCluster_gkeonpremBareMetalClusterManuallbExample(t
 				ResourceName:            "google_gkeonprem_bare_metal_cluster.cluster-manuallb",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"name", "location"},
+				ImportStateVerifyIgnore: []string{"annotations", "location", "name"},
 			},
 		},
 	})
@@ -160,7 +179,6 @@ func TestAccGkeonpremBareMetalCluster_gkeonpremBareMetalClusterManuallbExample(t
 func testAccGkeonpremBareMetalCluster_gkeonpremBareMetalClusterManuallbExample(context map[string]interface{}) string {
 	return acctest.Nprintf(`
 resource "google_gkeonprem_bare_metal_cluster" "cluster-manuallb" {
-  provider = google-beta
   name = "tf-test-cluster-manuallb%{random_suffix}"
   location = "us-west1"
   admin_cluster_membership = "projects/870316890899/locations/global/memberships/gkeonprem-terraform-test"
@@ -234,7 +252,7 @@ func TestAccGkeonpremBareMetalCluster_gkeonpremBareMetalClusterBgplbExample(t *t
 
 	acctest.VcrTest(t, resource.TestCase{
 		PreCheck:                 func() { acctest.AccTestPreCheck(t) },
-		ProtoV5ProviderFactories: acctest.ProtoV5ProviderBetaFactories(t),
+		ProtoV5ProviderFactories: acctest.ProtoV5ProviderFactories(t),
 		CheckDestroy:             testAccCheckGkeonpremBareMetalClusterDestroyProducer(t),
 		Steps: []resource.TestStep{
 			{
@@ -244,7 +262,7 @@ func TestAccGkeonpremBareMetalCluster_gkeonpremBareMetalClusterBgplbExample(t *t
 				ResourceName:            "google_gkeonprem_bare_metal_cluster.cluster-bgplb",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"name", "location"},
+				ImportStateVerifyIgnore: []string{"annotations", "location", "name"},
 			},
 		},
 	})
@@ -253,7 +271,6 @@ func TestAccGkeonpremBareMetalCluster_gkeonpremBareMetalClusterBgplbExample(t *t
 func testAccGkeonpremBareMetalCluster_gkeonpremBareMetalClusterBgplbExample(context map[string]interface{}) string {
 	return acctest.Nprintf(`
 resource "google_gkeonprem_bare_metal_cluster" "cluster-bgplb" {
-  provider = google-beta
   name = "tf-test-cluster-bgplb%{random_suffix}"
   location = "us-west1"
   admin_cluster_membership = "projects/870316890899/locations/global/memberships/gkeonprem-terraform-test"

@@ -23,8 +23,8 @@ import (
 	"fmt"
 	dcl "github.com/GoogleCloudPlatform/declarative-resource-client-library/dcl"
 	containerazure "github.com/GoogleCloudPlatform/declarative-resource-client-library/services/google/containerazure/beta"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/terraform"
 	"strings"
 	"testing"
 
@@ -59,7 +59,7 @@ func TestAccContainerAzureNodePool_BasicHandWritten(t *testing.T) {
 				ResourceName:            "google_container_azure_node_pool.primary",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"management.#", "management.0.%", "management.0.auto_repair"},
+				ImportStateVerifyIgnore: []string{"management.#", "management.0.%", "management.0.auto_repair", "annotations"},
 			},
 			{
 				Config: testAccContainerAzureNodePool_BasicHandWrittenUpdate0(context),
@@ -68,7 +68,7 @@ func TestAccContainerAzureNodePool_BasicHandWritten(t *testing.T) {
 				ResourceName:            "google_container_azure_node_pool.primary",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"management.#", "management.0.%", "management.0.auto_repair"},
+				ImportStateVerifyIgnore: []string{"management.#", "management.0.%", "management.0.auto_repair", "annotations"},
 			},
 		},
 	})
@@ -100,7 +100,7 @@ func TestAccContainerAzureNodePool_BetaBasicHandWritten(t *testing.T) {
 				ResourceName:            "google_container_azure_node_pool.primary",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"management.#", "management.0.%", "management.0.auto_repair"},
+				ImportStateVerifyIgnore: []string{"management.#", "management.0.%", "management.0.auto_repair", "annotations"},
 			},
 			{
 				Config: testAccContainerAzureNodePool_BetaBasicHandWrittenUpdate0(context),
@@ -109,7 +109,7 @@ func TestAccContainerAzureNodePool_BetaBasicHandWritten(t *testing.T) {
 				ResourceName:            "google_container_azure_node_pool.primary",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"management.#", "management.0.%", "management.0.auto_repair"},
+				ImportStateVerifyIgnore: []string{"management.#", "management.0.%", "management.0.auto_repair", "annotations"},
 			},
 		},
 	})
@@ -190,6 +190,10 @@ resource "google_container_azure_node_pool" "primary" {
 
     tags = {
       owner = "mmv2"
+    }
+
+    labels = {
+      key_one = "label_one"
     }
 
     vm_size = "Standard_DS2_v2"
@@ -296,6 +300,10 @@ resource "google_container_azure_node_pool" "primary" {
 
     tags = {
       owner = "mmv2"
+    }
+
+    labels = {
+      key_two = "label_two"
     }
 
     vm_size = "Standard_DS2_v2"
@@ -405,6 +413,10 @@ resource "google_container_azure_node_pool" "primary" {
 
     tags = {
       owner = "mmv2"
+    }
+
+    labels = {
+      key_one = "label_one"
     }
 
     vm_size = "Standard_DS2_v2"
@@ -517,6 +529,10 @@ resource "google_container_azure_node_pool" "primary" {
 
     tags = {
       owner = "mmv2"
+    }
+
+    labels = {
+      key_two = "label_two"
     }
 
     vm_size = "Standard_DS2_v2"

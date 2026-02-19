@@ -19,15 +19,35 @@ package iambeta_test
 
 import (
 	"fmt"
+	"log"
+	"strconv"
 	"strings"
 	"testing"
+	"time"
 
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/terraform"
 
 	"github.com/hashicorp/terraform-provider-google-beta/google-beta/acctest"
+	"github.com/hashicorp/terraform-provider-google-beta/google-beta/envvar"
 	"github.com/hashicorp/terraform-provider-google-beta/google-beta/tpgresource"
 	transport_tpg "github.com/hashicorp/terraform-provider-google-beta/google-beta/transport"
+
+	"google.golang.org/api/googleapi"
+)
+
+var (
+	_ = fmt.Sprintf
+	_ = log.Print
+	_ = strconv.Atoi
+	_ = strings.Trim
+	_ = time.Now
+	_ = resource.TestMain
+	_ = terraform.NewState
+	_ = envvar.TestEnvVar
+	_ = tpgresource.SetLabels
+	_ = transport_tpg.Config{}
+	_ = googleapi.Error{}
 )
 
 func TestAccIAMBetaWorkloadIdentityPool_iamWorkloadIdentityPoolBasicExample(t *testing.T) {
@@ -63,7 +83,7 @@ resource "google_iam_workload_identity_pool" "example" {
 `, context)
 }
 
-func TestAccIAMBetaWorkloadIdentityPool_iamWorkloadIdentityPoolFullExample(t *testing.T) {
+func TestAccIAMBetaWorkloadIdentityPool_iamWorkloadIdentityPoolFullFederationOnlyModeExample(t *testing.T) {
 	t.Parallel()
 
 	context := map[string]interface{}{
@@ -72,11 +92,14 @@ func TestAccIAMBetaWorkloadIdentityPool_iamWorkloadIdentityPoolFullExample(t *te
 
 	acctest.VcrTest(t, resource.TestCase{
 		PreCheck:                 func() { acctest.AccTestPreCheck(t) },
-		ProtoV5ProviderFactories: acctest.ProtoV5ProviderFactories(t),
-		CheckDestroy:             testAccCheckIAMBetaWorkloadIdentityPoolDestroyProducer(t),
+		ProtoV5ProviderFactories: acctest.ProtoV5ProviderBetaFactories(t),
+		ExternalProviders: map[string]resource.ExternalProvider{
+			"random": {},
+		},
+		CheckDestroy: testAccCheckIAMBetaWorkloadIdentityPoolDestroyProducer(t),
 		Steps: []resource.TestStep{
 			{
-				Config: testAccIAMBetaWorkloadIdentityPool_iamWorkloadIdentityPoolFullExample(context),
+				Config: testAccIAMBetaWorkloadIdentityPool_iamWorkloadIdentityPoolFullFederationOnlyModeExample(context),
 			},
 			{
 				ResourceName:            "google_iam_workload_identity_pool.example",
@@ -88,13 +111,84 @@ func TestAccIAMBetaWorkloadIdentityPool_iamWorkloadIdentityPoolFullExample(t *te
 	})
 }
 
-func testAccIAMBetaWorkloadIdentityPool_iamWorkloadIdentityPoolFullExample(context map[string]interface{}) string {
+func testAccIAMBetaWorkloadIdentityPool_iamWorkloadIdentityPoolFullFederationOnlyModeExample(context map[string]interface{}) string {
 	return acctest.Nprintf(`
 resource "google_iam_workload_identity_pool" "example" {
+  provider = google-beta
+
   workload_identity_pool_id = "tf-test-example-pool%{random_suffix}"
-  display_name              = "Name of pool"
-  description               = "Identity pool for automated test"
+  display_name              = "Name of the pool"
+  description               = "Identity pool operates in FEDERATION_ONLY mode"
   disabled                  = true
+  mode                      = "FEDERATION_ONLY"
+}
+`, context)
+}
+
+func TestAccIAMBetaWorkloadIdentityPool_iamWorkloadIdentityPoolFullTrustDomainModeExample(t *testing.T) {
+	t.Parallel()
+
+	context := map[string]interface{}{
+		"random_suffix": acctest.RandString(t, 10),
+	}
+
+	acctest.VcrTest(t, resource.TestCase{
+		PreCheck:                 func() { acctest.AccTestPreCheck(t) },
+		ProtoV5ProviderFactories: acctest.ProtoV5ProviderBetaFactories(t),
+		CheckDestroy:             testAccCheckIAMBetaWorkloadIdentityPoolDestroyProducer(t),
+		Steps: []resource.TestStep{
+			{
+				Config: testAccIAMBetaWorkloadIdentityPool_iamWorkloadIdentityPoolFullTrustDomainModeExample(context),
+			},
+			{
+				ResourceName:            "google_iam_workload_identity_pool.example",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"workload_identity_pool_id"},
+			},
+		},
+	})
+}
+
+func testAccIAMBetaWorkloadIdentityPool_iamWorkloadIdentityPoolFullTrustDomainModeExample(context map[string]interface{}) string {
+	return acctest.Nprintf(`
+resource "google_iam_workload_identity_pool" "example" {
+  provider = google-beta
+
+  workload_identity_pool_id = "tf-test-example-pool%{random_suffix}"
+  display_name              = "Name of the pool"
+  description               = "Identity pool operates in TRUST_DOMAIN mode"
+  disabled                  = true
+  mode                      = "TRUST_DOMAIN"
+  inline_certificate_issuance_config {
+    ca_pools = {      
+      "us-central1" : "projects/project-bar/locations/us-central1/caPools/ca-pool-bar"
+      "asia-east2" : "projects/project-foo/locations/asia-east2/caPools/ca-pool-foo"
+    }
+    lifetime                   = "86400s"
+    rotation_window_percentage = 50
+    key_algorithm              = "ECDSA_P256"
+  }
+  inline_trust_config {
+    additional_trust_bundles {
+      trust_domain = "example.com"
+      trust_anchors {
+        pem_certificate = file("test-fixtures/trust_anchor_1.pem")
+      }
+      trust_anchors {
+        pem_certificate = file("test-fixtures/trust_anchor_2.pem")
+      }
+    }
+    additional_trust_bundles {
+      trust_domain = "example.net"
+      trust_anchors {
+        pem_certificate = file("test-fixtures/trust_anchor_3.pem")
+      }
+      trust_anchors {
+        pem_certificate = file("test-fixtures/trust_anchor_4.pem")
+      }
+    }
+  }
 }
 `, context)
 }

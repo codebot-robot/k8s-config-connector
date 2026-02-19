@@ -23,7 +23,7 @@ description: |-
 AzureClient resources hold client authentication information needed by the Anthos Multi-Cloud API to manage Azure resources on your Azure subscription.When an AzureCluster is created, an AzureClient resource needs to be provided and all operations on Azure resources associated to that cluster will authenticate to Azure services using the given client.AzureClient resources are immutable and cannot be modified upon creation.Each AzureClient resource is bound to a single Azure Active Directory Application and tenant.
 
 For more information, see:
-* [Multicloud overview](https://cloud.google.com/anthos/clusters/docs/multi-cloud)
+* [Multicloud overview](https://cloud.google.com/kubernetes-engine/multi-cloud/docs)
 ## Example Usage - basic_azure_client
 A basic example of a containerazure azure client
 ```hcl
@@ -93,6 +93,21 @@ This resource provides the following
 ## Import
 
 Client can be imported using any of these accepted formats:
+* `projects/{{project}}/locations/{{location}}/azureClients/{{name}}`
+* `{{project}}/{{location}}/{{name}}`
+* `{{location}}/{{name}}`
+
+In Terraform v1.5.0 and later, use an [`import` block](https://developer.hashicorp.com/terraform/language/import) to import Client using one of the formats above. For example:
+
+
+```tf
+import {
+  id = "projects/{{project}}/locations/{{location}}/azureClients/{{name}}"
+  to = google_container_azure_client.default
+}
+```
+
+When using the [`terraform import` command](https://developer.hashicorp.com/terraform/cli/commands/import), Client can be imported using one of the formats above. For example:
 
 ```
 $ terraform import google_container_azure_client.default projects/{{project}}/locations/{{location}}/azureClients/{{name}}

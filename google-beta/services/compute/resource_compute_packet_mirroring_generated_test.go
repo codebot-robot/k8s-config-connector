@@ -19,15 +19,35 @@ package compute_test
 
 import (
 	"fmt"
+	"log"
+	"strconv"
 	"strings"
 	"testing"
+	"time"
 
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/terraform"
 
 	"github.com/hashicorp/terraform-provider-google-beta/google-beta/acctest"
+	"github.com/hashicorp/terraform-provider-google-beta/google-beta/envvar"
 	"github.com/hashicorp/terraform-provider-google-beta/google-beta/tpgresource"
 	transport_tpg "github.com/hashicorp/terraform-provider-google-beta/google-beta/transport"
+
+	"google.golang.org/api/googleapi"
+)
+
+var (
+	_ = fmt.Sprintf
+	_ = log.Print
+	_ = strconv.Atoi
+	_ = strings.Trim
+	_ = time.Now
+	_ = resource.TestMain
+	_ = terraform.NewState
+	_ = envvar.TestEnvVar
+	_ = tpgresource.SetLabels
+	_ = transport_tpg.Config{}
+	_ = googleapi.Error{}
 )
 
 func TestAccComputePacketMirroring_computePacketMirroringFullExample(t *testing.T) {
@@ -115,6 +135,7 @@ resource "google_compute_forwarding_rule" "default" {
 resource "google_compute_packet_mirroring" "foobar" {
   name = "tf-test-my-mirroring%{random_suffix}"
   description = "bar"
+  enable = "TRUE"
   network {
     url = google_compute_network.default.id
   }
@@ -126,6 +147,9 @@ resource "google_compute_packet_mirroring" "foobar" {
     instances {
       url = google_compute_instance.mirror.id
     }
+    subnetworks {
+      url = google_compute_subnetwork.default.id
+      }
   }
   filter {
     ip_protocols = ["tcp"]

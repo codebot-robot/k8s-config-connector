@@ -19,15 +19,35 @@ package compute_test
 
 import (
 	"fmt"
+	"log"
+	"strconv"
 	"strings"
 	"testing"
+	"time"
 
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/terraform"
 
 	"github.com/hashicorp/terraform-provider-google-beta/google-beta/acctest"
+	"github.com/hashicorp/terraform-provider-google-beta/google-beta/envvar"
 	"github.com/hashicorp/terraform-provider-google-beta/google-beta/tpgresource"
 	transport_tpg "github.com/hashicorp/terraform-provider-google-beta/google-beta/transport"
+
+	"google.golang.org/api/googleapi"
+)
+
+var (
+	_ = fmt.Sprintf
+	_ = log.Print
+	_ = strconv.Atoi
+	_ = strings.Trim
+	_ = time.Now
+	_ = resource.TestMain
+	_ = terraform.NewState
+	_ = envvar.TestEnvVar
+	_ = tpgresource.SetLabels
+	_ = transport_tpg.Config{}
+	_ = googleapi.Error{}
 )
 
 func TestAccComputeTargetHttpsProxy_targetHttpsProxyBasicExample(t *testing.T) {
@@ -49,7 +69,7 @@ func TestAccComputeTargetHttpsProxy_targetHttpsProxyBasicExample(t *testing.T) {
 				ResourceName:            "google_compute_target_https_proxy.default",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"ssl_policy", "url_map", "server_tls_policy"},
+				ImportStateVerifyIgnore: []string{"server_tls_policy", "ssl_policy", "url_map"},
 			},
 		},
 	})
@@ -128,7 +148,7 @@ func TestAccComputeTargetHttpsProxy_targetHttpsProxyHttpKeepAliveTimeoutExample(
 				ResourceName:            "google_compute_target_https_proxy.default",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"ssl_policy", "url_map", "server_tls_policy"},
+				ImportStateVerifyIgnore: []string{"server_tls_policy", "ssl_policy", "url_map"},
 			},
 		},
 	})
@@ -209,7 +229,7 @@ func TestAccComputeTargetHttpsProxy_targetHttpsProxyMtlsExample(t *testing.T) {
 				ResourceName:            "google_compute_target_https_proxy.default",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"ssl_policy", "url_map", "server_tls_policy"},
+				ImportStateVerifyIgnore: []string{"server_tls_policy", "ssl_policy", "url_map"},
 			},
 		},
 	})
@@ -307,6 +327,165 @@ resource "google_compute_http_health_check" "default" {
   request_path       = "/"
   check_interval_sec = 1
   timeout_sec        = 1
+}
+`, context)
+}
+
+func TestAccComputeTargetHttpsProxy_targetHttpsProxyCertificateManagerCertificateExample(t *testing.T) {
+	t.Parallel()
+
+	context := map[string]interface{}{
+		"random_suffix": acctest.RandString(t, 10),
+	}
+
+	acctest.VcrTest(t, resource.TestCase{
+		PreCheck:                 func() { acctest.AccTestPreCheck(t) },
+		ProtoV5ProviderFactories: acctest.ProtoV5ProviderFactories(t),
+		CheckDestroy:             testAccCheckComputeTargetHttpsProxyDestroyProducer(t),
+		Steps: []resource.TestStep{
+			{
+				Config: testAccComputeTargetHttpsProxy_targetHttpsProxyCertificateManagerCertificateExample(context),
+			},
+			{
+				ResourceName:            "google_compute_target_https_proxy.default",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"server_tls_policy", "ssl_policy", "url_map"},
+			},
+		},
+	})
+}
+
+func testAccComputeTargetHttpsProxy_targetHttpsProxyCertificateManagerCertificateExample(context map[string]interface{}) string {
+	return acctest.Nprintf(`
+
+resource "google_compute_target_https_proxy" "default" {
+  name                             = "tf-test-target-http-proxy%{random_suffix}"
+  url_map                          = google_compute_url_map.default.id
+  certificate_manager_certificates =  ["//certificatemanager.googleapis.com/${google_certificate_manager_certificate.default.id}"] # [google_certificate_manager_certificate.default.id] is also acceptable
+}
+
+resource "google_certificate_manager_certificate" "default" {
+  name              = "tf-test-my-certificate%{random_suffix}"
+  scope             = "ALL_REGIONS"
+  self_managed {
+    pem_certificate = file("test-fixtures/cert.pem")
+    pem_private_key = file("test-fixtures/private-key.pem")                                                                                                                
+  }
+}
+
+resource "google_compute_url_map" "default" {
+  name        = "tf-test-url-map%{random_suffix}"
+  description = "a description"
+
+  default_service = google_compute_backend_service.default.id
+
+  host_rule {
+    hosts        = ["mysite.com"]
+    path_matcher = "allpaths"
+  }
+
+  path_matcher {
+    name            = "allpaths"
+    default_service = google_compute_backend_service.default.id
+
+    path_rule {
+      paths   = ["/*"]
+      service = google_compute_backend_service.default.id
+    }
+  }
+}
+
+resource "google_compute_backend_service" "default" {
+  name        = "tf-test-backend-service%{random_suffix}"
+  port_name   = "http"
+  protocol    = "HTTP"
+  timeout_sec = 10
+  load_balancing_scheme = "INTERNAL_MANAGED"
+}
+`, context)
+}
+
+func TestAccComputeTargetHttpsProxy_targetHttpsProxyFingerprintExample(t *testing.T) {
+	t.Parallel()
+
+	context := map[string]interface{}{
+		"random_suffix": acctest.RandString(t, 10),
+	}
+
+	acctest.VcrTest(t, resource.TestCase{
+		PreCheck:                 func() { acctest.AccTestPreCheck(t) },
+		ProtoV5ProviderFactories: acctest.ProtoV5ProviderFactories(t),
+		CheckDestroy:             testAccCheckComputeTargetHttpsProxyDestroyProducer(t),
+		Steps: []resource.TestStep{
+			{
+				Config: testAccComputeTargetHttpsProxy_targetHttpsProxyFingerprintExample(context),
+			},
+			{
+				ResourceName:            "google_compute_target_https_proxy.default",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"server_tls_policy", "ssl_policy", "url_map"},
+			},
+		},
+	})
+}
+
+func testAccComputeTargetHttpsProxy_targetHttpsProxyFingerprintExample(context map[string]interface{}) string {
+	return acctest.Nprintf(`
+resource "google_compute_target_https_proxy" "default" {
+  name             = "tf-test-test-fingerprint-proxy%{random_suffix}"
+  url_map          = google_compute_url_map.default.id
+  ssl_certificates = [google_compute_ssl_certificate.default.id]
+}
+
+resource "google_compute_ssl_certificate" "default" {
+  name        = "tf-test-my-certificate%{random_suffix}"
+  private_key = file("test-fixtures/test.key")
+  certificate = file("test-fixtures/test.crt")
+}
+
+resource "google_compute_url_map" "default" {
+  name        = "tf-test-url-map%{random_suffix}"
+  description = "a description"
+
+  default_service = google_compute_backend_service.default.id
+
+  host_rule {
+    hosts        = ["mysite.com"]
+    path_matcher = "allpaths"
+  }
+
+  path_matcher {
+    name            = "allpaths"
+    default_service = google_compute_backend_service.default.id
+
+    path_rule {
+      paths   = ["/*"]
+      service = google_compute_backend_service.default.id
+    }
+  }
+}
+
+resource "google_compute_backend_service" "default" {
+  name        = "tf-test-backend-service%{random_suffix}"
+  port_name   = "http"
+  protocol    = "HTTP"
+  timeout_sec = 10
+
+  health_checks = [google_compute_http_health_check.default.id]
+}
+
+resource "google_compute_http_health_check" "default" {
+  name               = "tf-test-http-health-check%{random_suffix}"
+  request_path       = "/"
+  check_interval_sec = 1
+  timeout_sec        = 1
+}
+
+output "target_https_proxy_fingerprint" {
+  value       = google_compute_target_https_proxy.default.fingerprint
+  description = "The fingerprint of the target HTTPS proxy for optimistic locking"
 }
 `, context)
 }

@@ -19,22 +19,42 @@ package memcache_test
 
 import (
 	"fmt"
+	"log"
+	"strconv"
 	"strings"
 	"testing"
+	"time"
 
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/terraform"
 
 	"github.com/hashicorp/terraform-provider-google-beta/google-beta/acctest"
+	"github.com/hashicorp/terraform-provider-google-beta/google-beta/envvar"
 	"github.com/hashicorp/terraform-provider-google-beta/google-beta/tpgresource"
 	transport_tpg "github.com/hashicorp/terraform-provider-google-beta/google-beta/transport"
+
+	"google.golang.org/api/googleapi"
 )
 
-func TestAccMemcacheInstance_memcacheInstanceBasicExample(t *testing.T) {
+var (
+	_ = fmt.Sprintf
+	_ = log.Print
+	_ = strconv.Atoi
+	_ = strings.Trim
+	_ = time.Now
+	_ = resource.TestMain
+	_ = terraform.NewState
+	_ = envvar.TestEnvVar
+	_ = tpgresource.SetLabels
+	_ = transport_tpg.Config{}
+	_ = googleapi.Error{}
+)
+
+func TestAccMemcacheInstance_memcacheInstanceBasicTestExample(t *testing.T) {
 	t.Parallel()
 
 	context := map[string]interface{}{
-		"network_name":  acctest.BootstrapSharedTestNetwork(t, "memcache-instance-basic"),
+		"network_name":  acctest.BootstrapSharedServiceNetworkingConnection(t, "vpc-network-1"),
 		"random_suffix": acctest.RandString(t, 10),
 	}
 
@@ -44,19 +64,19 @@ func TestAccMemcacheInstance_memcacheInstanceBasicExample(t *testing.T) {
 		CheckDestroy:             testAccCheckMemcacheInstanceDestroyProducer(t),
 		Steps: []resource.TestStep{
 			{
-				Config: testAccMemcacheInstance_memcacheInstanceBasicExample(context),
+				Config: testAccMemcacheInstance_memcacheInstanceBasicTestExample(context),
 			},
 			{
 				ResourceName:            "google_memcache_instance.instance",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"name", "region"},
+				ImportStateVerifyIgnore: []string{"labels", "name", "region", "reserved_ip_range_id", "terraform_labels"},
 			},
 		},
 	})
 }
 
-func testAccMemcacheInstance_memcacheInstanceBasicExample(context map[string]interface{}) string {
+func testAccMemcacheInstance_memcacheInstanceBasicTestExample(context map[string]interface{}) string {
 	return acctest.Nprintf(`
 // This example assumes this network already exists.
 // The API creates a tenant network per network authorized for a
@@ -70,23 +90,13 @@ data "google_compute_network" "memcache_network" {
   name = "%{network_name}"
 }
 
-resource "google_compute_global_address" "service_range" {
-  name          = "address%{random_suffix}"
-  purpose       = "VPC_PEERING"
-  address_type  = "INTERNAL"
-  prefix_length = 16
-  network       = data.google_compute_network.memcache_network.id
-}
-
-resource "google_service_networking_connection" "private_service_connection" {
-  network                 = data.google_compute_network.memcache_network.id
-  service                 = "servicenetworking.googleapis.com"
-  reserved_peering_ranges = [google_compute_global_address.service_range.name]
-}
-
 resource "google_memcache_instance" "instance" {
   name = "tf-test-test-instance%{random_suffix}"
-  authorized_network = google_service_networking_connection.private_service_connection.network
+  authorized_network = data.google_compute_network.memcache_network.id
+
+  labels = {
+    env = "test"
+  }
 
   node_config {
     cpu_count      = 1

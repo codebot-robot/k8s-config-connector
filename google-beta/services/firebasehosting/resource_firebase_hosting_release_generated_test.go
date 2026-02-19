@@ -18,12 +18,36 @@
 package firebasehosting_test
 
 import (
+	"fmt"
+	"log"
+	"strconv"
+	"strings"
 	"testing"
+	"time"
 
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/terraform"
 
 	"github.com/hashicorp/terraform-provider-google-beta/google-beta/acctest"
 	"github.com/hashicorp/terraform-provider-google-beta/google-beta/envvar"
+	"github.com/hashicorp/terraform-provider-google-beta/google-beta/tpgresource"
+	transport_tpg "github.com/hashicorp/terraform-provider-google-beta/google-beta/transport"
+
+	"google.golang.org/api/googleapi"
+)
+
+var (
+	_ = fmt.Sprintf
+	_ = log.Print
+	_ = strconv.Atoi
+	_ = strings.Trim
+	_ = time.Now
+	_ = resource.TestMain
+	_ = terraform.NewState
+	_ = envvar.TestEnvVar
+	_ = tpgresource.SetLabels
+	_ = transport_tpg.Config{}
+	_ = googleapi.Error{}
 )
 
 func TestAccFirebaseHostingRelease_firebasehostingReleaseInSiteExample(t *testing.T) {
@@ -45,7 +69,7 @@ func TestAccFirebaseHostingRelease_firebasehostingReleaseInSiteExample(t *testin
 				ResourceName:            "google_firebase_hosting_release.default",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"release_id", "site_id", "channel_id", "version_name"},
+				ImportStateVerifyIgnore: []string{"channel_id", "site_id", "version_name"},
 			},
 		},
 	})
@@ -99,7 +123,7 @@ func TestAccFirebaseHostingRelease_firebasehostingReleaseInChannelExample(t *tes
 				ResourceName:            "google_firebase_hosting_release.default",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"release_id", "site_id", "channel_id", "version_name"},
+				ImportStateVerifyIgnore: []string{"channel_id", "site_id", "version_name"},
 			},
 		},
 	})
@@ -160,7 +184,7 @@ func TestAccFirebaseHostingRelease_firebasehostingReleaseDisableExample(t *testi
 				ResourceName:            "google_firebase_hosting_release.default",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"release_id", "site_id", "channel_id", "version_name"},
+				ImportStateVerifyIgnore: []string{"channel_id", "site_id", "version_name"},
 			},
 		},
 	})

@@ -19,24 +19,44 @@ package privateca_test
 
 import (
 	"fmt"
+	"log"
+	"strconv"
 	"strings"
 	"testing"
+	"time"
 
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/terraform"
 
 	"github.com/hashicorp/terraform-provider-google-beta/google-beta/acctest"
+	"github.com/hashicorp/terraform-provider-google-beta/google-beta/envvar"
 	"github.com/hashicorp/terraform-provider-google-beta/google-beta/tpgresource"
 	transport_tpg "github.com/hashicorp/terraform-provider-google-beta/google-beta/transport"
+
+	"google.golang.org/api/googleapi"
+)
+
+var (
+	_ = fmt.Sprintf
+	_ = log.Print
+	_ = strconv.Atoi
+	_ = strings.Trim
+	_ = time.Now
+	_ = resource.TestMain
+	_ = terraform.NewState
+	_ = envvar.TestEnvVar
+	_ = tpgresource.SetLabels
+	_ = transport_tpg.Config{}
+	_ = googleapi.Error{}
 )
 
 func TestAccPrivatecaCertificateAuthority_privatecaCertificateAuthorityBasicExample(t *testing.T) {
 	t.Parallel()
 
 	context := map[string]interface{}{
-		"pool_name":           acctest.BootstrapSharedCaPoolInLocation(t, "us-central1"),
-		"pool_location":       "us-central1",
 		"deletion_protection": false,
+		"pool_location":       "us-central1",
+		"pool_name":           acctest.BootstrapSharedCaPoolInLocation(t, "us-central1"),
 		"random_suffix":       acctest.RandString(t, 10),
 	}
 
@@ -52,7 +72,7 @@ func TestAccPrivatecaCertificateAuthority_privatecaCertificateAuthorityBasicExam
 				ResourceName:            "google_privateca_certificate_authority.default",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"pem_ca_certificate", "ignore_active_certificates_on_deletion", "skip_grace_period", "location", "certificate_authority_id", "pool", "deletion_protection"},
+				ImportStateVerifyIgnore: []string{"certificate_authority_id", "deletion_protection", "ignore_active_certificates_on_deletion", "labels", "location", "pem_ca_certificate", "pool", "skip_grace_period", "terraform_labels"},
 			},
 		},
 	})
@@ -66,44 +86,100 @@ resource "google_privateca_certificate_authority" "default" {
   pool = "%{pool_name}"
   certificate_authority_id = "tf-test-my-certificate-authority%{random_suffix}"
   location = "%{pool_location}"
-  deletion_protection = "%{deletion_protection}"
+  deletion_protection = %{deletion_protection}
   config {
     subject_config {
       subject {
-        organization = "HashiCorp"
+        organization = "ACME"
         common_name = "my-certificate-authority"
-      }
-      subject_alt_name {
-        dns_names = ["hashicorp.com"]
       }
     }
     x509_config {
       ca_options {
+        # is_ca *MUST* be true for certificate authorities
         is_ca = true
-        max_issuer_path_length = 10
       }
       key_usage {
         base_key_usage {
-          digital_signature = true
-          content_commitment = true
-          key_encipherment = false
-          data_encipherment = true
-          key_agreement = true
+          # cert_sign and crl_sign *MUST* be true for certificate authorities
           cert_sign = true
           crl_sign = true
-          decipher_only = true
         }
         extended_key_usage {
-          server_auth = true
-          client_auth = false
-          email_protection = true
-          code_signing = true
-          time_stamping = true
         }
       }
     }
   }
-  lifetime = "86400s"
+  # valid for 10 years
+  lifetime = "${10 * 365 * 24 * 3600}s"
+  key_spec {
+    algorithm = "RSA_PKCS1_4096_SHA256"
+  }
+}
+`, context)
+}
+
+func TestAccPrivatecaCertificateAuthority_privatecaCertificateAuthorityBasicNoOrgExample(t *testing.T) {
+	t.Parallel()
+
+	context := map[string]interface{}{
+		"deletion_protection": false,
+		"pool_location":       "us-central1",
+		"pool_name":           acctest.BootstrapSharedCaPoolInLocation(t, "us-central1"),
+		"random_suffix":       acctest.RandString(t, 10),
+	}
+
+	acctest.VcrTest(t, resource.TestCase{
+		PreCheck:                 func() { acctest.AccTestPreCheck(t) },
+		ProtoV5ProviderFactories: acctest.ProtoV5ProviderFactories(t),
+		CheckDestroy:             testAccCheckPrivatecaCertificateAuthorityDestroyProducer(t),
+		Steps: []resource.TestStep{
+			{
+				Config: testAccPrivatecaCertificateAuthority_privatecaCertificateAuthorityBasicNoOrgExample(context),
+			},
+			{
+				ResourceName:            "google_privateca_certificate_authority.default",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"certificate_authority_id", "deletion_protection", "ignore_active_certificates_on_deletion", "labels", "location", "pem_ca_certificate", "pool", "skip_grace_period", "terraform_labels"},
+			},
+		},
+	})
+}
+
+func testAccPrivatecaCertificateAuthority_privatecaCertificateAuthorityBasicNoOrgExample(context map[string]interface{}) string {
+	return acctest.Nprintf(`
+resource "google_privateca_certificate_authority" "default" {
+  // This example assumes this pool already exists.
+  // Pools cannot be deleted in normal test circumstances, so we depend on static pools
+  pool = "%{pool_name}"
+  certificate_authority_id = "tf-test-my-certificate-authority%{random_suffix}"
+  location = "%{pool_location}"
+  deletion_protection = %{deletion_protection}
+  config {
+    subject_config {
+      subject {
+        common_name = "my-certificate-authority"
+      }
+    }
+    x509_config {
+      ca_options {
+        # is_ca *MUST* be true for certificate authorities
+        is_ca = true
+      }
+      key_usage {
+        base_key_usage {
+          # cert_sign and crl_sign *MUST* be true for certificate authorities
+          cert_sign = true
+          crl_sign = true
+        }
+        extended_key_usage {
+        }
+      }
+    }
+  }
+  # valid for 10 years
+  lifetime = "${10 * 365 * 24 * 3600}s"
   key_spec {
     algorithm = "RSA_PKCS1_4096_SHA256"
   }
@@ -116,9 +192,9 @@ func TestAccPrivatecaCertificateAuthority_privatecaCertificateAuthoritySubordina
 	t.Parallel()
 
 	context := map[string]interface{}{
-		"pool_name":           acctest.BootstrapSharedCaPoolInLocation(t, "us-central1"),
-		"pool_location":       "us-central1",
 		"deletion_protection": false,
+		"pool_location":       "us-central1",
+		"pool_name":           acctest.BootstrapSharedCaPoolInLocation(t, "us-central1"),
 		"random_suffix":       acctest.RandString(t, 10),
 	}
 
@@ -134,7 +210,7 @@ func TestAccPrivatecaCertificateAuthority_privatecaCertificateAuthoritySubordina
 				ResourceName:            "google_privateca_certificate_authority.default",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"pem_ca_certificate", "ignore_active_certificates_on_deletion", "skip_grace_period", "location", "certificate_authority_id", "pool", "deletion_protection"},
+				ImportStateVerifyIgnore: []string{"certificate_authority_id", "deletion_protection", "ignore_active_certificates_on_deletion", "labels", "location", "pem_ca_certificate", "pool", "skip_grace_period", "subordinate_config.0.certificate_authority", "terraform_labels"},
 			},
 		},
 	})
@@ -149,11 +225,8 @@ resource "google_privateca_certificate_authority" "root-ca" {
   config {
     subject_config {
       subject {
-        organization = "HashiCorp"
+        organization = "ACME"
         common_name = "my-certificate-authority"
-      }
-      subject_alt_name {
-        dns_names = ["hashicorp.com"]
       }
     }
     x509_config {
@@ -168,7 +241,6 @@ resource "google_privateca_certificate_authority" "root-ca" {
           crl_sign = true
         }
         extended_key_usage {
-          server_auth = false
         }
       }
     }
@@ -189,52 +261,115 @@ resource "google_privateca_certificate_authority" "default" {
   pool = "%{pool_name}"
   certificate_authority_id = "tf-test-my-certificate-authority%{random_suffix}-sub"
   location = "%{pool_location}"
-  deletion_protection = "%{deletion_protection}"
+  deletion_protection = %{deletion_protection}
   subordinate_config {
     certificate_authority = google_privateca_certificate_authority.root-ca.name
   }
   config {
     subject_config {
       subject {
-        organization = "HashiCorp"
+        organization = "ACME"
         common_name = "my-subordinate-authority"
-      }
-      subject_alt_name {
-        dns_names = ["hashicorp.com"]
       }
     }
     x509_config {
       ca_options {
         is_ca = true
-        # Force the sub CA to only issue leaf certs
-        max_issuer_path_length = 0
+        # Force the sub CA to only issue leaf certs.
+        # Use e.g.
+        #    max_issuer_path_length = 1
+        # if you need to chain more subordinates.
+        zero_max_issuer_path_length = true
       }
       key_usage {
         base_key_usage {
-          digital_signature = true
-          content_commitment = true
-          key_encipherment = false
-          data_encipherment = true
-          key_agreement = true
           cert_sign = true
           crl_sign = true
-          decipher_only = true
         }
         extended_key_usage {
-          server_auth = true
-          client_auth = false
-          email_protection = true
-          code_signing = true
-          time_stamping = true
         }
       }
     }
   }
-  lifetime = "86400s"
+  # valid for 5 years
+  lifetime = "${5 * 365 * 24 * 3600}s"
+  key_spec {
+    algorithm = "RSA_PKCS1_2048_SHA256"
+  }
+  type = "SUBORDINATE"
+}
+`, context)
+}
+
+func TestAccPrivatecaCertificateAuthority_privatecaCertificateAuthorityBasicWithCustomCdpAiaUrlsExample(t *testing.T) {
+	t.Parallel()
+
+	context := map[string]interface{}{
+		"deletion_protection": false,
+		"pool_location":       "us-central1",
+		"pool_name":           acctest.BootstrapSharedCaPoolInLocation(t, "us-central1"),
+		"random_suffix":       acctest.RandString(t, 10),
+	}
+
+	acctest.VcrTest(t, resource.TestCase{
+		PreCheck:                 func() { acctest.AccTestPreCheck(t) },
+		ProtoV5ProviderFactories: acctest.ProtoV5ProviderFactories(t),
+		CheckDestroy:             testAccCheckPrivatecaCertificateAuthorityDestroyProducer(t),
+		Steps: []resource.TestStep{
+			{
+				Config: testAccPrivatecaCertificateAuthority_privatecaCertificateAuthorityBasicWithCustomCdpAiaUrlsExample(context),
+			},
+			{
+				ResourceName:            "google_privateca_certificate_authority.default",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"certificate_authority_id", "deletion_protection", "ignore_active_certificates_on_deletion", "labels", "location", "pem_ca_certificate", "pool", "skip_grace_period", "terraform_labels"},
+			},
+		},
+	})
+}
+
+func testAccPrivatecaCertificateAuthority_privatecaCertificateAuthorityBasicWithCustomCdpAiaUrlsExample(context map[string]interface{}) string {
+	return acctest.Nprintf(`
+resource "google_privateca_certificate_authority" "default" {
+  // This example assumes this pool already exists.
+  // Pools cannot be deleted in normal test circumstances, so we depend on static pools
+  pool = "%{pool_name}"
+  certificate_authority_id = "tf-test-my-certificate-authority%{random_suffix}"
+  location = "%{pool_location}"
+  deletion_protection = %{deletion_protection}
+  config {
+    subject_config {
+      subject {
+        organization = "ACME"
+        common_name = "my-certificate-authority"
+      }
+    }
+    x509_config {
+      ca_options {
+        # is_ca *MUST* be true for certificate authorities
+        is_ca = true
+      }
+      key_usage {
+        base_key_usage {
+          # cert_sign and crl_sign *MUST* be true for certificate authorities
+          cert_sign = true
+          crl_sign = true
+        }
+        extended_key_usage {
+        }
+      }
+    }
+  }
+  # valid for 10 years
+  lifetime = "${10 * 365 * 24 * 3600}s"
   key_spec {
     algorithm = "RSA_PKCS1_4096_SHA256"
   }
-  type = "SUBORDINATE"
+  user_defined_access_urls {
+    aia_issuing_certificate_urls = ["http://example.com/ca.crt", "http://example.com/anotherca.crt"]
+    crl_access_urls = ["http://example.com/crl1.crt", "http://example.com/crl2.crt"]
+  }
 }
 `, context)
 }

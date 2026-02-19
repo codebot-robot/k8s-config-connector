@@ -19,15 +19,35 @@ package compute_test
 
 import (
 	"fmt"
+	"log"
+	"strconv"
 	"strings"
 	"testing"
+	"time"
 
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/terraform"
 
 	"github.com/hashicorp/terraform-provider-google-beta/google-beta/acctest"
+	"github.com/hashicorp/terraform-provider-google-beta/google-beta/envvar"
 	"github.com/hashicorp/terraform-provider-google-beta/google-beta/tpgresource"
 	transport_tpg "github.com/hashicorp/terraform-provider-google-beta/google-beta/transport"
+
+	"google.golang.org/api/googleapi"
+)
+
+var (
+	_ = fmt.Sprintf
+	_ = log.Print
+	_ = strconv.Atoi
+	_ = strings.Trim
+	_ = time.Now
+	_ = resource.TestMain
+	_ = terraform.NewState
+	_ = envvar.TestEnvVar
+	_ = tpgresource.SetLabels
+	_ = transport_tpg.Config{}
+	_ = googleapi.Error{}
 )
 
 func TestAccComputeRegionSecurityPolicyRule_regionSecurityPolicyRuleBasicExample(t *testing.T) {
@@ -39,7 +59,7 @@ func TestAccComputeRegionSecurityPolicyRule_regionSecurityPolicyRuleBasicExample
 
 	acctest.VcrTest(t, resource.TestCase{
 		PreCheck:                 func() { acctest.AccTestPreCheck(t) },
-		ProtoV5ProviderFactories: acctest.ProtoV5ProviderBetaFactories(t),
+		ProtoV5ProviderFactories: acctest.ProtoV5ProviderFactories(t),
 		CheckDestroy:             testAccCheckComputeRegionSecurityPolicyRuleDestroyProducer(t),
 		Steps: []resource.TestStep{
 			{
@@ -58,8 +78,6 @@ func TestAccComputeRegionSecurityPolicyRule_regionSecurityPolicyRuleBasicExample
 func testAccComputeRegionSecurityPolicyRule_regionSecurityPolicyRuleBasicExample(context map[string]interface{}) string {
 	return acctest.Nprintf(`
 resource "google_compute_region_security_policy" "default" {
-  provider    = google-beta
-  
   region      = "us-west2"
   name        = "policyruletest%{random_suffix}"
   description = "basic region security policy"
@@ -67,8 +85,6 @@ resource "google_compute_region_security_policy" "default" {
 }
 
 resource "google_compute_region_security_policy_rule" "policy_rule" {
-  provider = google-beta
-  
   region          = "us-west2"
   security_policy = google_compute_region_security_policy.default.name
   description     = "new rule"
@@ -94,7 +110,7 @@ func TestAccComputeRegionSecurityPolicyRule_regionSecurityPolicyRuleMultipleRule
 
 	acctest.VcrTest(t, resource.TestCase{
 		PreCheck:                 func() { acctest.AccTestPreCheck(t) },
-		ProtoV5ProviderFactories: acctest.ProtoV5ProviderBetaFactories(t),
+		ProtoV5ProviderFactories: acctest.ProtoV5ProviderFactories(t),
 		CheckDestroy:             testAccCheckComputeRegionSecurityPolicyRuleDestroyProducer(t),
 		Steps: []resource.TestStep{
 			{
@@ -113,8 +129,6 @@ func TestAccComputeRegionSecurityPolicyRule_regionSecurityPolicyRuleMultipleRule
 func testAccComputeRegionSecurityPolicyRule_regionSecurityPolicyRuleMultipleRulesExample(context map[string]interface{}) string {
 	return acctest.Nprintf(`
 resource "google_compute_region_security_policy" "default" {
-  provider    = google-beta
-  
   region      = "us-west2"
   name        = "policywithmultiplerules%{random_suffix}"
   description = "basic region security policy"
@@ -122,8 +136,6 @@ resource "google_compute_region_security_policy" "default" {
 }
 
 resource "google_compute_region_security_policy_rule" "policy_rule_one" {
-  provider = google-beta
-  
   region          = "us-west2"
   security_policy = google_compute_region_security_policy.default.name
   description     = "new rule one"
@@ -139,8 +151,6 @@ resource "google_compute_region_security_policy_rule" "policy_rule_one" {
 }
 
 resource "google_compute_region_security_policy_rule" "policy_rule_two" {
-  provider = google-beta
-  
   region          = "us-west2"
   security_policy = google_compute_region_security_policy.default.name
   description     = "new rule two"
@@ -149,6 +159,150 @@ resource "google_compute_region_security_policy_rule" "policy_rule_two" {
     versioned_expr = "SRC_IPS_V1"
     config {
       src_ip_ranges = ["192.168.0.0/16", "10.0.0.0/8"]
+    }
+  }
+  action          = "allow"
+  preview         = true
+}
+`, context)
+}
+
+func TestAccComputeRegionSecurityPolicyRule_regionSecurityPolicyRuleDefaultRuleExample(t *testing.T) {
+	t.Parallel()
+
+	context := map[string]interface{}{
+		"random_suffix": acctest.RandString(t, 10),
+	}
+
+	acctest.VcrTest(t, resource.TestCase{
+		PreCheck:                 func() { acctest.AccTestPreCheck(t) },
+		ProtoV5ProviderFactories: acctest.ProtoV5ProviderFactories(t),
+		CheckDestroy:             testAccCheckComputeRegionSecurityPolicyRuleDestroyProducer(t),
+		Steps: []resource.TestStep{
+			{
+				Config: testAccComputeRegionSecurityPolicyRule_regionSecurityPolicyRuleDefaultRuleExample(context),
+			},
+			{
+				ResourceName:            "google_compute_region_security_policy_rule.policy_rule",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"region", "security_policy"},
+			},
+		},
+	})
+}
+
+func testAccComputeRegionSecurityPolicyRule_regionSecurityPolicyRuleDefaultRuleExample(context map[string]interface{}) string {
+	return acctest.Nprintf(`
+resource "google_compute_region_security_policy" "default" {
+  region      = "us-west2"
+  name        = "policywithdefaultrule%{random_suffix}"
+  description = "basic region security policy"
+  type        = "CLOUD_ARMOR"
+}
+
+resource "google_compute_region_security_policy_rule" "default_rule" {
+  region          = "us-west2"
+  security_policy = google_compute_region_security_policy.default.name
+  description     = "new rule"
+  action          = "deny"
+  priority        = "2147483647"
+  match {
+    versioned_expr = "SRC_IPS_V1"
+    config {
+      src_ip_ranges = ["*"]
+    }
+  }
+}
+
+resource "google_compute_region_security_policy_rule" "policy_rule" {
+  region          = "us-west2"
+  security_policy = google_compute_region_security_policy.default.name
+  description     = "new rule"
+  priority        = 100
+  match {
+    versioned_expr = "SRC_IPS_V1"
+    config {
+      src_ip_ranges = ["10.10.0.0/16"]
+    }
+  }
+  action          = "allow"
+  preview         = true
+}
+`, context)
+}
+
+func TestAccComputeRegionSecurityPolicyRule_regionSecurityPolicyRuleWithPreconfiguredWafConfigExample(t *testing.T) {
+	t.Parallel()
+
+	context := map[string]interface{}{
+		"random_suffix": acctest.RandString(t, 10),
+	}
+
+	acctest.VcrTest(t, resource.TestCase{
+		PreCheck:                 func() { acctest.AccTestPreCheck(t) },
+		ProtoV5ProviderFactories: acctest.ProtoV5ProviderFactories(t),
+		CheckDestroy:             testAccCheckComputeRegionSecurityPolicyRuleDestroyProducer(t),
+		Steps: []resource.TestStep{
+			{
+				Config: testAccComputeRegionSecurityPolicyRule_regionSecurityPolicyRuleWithPreconfiguredWafConfigExample(context),
+			},
+			{
+				ResourceName:            "google_compute_region_security_policy_rule.policy_rule",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"region", "security_policy"},
+			},
+		},
+	})
+}
+
+func testAccComputeRegionSecurityPolicyRule_regionSecurityPolicyRuleWithPreconfiguredWafConfigExample(context map[string]interface{}) string {
+	return acctest.Nprintf(`
+resource "google_compute_region_security_policy" "default" {
+  region      = "asia-southeast1"
+  name        = "policyruletest%{random_suffix}"
+  description = "basic region security policy"
+  type        = "CLOUD_ARMOR"
+}
+
+resource "google_compute_region_security_policy_rule" "policy_rule" {
+  region          = "asia-southeast1"
+  security_policy = google_compute_region_security_policy.default.name
+  description     = "new rule"
+  priority        = 100
+  match {
+    versioned_expr = "SRC_IPS_V1"
+    config {
+      src_ip_ranges = ["10.10.0.0/16"]
+    }
+  }
+  preconfigured_waf_config {
+    exclusion {
+      request_uri {
+        operator = "STARTS_WITH"
+        value = "/admin"
+      }
+      target_rule_set = "rce-stable"
+    }
+    exclusion {
+      request_query_param {
+        operator = "CONTAINS"
+        value = "password"
+      }
+      request_query_param {
+        operator = "STARTS_WITH"
+        value = "freeform"
+      }
+      request_query_param {
+        operator = "EQUALS"
+        value = "description"
+      }
+      target_rule_set = "xss-stable"
+      target_rule_ids = [
+        "owasp-crs-v030001-id941330-xss",
+        "owasp-crs-v030001-id941340-xss",
+      ]
     }
   }
   action          = "allow"

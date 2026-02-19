@@ -18,15 +18,36 @@
 package compute_test
 
 import (
+	"fmt"
 	"log"
+	"strconv"
 	"strings"
 	"testing"
+	"time"
 
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/terraform"
 
 	"github.com/hashicorp/terraform-provider-google-beta/google-beta/acctest"
 	"github.com/hashicorp/terraform-provider-google-beta/google-beta/envvar"
+	"github.com/hashicorp/terraform-provider-google-beta/google-beta/tpgresource"
+	transport_tpg "github.com/hashicorp/terraform-provider-google-beta/google-beta/transport"
+
+	"google.golang.org/api/googleapi"
+)
+
+var (
+	_ = fmt.Sprintf
+	_ = log.Print
+	_ = strconv.Atoi
+	_ = strings.Trim
+	_ = time.Now
+	_ = resource.TestMain
+	_ = terraform.NewState
+	_ = envvar.TestEnvVar
+	_ = tpgresource.SetLabels
+	_ = transport_tpg.Config{}
+	_ = googleapi.Error{}
 )
 
 func TestAccComputeOrganizationSecurityPolicyAssociation_organizationSecurityPolicyAssociationBasicExample(t *testing.T) {
@@ -39,7 +60,7 @@ func TestAccComputeOrganizationSecurityPolicyAssociation_organizationSecurityPol
 
 	acctest.VcrTest(t, resource.TestCase{
 		PreCheck:                 func() { acctest.AccTestPreCheck(t) },
-		ProtoV5ProviderFactories: acctest.ProtoV5ProviderBetaFactories(t),
+		ProtoV5ProviderFactories: acctest.ProtoV5ProviderFactories(t),
 		CheckDestroy:             testAccCheckComputeOrganizationSecurityPolicyAssociationDestroyProducer(t),
 		Steps: []resource.TestStep{
 			{
@@ -58,41 +79,18 @@ func TestAccComputeOrganizationSecurityPolicyAssociation_organizationSecurityPol
 func testAccComputeOrganizationSecurityPolicyAssociation_organizationSecurityPolicyAssociationBasicExample(context map[string]interface{}) string {
 	return acctest.Nprintf(`
 resource "google_folder" "security_policy_target" {
-  provider     = google-beta
   display_name = "tf-test-secpol-%{random_suffix}"
   parent       = "organizations/%{org_id}"
+  deletion_protection = false
 }
 
 resource "google_compute_organization_security_policy" "policy" {
-  provider = google-beta
-  display_name = "tf-test%{random_suffix}"
+  short_name   = "tf-test%{random_suffix}"
   parent       = google_folder.security_policy_target.name
-}
-
-resource "google_compute_organization_security_policy_rule" "policy" {
-  provider = google-beta
-  policy_id = google_compute_organization_security_policy.policy.id
-  action = "allow"
-
-  direction = "INGRESS"
-  enable_logging = true
-  match {
-    config {
-      src_ip_ranges = ["192.168.0.0/16", "10.0.0.0/8"]
-      layer4_config {
-        ip_protocol = "tcp"
-        ports = ["22"]
-      }
-      layer4_config {
-        ip_protocol = "icmp"
-      }
-    }
-  }
-  priority = 100
+  type         = "CLOUD_ARMOR"
 }
 
 resource "google_compute_organization_security_policy_association" "policy" {
-  provider = google-beta
   name          = "tf-test%{random_suffix}"
   attachment_id = google_compute_organization_security_policy.policy.parent
   policy_id     = google_compute_organization_security_policy.policy.id

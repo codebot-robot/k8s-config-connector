@@ -19,16 +19,35 @@ package pubsub_test
 
 import (
 	"fmt"
+	"log"
+	"strconv"
 	"strings"
 	"testing"
+	"time"
 
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/terraform"
 
 	"github.com/hashicorp/terraform-provider-google-beta/google-beta/acctest"
 	"github.com/hashicorp/terraform-provider-google-beta/google-beta/envvar"
 	"github.com/hashicorp/terraform-provider-google-beta/google-beta/tpgresource"
 	transport_tpg "github.com/hashicorp/terraform-provider-google-beta/google-beta/transport"
+
+	"google.golang.org/api/googleapi"
+)
+
+var (
+	_ = fmt.Sprintf
+	_ = log.Print
+	_ = strconv.Atoi
+	_ = strings.Trim
+	_ = time.Now
+	_ = resource.TestMain
+	_ = terraform.NewState
+	_ = envvar.TestEnvVar
+	_ = tpgresource.SetLabels
+	_ = transport_tpg.Config{}
+	_ = googleapi.Error{}
 )
 
 func TestAccPubsubTopic_pubsubTopicBasicExample(t *testing.T) {
@@ -47,9 +66,10 @@ func TestAccPubsubTopic_pubsubTopicBasicExample(t *testing.T) {
 				Config: testAccPubsubTopic_pubsubTopicBasicExample(context),
 			},
 			{
-				ResourceName:      "google_pubsub_topic.example",
-				ImportState:       true,
-				ImportStateVerify: true,
+				ResourceName:            "google_pubsub_topic.example",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"labels", "tags", "terraform_labels"},
 			},
 		},
 	})
@@ -85,9 +105,10 @@ func TestAccPubsubTopic_pubsubTopicGeoRestrictedExample(t *testing.T) {
 				Config: testAccPubsubTopic_pubsubTopicGeoRestrictedExample(context),
 			},
 			{
-				ResourceName:      "google_pubsub_topic.example",
-				ImportState:       true,
-				ImportStateVerify: true,
+				ResourceName:            "google_pubsub_topic.example",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"labels", "tags", "terraform_labels"},
 			},
 		},
 	})
@@ -102,6 +123,7 @@ resource "google_pubsub_topic" "example" {
     allowed_persistence_regions = [
       "europe-west3",
     ]
+    enforce_in_transit = true
   }
 }
 `, context)
@@ -124,9 +146,10 @@ func TestAccPubsubTopic_pubsubTopicSchemaSettingsExample(t *testing.T) {
 				Config: testAccPubsubTopic_pubsubTopicSchemaSettingsExample(context),
 			},
 			{
-				ResourceName:      "google_pubsub_topic.example",
-				ImportState:       true,
-				ImportStateVerify: true,
+				ResourceName:            "google_pubsub_topic.example",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"labels", "tags", "terraform_labels"},
 			},
 		},
 	})
@@ -148,6 +171,392 @@ resource "google_pubsub_topic" "example" {
     schema = "projects/%{project_name}/schemas/example%{random_suffix}"
     encoding = "JSON"
   }
+}
+`, context)
+}
+
+func TestAccPubsubTopic_pubsubTopicIngestionKinesisExample(t *testing.T) {
+	t.Parallel()
+
+	context := map[string]interface{}{
+		"random_suffix": acctest.RandString(t, 10),
+	}
+
+	acctest.VcrTest(t, resource.TestCase{
+		PreCheck:                 func() { acctest.AccTestPreCheck(t) },
+		ProtoV5ProviderFactories: acctest.ProtoV5ProviderFactories(t),
+		CheckDestroy:             testAccCheckPubsubTopicDestroyProducer(t),
+		Steps: []resource.TestStep{
+			{
+				Config: testAccPubsubTopic_pubsubTopicIngestionKinesisExample(context),
+			},
+			{
+				ResourceName:            "google_pubsub_topic.example",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"labels", "tags", "terraform_labels"},
+			},
+		},
+	})
+}
+
+func testAccPubsubTopic_pubsubTopicIngestionKinesisExample(context map[string]interface{}) string {
+	return acctest.Nprintf(`
+resource "google_pubsub_topic" "example" {
+  name = "tf-test-example-topic%{random_suffix}"
+
+  # Outside of automated terraform-provider-google CI tests, these values must be of actual AWS resources for the test to pass.
+  ingestion_data_source_settings {
+    aws_kinesis {
+        stream_arn = "arn:aws:kinesis:us-west-2:111111111111:stream/fake-stream-name"
+        consumer_arn = "arn:aws:kinesis:us-west-2:111111111111:stream/fake-stream-name/consumer/consumer-1:1111111111"
+        aws_role_arn = "arn:aws:iam::111111111111:role/fake-role-name"
+        gcp_service_account = "fake-service-account@fake-gcp-project.iam.gserviceaccount.com"
+    }
+  }
+}
+`, context)
+}
+
+func TestAccPubsubTopic_pubsubTopicIngestionCloudStorageExample(t *testing.T) {
+	t.Parallel()
+
+	context := map[string]interface{}{
+		"random_suffix": acctest.RandString(t, 10),
+	}
+
+	acctest.VcrTest(t, resource.TestCase{
+		PreCheck:                 func() { acctest.AccTestPreCheck(t) },
+		ProtoV5ProviderFactories: acctest.ProtoV5ProviderFactories(t),
+		CheckDestroy:             testAccCheckPubsubTopicDestroyProducer(t),
+		Steps: []resource.TestStep{
+			{
+				Config: testAccPubsubTopic_pubsubTopicIngestionCloudStorageExample(context),
+			},
+			{
+				ResourceName:            "google_pubsub_topic.example",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"labels", "tags", "terraform_labels"},
+			},
+		},
+	})
+}
+
+func testAccPubsubTopic_pubsubTopicIngestionCloudStorageExample(context map[string]interface{}) string {
+	return acctest.Nprintf(`
+resource "google_pubsub_topic" "example" {
+  name = "tf-test-example-topic%{random_suffix}"
+
+  # Outside of automated terraform-provider-google CI tests, these values must be of actual Cloud Storage resources for the test to pass.
+  ingestion_data_source_settings {
+    cloud_storage {
+        bucket = "test-bucket"
+        text_format {
+            delimiter = " "
+        }
+        minimum_object_create_time = "2024-01-01T00:00:00Z"
+        match_glob = "foo/**"
+    }
+    platform_logs_settings {
+        severity = "WARNING"
+    }
+  }
+}
+`, context)
+}
+
+func TestAccPubsubTopic_pubsubTopicIngestionAzureEventHubsExample(t *testing.T) {
+	t.Parallel()
+
+	context := map[string]interface{}{
+		"random_suffix": acctest.RandString(t, 10),
+	}
+
+	acctest.VcrTest(t, resource.TestCase{
+		PreCheck:                 func() { acctest.AccTestPreCheck(t) },
+		ProtoV5ProviderFactories: acctest.ProtoV5ProviderFactories(t),
+		CheckDestroy:             testAccCheckPubsubTopicDestroyProducer(t),
+		Steps: []resource.TestStep{
+			{
+				Config: testAccPubsubTopic_pubsubTopicIngestionAzureEventHubsExample(context),
+			},
+			{
+				ResourceName:            "google_pubsub_topic.example",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"labels", "tags", "terraform_labels"},
+			},
+		},
+	})
+}
+
+func testAccPubsubTopic_pubsubTopicIngestionAzureEventHubsExample(context map[string]interface{}) string {
+	return acctest.Nprintf(`
+resource "google_pubsub_topic" "example" {
+  name = "tf-test-example-topic%{random_suffix}"
+
+  # Outside of automated terraform-provider-google CI tests, these values must be of actual Azure resources for the test to pass.
+  ingestion_data_source_settings {
+    azure_event_hubs {
+        resource_group = "azure-ingestion-resource-group"
+        namespace = "azure-ingestion-namespace"
+        event_hub = "azure-ingestion-event-hub"
+        client_id = "aZZZZZZZ-YYYY-HHHH-GGGG-abcdef569123"
+        tenant_id = "0XXXXXXX-YYYY-HHHH-GGGG-123456789123"
+        subscription_id = "bXXXXXXX-YYYY-HHHH-GGGG-123456789123"
+        gcp_service_account = "fake-service-account@fake-gcp-project.iam.gserviceaccount.com"
+    }
+  }
+}
+`, context)
+}
+
+func TestAccPubsubTopic_pubsubTopicIngestionAwsMskExample(t *testing.T) {
+	t.Parallel()
+
+	context := map[string]interface{}{
+		"random_suffix": acctest.RandString(t, 10),
+	}
+
+	acctest.VcrTest(t, resource.TestCase{
+		PreCheck:                 func() { acctest.AccTestPreCheck(t) },
+		ProtoV5ProviderFactories: acctest.ProtoV5ProviderFactories(t),
+		CheckDestroy:             testAccCheckPubsubTopicDestroyProducer(t),
+		Steps: []resource.TestStep{
+			{
+				Config: testAccPubsubTopic_pubsubTopicIngestionAwsMskExample(context),
+			},
+			{
+				ResourceName:            "google_pubsub_topic.example",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"labels", "tags", "terraform_labels"},
+			},
+		},
+	})
+}
+
+func testAccPubsubTopic_pubsubTopicIngestionAwsMskExample(context map[string]interface{}) string {
+	return acctest.Nprintf(`
+resource "google_pubsub_topic" "example" {
+  name = "tf-test-example-topic%{random_suffix}"
+
+  # Outside of automated terraform-provider-google CI tests, these values must be of actual AWS resources for the test to pass.
+  ingestion_data_source_settings {
+    aws_msk {
+        cluster_arn = "arn:aws:kinesis:us-west-2:111111111111:stream/fake-stream-name"
+        topic = "test-topic"
+        aws_role_arn = "arn:aws:iam::111111111111:role/fake-role-name"
+        gcp_service_account = "fake-service-account@fake-gcp-project.iam.gserviceaccount.com"
+    }
+  }
+}
+`, context)
+}
+
+func TestAccPubsubTopic_pubsubTopicIngestionConfluentCloudExample(t *testing.T) {
+	t.Parallel()
+
+	context := map[string]interface{}{
+		"random_suffix": acctest.RandString(t, 10),
+	}
+
+	acctest.VcrTest(t, resource.TestCase{
+		PreCheck:                 func() { acctest.AccTestPreCheck(t) },
+		ProtoV5ProviderFactories: acctest.ProtoV5ProviderFactories(t),
+		CheckDestroy:             testAccCheckPubsubTopicDestroyProducer(t),
+		Steps: []resource.TestStep{
+			{
+				Config: testAccPubsubTopic_pubsubTopicIngestionConfluentCloudExample(context),
+			},
+			{
+				ResourceName:            "google_pubsub_topic.example",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"labels", "tags", "terraform_labels"},
+			},
+		},
+	})
+}
+
+func testAccPubsubTopic_pubsubTopicIngestionConfluentCloudExample(context map[string]interface{}) string {
+	return acctest.Nprintf(`
+resource "google_pubsub_topic" "example" {
+  name = "tf-test-example-topic%{random_suffix}"
+
+  # Outside of automated terraform-provider-google CI tests, these values must be of actual Confluent Cloud resources for the test to pass.
+  ingestion_data_source_settings {
+    confluent_cloud {
+        bootstrap_server = "test.us-west2.gcp.confluent.cloud:1111"
+        cluster_id = "1234"
+        topic = "test-topic"
+        identity_pool_id = "test-identity-pool-id"
+        gcp_service_account = "fake-service-account@fake-gcp-project.iam.gserviceaccount.com"
+    }
+  }
+}
+`, context)
+}
+
+func TestAccPubsubTopic_pubsubTopicSingleSmtExample(t *testing.T) {
+	t.Parallel()
+
+	context := map[string]interface{}{
+		"random_suffix": acctest.RandString(t, 10),
+	}
+
+	acctest.VcrTest(t, resource.TestCase{
+		PreCheck:                 func() { acctest.AccTestPreCheck(t) },
+		ProtoV5ProviderFactories: acctest.ProtoV5ProviderFactories(t),
+		CheckDestroy:             testAccCheckPubsubTopicDestroyProducer(t),
+		Steps: []resource.TestStep{
+			{
+				Config: testAccPubsubTopic_pubsubTopicSingleSmtExample(context),
+			},
+			{
+				ResourceName:            "google_pubsub_topic.example",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"labels", "tags", "terraform_labels"},
+			},
+		},
+	})
+}
+
+func testAccPubsubTopic_pubsubTopicSingleSmtExample(context map[string]interface{}) string {
+	return acctest.Nprintf(`
+resource "google_pubsub_topic" "example" {
+  name = "tf-test-example-topic%{random_suffix}"
+
+  message_transforms {
+    javascript_udf {
+      function_name = "isYearEven"
+      code = <<EOF
+function isYearEven(message, metadata) {
+  const data = JSON.parse(message.data);
+  return message.year %2 === 0;
+}
+EOF
+    }
+  }
+}
+`, context)
+}
+
+func TestAccPubsubTopic_pubsubTopicMultipleSmtsExample(t *testing.T) {
+	t.Parallel()
+
+	context := map[string]interface{}{
+		"random_suffix": acctest.RandString(t, 10),
+	}
+
+	acctest.VcrTest(t, resource.TestCase{
+		PreCheck:                 func() { acctest.AccTestPreCheck(t) },
+		ProtoV5ProviderFactories: acctest.ProtoV5ProviderFactories(t),
+		CheckDestroy:             testAccCheckPubsubTopicDestroyProducer(t),
+		Steps: []resource.TestStep{
+			{
+				Config: testAccPubsubTopic_pubsubTopicMultipleSmtsExample(context),
+			},
+			{
+				ResourceName:            "google_pubsub_topic.example",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"labels", "tags", "terraform_labels"},
+			},
+		},
+	})
+}
+
+func testAccPubsubTopic_pubsubTopicMultipleSmtsExample(context map[string]interface{}) string {
+	return acctest.Nprintf(`
+resource "google_pubsub_topic" "example" {
+  name = "tf-test-example-topic%{random_suffix}"
+
+  message_transforms {
+    javascript_udf {
+      function_name = "redactSSN"
+      code = <<EOF
+function redactSSN(message, metadata) {
+  const data = JSON.parse(message.data);
+  delete data['ssn'];
+  message.data = JSON.stringify(data);
+  return message;
+}
+EOF
+    }
+  }
+
+  message_transforms {
+    javascript_udf {
+      function_name = "otherFunc"
+      code = <<EOF
+function otherFunc(message, metadata) {
+  return null;
+}
+EOF
+    }
+  }
+
+  message_transforms {
+    disabled = true
+    javascript_udf {
+      function_name = "someSMTWeDisabled"
+      code = "..."
+    }
+  }
+}
+`, context)
+}
+
+func TestAccPubsubTopic_pubsubTopicTagsExample(t *testing.T) {
+	t.Parallel()
+
+	context := map[string]interface{}{
+		"random_suffix": acctest.RandString(t, 10),
+	}
+
+	acctest.VcrTest(t, resource.TestCase{
+		PreCheck:                 func() { acctest.AccTestPreCheck(t) },
+		ProtoV5ProviderFactories: acctest.ProtoV5ProviderFactories(t),
+		CheckDestroy:             testAccCheckPubsubTopicDestroyProducer(t),
+		Steps: []resource.TestStep{
+			{
+				Config: testAccPubsubTopic_pubsubTopicTagsExample(context),
+			},
+			{
+				ResourceName:            "google_pubsub_topic.example",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"labels", "tags", "terraform_labels"},
+			},
+		},
+	})
+}
+
+func testAccPubsubTopic_pubsubTopicTagsExample(context map[string]interface{}) string {
+	return acctest.Nprintf(`
+resource "google_pubsub_topic" "example" {
+  name = "tf-test-example-topic%{random_suffix}"
+  project = data.google_project.project.project_id
+}
+
+data "google_project" "project" {}
+
+resource "google_tags_tag_key" "tag_key" {
+  parent     = data.google_project.project.id
+  short_name = "tf_test_tag_key%{random_suffix}"
+}
+
+resource "google_tags_tag_value" "tag_value" {
+  parent     = google_tags_tag_key.tag_key.id
+  short_name = "tf_test_tag_value%{random_suffix}"
+}
+
+resource "google_tags_tag_binding" "binding" {
+  parent    = "//pubsub.googleapis.com/projects/${data.google_project.project.number}/topics/${google_pubsub_topic.example.name}"
+  tag_value = google_tags_tag_value.tag_value.id
 }
 `, context)
 }

@@ -19,15 +19,35 @@ package networkmanagement_test
 
 import (
 	"fmt"
+	"log"
+	"strconv"
 	"strings"
 	"testing"
+	"time"
 
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/terraform"
 
 	"github.com/hashicorp/terraform-provider-google-beta/google-beta/acctest"
+	"github.com/hashicorp/terraform-provider-google-beta/google-beta/envvar"
 	"github.com/hashicorp/terraform-provider-google-beta/google-beta/tpgresource"
 	transport_tpg "github.com/hashicorp/terraform-provider-google-beta/google-beta/transport"
+
+	"google.golang.org/api/googleapi"
+)
+
+var (
+	_ = fmt.Sprintf
+	_ = log.Print
+	_ = strconv.Atoi
+	_ = strings.Trim
+	_ = time.Now
+	_ = resource.TestMain
+	_ = terraform.NewState
+	_ = envvar.TestEnvVar
+	_ = tpgresource.SetLabels
+	_ = transport_tpg.Config{}
+	_ = googleapi.Error{}
 )
 
 func TestAccNetworkManagementConnectivityTest_networkManagementConnectivityTestInstancesExample(t *testing.T) {
@@ -46,9 +66,10 @@ func TestAccNetworkManagementConnectivityTest_networkManagementConnectivityTestI
 				Config: testAccNetworkManagementConnectivityTest_networkManagementConnectivityTestInstancesExample(context),
 			},
 			{
-				ResourceName:      "google_network_management_connectivity_test.instance-test",
-				ImportState:       true,
-				ImportStateVerify: true,
+				ResourceName:            "google_network_management_connectivity_test.instance-test",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"labels", "terraform_labels"},
 			},
 		},
 	})
@@ -67,6 +88,9 @@ resource "google_network_management_connectivity_test" "instance-test" {
   }
 
   protocol = "TCP"
+  labels = {
+    env = "test"
+  }
 }
 
 resource "google_compute_instance" "source" {
@@ -130,9 +154,10 @@ func TestAccNetworkManagementConnectivityTest_networkManagementConnectivityTestA
 				Config: testAccNetworkManagementConnectivityTest_networkManagementConnectivityTestAddressesExample(context),
 			},
 			{
-				ResourceName:      "google_network_management_connectivity_test.address-test",
-				ImportState:       true,
-				ImportStateVerify: true,
+				ResourceName:            "google_network_management_connectivity_test.address-test",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"labels", "terraform_labels"},
 			},
 		},
 	})
@@ -183,6 +208,64 @@ resource "google_compute_address" "dest-addr" {
   address_type = "INTERNAL"
   address      = "10.0.43.43"
   region       = "us-central1"
+}
+`, context)
+}
+
+func TestAccNetworkManagementConnectivityTest_networkManagementConnectivityTestEndpointsExample(t *testing.T) {
+	t.Parallel()
+
+	context := map[string]interface{}{
+		"random_suffix": acctest.RandString(t, 10),
+	}
+
+	acctest.VcrTest(t, resource.TestCase{
+		PreCheck:                 func() { acctest.AccTestPreCheck(t) },
+		ProtoV5ProviderFactories: acctest.ProtoV5ProviderFactories(t),
+		CheckDestroy:             testAccCheckNetworkManagementConnectivityTestDestroyProducer(t),
+		Steps: []resource.TestStep{
+			{
+				Config: testAccNetworkManagementConnectivityTest_networkManagementConnectivityTestEndpointsExample(context),
+			},
+			{
+				ResourceName:            "google_network_management_connectivity_test.endpoints-test",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"labels", "terraform_labels"},
+			},
+		},
+	})
+}
+
+func testAccNetworkManagementConnectivityTest_networkManagementConnectivityTestEndpointsExample(context map[string]interface{}) string {
+	return acctest.Nprintf(`
+resource "google_network_management_connectivity_test" "endpoints-test" {
+  name = "tf-test-conn-test-endpoints%{random_suffix}"
+  source {
+    gke_master_cluster =  "projects/test-project/locations/us-central1/clusters/name"
+    cloud_sql_instance = "projects/test-project/instances/name"
+    app_engine_version {
+         uri = "apps/test-project/services/default/versions/name"
+    }
+    cloud_function {
+      uri = "projects/test-project/locations/us-central1/functions/name"
+    }
+    cloud_run_revision {
+        uri = "projects/test-project/locations/us-central1/revisions/name"
+    }
+    port = 80
+  }
+  destination {
+    port = 443
+    forwarding_rule = "projects/test-project/regions/us-central1/forwardingRules/name"
+    gke_master_cluster = "projects/test-project/locations/us-central1/clusters/name"
+    fqdn = "name.us-central1.gke.goog"
+    cloud_sql_instance = "projects/test-project/instances/name"
+    redis_instance = "projects/test-project/locations/us-central1/instances/name"
+    redis_cluster = "projects/test-project/locations/us-central1/clusters/name"
+  }
+  bypass_firewall_checks = true
+  round_trip = true
 }
 `, context)
 }

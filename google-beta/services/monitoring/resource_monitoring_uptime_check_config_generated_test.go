@@ -19,16 +19,35 @@ package monitoring_test
 
 import (
 	"fmt"
+	"log"
+	"strconv"
 	"strings"
 	"testing"
+	"time"
 
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/terraform"
 
 	"github.com/hashicorp/terraform-provider-google-beta/google-beta/acctest"
 	"github.com/hashicorp/terraform-provider-google-beta/google-beta/envvar"
 	"github.com/hashicorp/terraform-provider-google-beta/google-beta/tpgresource"
 	transport_tpg "github.com/hashicorp/terraform-provider-google-beta/google-beta/transport"
+
+	"google.golang.org/api/googleapi"
+)
+
+var (
+	_ = fmt.Sprintf
+	_ = log.Print
+	_ = strconv.Atoi
+	_ = strings.Trim
+	_ = time.Now
+	_ = resource.TestMain
+	_ = terraform.NewState
+	_ = envvar.TestEnvVar
+	_ = tpgresource.SetLabels
+	_ = transport_tpg.Config{}
+	_ = googleapi.Error{}
 )
 
 func TestAccMonitoringUptimeCheckConfig_uptimeCheckConfigHttpExample(t *testing.T) {
@@ -48,9 +67,10 @@ func TestAccMonitoringUptimeCheckConfig_uptimeCheckConfigHttpExample(t *testing.
 				Config: testAccMonitoringUptimeCheckConfig_uptimeCheckConfigHttpExample(context),
 			},
 			{
-				ResourceName:      "google_monitoring_uptime_check_config.http",
-				ImportState:       true,
-				ImportStateVerify: true,
+				ResourceName:            "google_monitoring_uptime_check_config.http",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"http_check.0.auth_info.0.password_wo_version"},
 			},
 		},
 	})
@@ -59,15 +79,97 @@ func TestAccMonitoringUptimeCheckConfig_uptimeCheckConfigHttpExample(t *testing.
 func testAccMonitoringUptimeCheckConfig_uptimeCheckConfigHttpExample(context map[string]interface{}) string {
 	return acctest.Nprintf(`
 resource "google_monitoring_uptime_check_config" "http" {
-  display_name = "tf-test-http-uptime-check%{random_suffix}"
-  timeout      = "60s"
+  display_name       = "tf-test-http-uptime-check%{random_suffix}"
+  timeout            = "60s"
+  log_check_failures = true
+  user_labels  = {
+    example-key = "example-value"
+  }
 
   http_check {
     path = "some-path"
     port = "8010"
     request_method = "POST"
-    content_type = "URL_ENCODED"
+    content_type = "USER_PROVIDED"
+    custom_content_type = "application/json"
     body = "Zm9vJTI1M0RiYXI="
+    ping_config {
+      pings_count = 1
+    }
+  }
+
+  monitored_resource {
+    type = "uptime_url"
+    labels = {
+      project_id = "%{project_id}"
+      host       = "192.168.1.1"
+    }
+  }
+
+  content_matchers {
+    content = "\"example\""
+    matcher = "MATCHES_JSON_PATH"
+    json_path_matcher {
+      json_path = "$.path"
+      json_matcher = "EXACT_MATCH"
+    }
+  }
+
+  checker_type = "STATIC_IP_CHECKERS"
+}
+`, context)
+}
+
+func TestAccMonitoringUptimeCheckConfig_uptimeCheckConfigHttpPasswordWoExample(t *testing.T) {
+	t.Parallel()
+
+	context := map[string]interface{}{
+		"project_id":    envvar.GetTestProjectFromEnv(),
+		"random_suffix": acctest.RandString(t, 10),
+	}
+
+	acctest.VcrTest(t, resource.TestCase{
+		PreCheck:                 func() { acctest.AccTestPreCheck(t) },
+		ProtoV5ProviderFactories: acctest.ProtoV5ProviderFactories(t),
+		CheckDestroy:             testAccCheckMonitoringUptimeCheckConfigDestroyProducer(t),
+		Steps: []resource.TestStep{
+			{
+				Config: testAccMonitoringUptimeCheckConfig_uptimeCheckConfigHttpPasswordWoExample(context),
+			},
+			{
+				ResourceName:            "google_monitoring_uptime_check_config.http",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"http_check.0.auth_info.0.password_wo_version"},
+			},
+		},
+	})
+}
+
+func testAccMonitoringUptimeCheckConfig_uptimeCheckConfigHttpPasswordWoExample(context map[string]interface{}) string {
+	return acctest.Nprintf(`
+resource "google_monitoring_uptime_check_config" "http" {
+  display_name = "tf-test-http-uptime-check%{random_suffix}"
+  timeout      = "60s"
+  user_labels  = {
+    example-key = "example-value"
+  }
+
+  http_check {
+    path = "some-path"
+    port = "8010"
+    request_method = "POST"
+    content_type = "USER_PROVIDED"
+    custom_content_type = "application/json"
+    body = "Zm9vJTI1M0RiYXI="
+    ping_config {
+      pings_count = 1
+    }
+    auth_info {
+      username = "name"
+      password_wo = "password1"
+      password_wo_version = "1"
+    }
   }
 
   monitored_resource {
@@ -109,9 +211,10 @@ func TestAccMonitoringUptimeCheckConfig_uptimeCheckConfigStatusCodeExample(t *te
 				Config: testAccMonitoringUptimeCheckConfig_uptimeCheckConfigStatusCodeExample(context),
 			},
 			{
-				ResourceName:      "google_monitoring_uptime_check_config.status_code",
-				ImportState:       true,
-				ImportStateVerify: true,
+				ResourceName:            "google_monitoring_uptime_check_config.status_code",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"http_check.0.auth_info.0.password_wo_version"},
 			},
 		},
 	})
@@ -180,9 +283,10 @@ func TestAccMonitoringUptimeCheckConfig_uptimeCheckConfigHttpsExample(t *testing
 				Config: testAccMonitoringUptimeCheckConfig_uptimeCheckConfigHttpsExample(context),
 			},
 			{
-				ResourceName:      "google_monitoring_uptime_check_config.https",
-				ImportState:       true,
-				ImportStateVerify: true,
+				ResourceName:            "google_monitoring_uptime_check_config.https",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"http_check.0.auth_info.0.password_wo_version"},
 			},
 		},
 	})
@@ -237,9 +341,10 @@ func TestAccMonitoringUptimeCheckConfig_uptimeCheckTcpExample(t *testing.T) {
 				Config: testAccMonitoringUptimeCheckConfig_uptimeCheckTcpExample(context),
 			},
 			{
-				ResourceName:      "google_monitoring_uptime_check_config.tcp_group",
-				ImportState:       true,
-				ImportStateVerify: true,
+				ResourceName:            "google_monitoring_uptime_check_config.tcp_group",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"http_check.0.auth_info.0.password_wo_version"},
 			},
 		},
 	})
@@ -253,6 +358,9 @@ resource "google_monitoring_uptime_check_config" "tcp_group" {
 
   tcp_check {
     port = 888
+    ping_config {
+      pings_count = 2
+    }
   }
 
   resource_group {
@@ -286,9 +394,10 @@ func TestAccMonitoringUptimeCheckConfig_uptimeCheckConfigSyntheticMonitorExample
 				Config: testAccMonitoringUptimeCheckConfig_uptimeCheckConfigSyntheticMonitorExample(context),
 			},
 			{
-				ResourceName:      "google_monitoring_uptime_check_config.synthetic_monitor",
-				ImportState:       true,
-				ImportStateVerify: true,
+				ResourceName:            "google_monitoring_uptime_check_config.synthetic_monitor",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"http_check.0.auth_info.0.password_wo_version"},
 			},
 		},
 	})
@@ -313,7 +422,7 @@ resource "google_cloudfunctions2_function" "function" {
   location = "us-central1"
  
   build_config {
-    runtime = "nodejs16"
+    runtime = "nodejs20"
     entry_point = "SyntheticFunction"  # Set the entry point 
     source {
       storage_source {

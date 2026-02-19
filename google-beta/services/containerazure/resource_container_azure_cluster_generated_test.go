@@ -23,8 +23,8 @@ import (
 	"fmt"
 	dcl "github.com/GoogleCloudPlatform/declarative-resource-client-library/dcl"
 	containerazure "github.com/GoogleCloudPlatform/declarative-resource-client-library/services/google/containerazure/beta"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/terraform"
 	"strings"
 	"testing"
 
@@ -59,7 +59,7 @@ func TestAccContainerAzureCluster_BasicHandWritten(t *testing.T) {
 				ResourceName:            "google_container_azure_cluster.primary",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"fleet.0.project"},
+				ImportStateVerifyIgnore: []string{"fleet.0.project", "annotations"},
 			},
 			{
 				Config: testAccContainerAzureCluster_BasicHandWrittenUpdate0(context),
@@ -68,7 +68,7 @@ func TestAccContainerAzureCluster_BasicHandWritten(t *testing.T) {
 				ResourceName:            "google_container_azure_cluster.primary",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"fleet.0.project"},
+				ImportStateVerifyIgnore: []string{"fleet.0.project", "annotations"},
 			},
 		},
 	})
@@ -100,7 +100,7 @@ func TestAccContainerAzureCluster_BetaBasicHandWritten(t *testing.T) {
 				ResourceName:            "google_container_azure_cluster.primary",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"fleet.0.project"},
+				ImportStateVerifyIgnore: []string{"fleet.0.project", "annotations"},
 			},
 			{
 				Config: testAccContainerAzureCluster_BetaBasicHandWrittenUpdate0(context),
@@ -109,7 +109,7 @@ func TestAccContainerAzureCluster_BetaBasicHandWritten(t *testing.T) {
 				ResourceName:            "google_container_azure_cluster.primary",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"fleet.0.project"},
+				ImportStateVerifyIgnore: []string{"fleet.0.project", "annotations"},
 			},
 		},
 	})
@@ -141,7 +141,7 @@ func TestAccContainerAzureCluster_BetaBasicEnumHandWritten(t *testing.T) {
 				ResourceName:            "google_container_azure_cluster.primary",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"fleet.0.project"},
+				ImportStateVerifyIgnore: []string{"fleet.0.project", "annotations"},
 			},
 			{
 				Config: testAccContainerAzureCluster_BetaBasicEnumHandWrittenUpdate0(context),
@@ -150,7 +150,7 @@ func TestAccContainerAzureCluster_BetaBasicEnumHandWritten(t *testing.T) {
 				ResourceName:            "google_container_azure_cluster.primary",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"fleet.0.project"},
+				ImportStateVerifyIgnore: []string{"fleet.0.project", "annotations"},
 			},
 		},
 	})
@@ -167,6 +167,9 @@ resource "google_container_azure_cluster" "primary" {
   authorization {
     admin_users {
       username = "mmv2@google.com"
+    }
+    admin_groups {
+      group = "group@domain.com"
     }
   }
 
@@ -222,6 +225,9 @@ resource "google_container_azure_cluster" "primary" {
   authorization {
     admin_users {
       username = "mmv2@google.com"
+    }
+    admin_groups {
+      group = "group@domain.com"
     }
   }
 

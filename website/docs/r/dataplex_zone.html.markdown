@@ -41,8 +41,8 @@ resource "google_dataplex_zone" "primary" {
   type         = "RAW"
   description  = "Zone for DCL"
   display_name = "Zone for DCL"
-  labels       = {}
   project      = "my-project-name"
+  labels       = {}
 }
 
 resource "google_dataplex_lake" "basic" {
@@ -50,12 +50,11 @@ resource "google_dataplex_lake" "basic" {
   name         = "lake"
   description  = "Lake for DCL"
   display_name = "Lake for DCL"
+  project      = "my-project-name"
 
   labels = {
     my-lake = "exists"
   }
-
-  project = "my-project-name"
 }
 
 
@@ -136,6 +135,9 @@ The `resource_spec` block supports:
 * `labels` -
   (Optional)
   Optional. User defined labels for the zone.
+
+**Note**: This field is non-authoritative, and will only manage the labels present in your configuration.
+Please refer to the field `effective_labels` for all of the labels present on the resource.
   
 * `project` -
   (Optional)
@@ -183,8 +185,14 @@ In addition to the arguments listed above, the following computed attributes are
 * `create_time` -
   Output only. The time when the zone was created.
   
+* `effective_labels` -
+  All of labels (key/value pairs) present on the resource in GCP, including the labels configured through Terraform, other clients and services.
+  
 * `state` -
   Output only. Current state of the zone. Possible values: STATE_UNSPECIFIED, ACTIVE, CREATING, DELETING, ACTION_REQUIRED
+  
+* `terraform_labels` -
+  The combination of labels configured directly on the resource and default labels configured on the provider.
   
 * `uid` -
   Output only. System generated globally unique ID for the zone. This ID will be different if the zone is deleted and re-created with the same name.
@@ -204,6 +212,21 @@ This resource provides the following
 ## Import
 
 Zone can be imported using any of these accepted formats:
+* `projects/{{project}}/locations/{{location}}/lakes/{{lake}}/zones/{{name}}`
+* `{{project}}/{{location}}/{{lake}}/{{name}}`
+* `{{location}}/{{lake}}/{{name}}`
+
+In Terraform v1.5.0 and later, use an [`import` block](https://developer.hashicorp.com/terraform/language/import) to import Zone using one of the formats above. For example:
+
+
+```tf
+import {
+  id = "projects/{{project}}/locations/{{location}}/lakes/{{lake}}/zones/{{name}}"
+  to = google_dataplex_zone.default
+}
+```
+
+When using the [`terraform import` command](https://developer.hashicorp.com/terraform/cli/commands/import), Zone can be imported using one of the formats above. For example:
 
 ```
 $ terraform import google_dataplex_zone.default projects/{{project}}/locations/{{location}}/lakes/{{lake}}/zones/{{name}}

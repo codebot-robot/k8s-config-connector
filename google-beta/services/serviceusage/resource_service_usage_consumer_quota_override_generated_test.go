@@ -19,16 +19,35 @@ package serviceusage_test
 
 import (
 	"fmt"
+	"log"
+	"strconv"
 	"strings"
 	"testing"
+	"time"
 
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/terraform"
 
 	"github.com/hashicorp/terraform-provider-google-beta/google-beta/acctest"
 	"github.com/hashicorp/terraform-provider-google-beta/google-beta/envvar"
 	"github.com/hashicorp/terraform-provider-google-beta/google-beta/tpgresource"
 	transport_tpg "github.com/hashicorp/terraform-provider-google-beta/google-beta/transport"
+
+	"google.golang.org/api/googleapi"
+)
+
+var (
+	_ = fmt.Sprintf
+	_ = log.Print
+	_ = strconv.Atoi
+	_ = strings.Trim
+	_ = time.Now
+	_ = resource.TestMain
+	_ = terraform.NewState
+	_ = envvar.TestEnvVar
+	_ = tpgresource.SetLabels
+	_ = transport_tpg.Config{}
+	_ = googleapi.Error{}
 )
 
 func TestAccServiceUsageConsumerQuotaOverride_consumerQuotaOverrideExample(t *testing.T) {
@@ -51,7 +70,7 @@ func TestAccServiceUsageConsumerQuotaOverride_consumerQuotaOverrideExample(t *te
 				ResourceName:            "google_service_usage_consumer_quota_override.override",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"force", "service", "metric", "limit"},
+				ImportStateVerifyIgnore: []string{"force", "limit", "metric", "service"},
 			},
 		},
 	})
@@ -64,6 +83,7 @@ resource "google_project" "my_project" {
   name       = "tf-test-project"
   project_id = "quota%{random_suffix}"
   org_id     = "%{org_id}"
+  deletion_policy = "DELETE"
 }
 
 resource "google_service_usage_consumer_quota_override" "override" {
@@ -98,7 +118,7 @@ func TestAccServiceUsageConsumerQuotaOverride_consumerQuotaOverrideZeroValueExam
 				ResourceName:            "google_service_usage_consumer_quota_override.override",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"force", "service", "metric", "limit"},
+				ImportStateVerifyIgnore: []string{"force", "limit", "metric", "service"},
 			},
 		},
 	})
@@ -111,6 +131,7 @@ resource "google_project" "my_project" {
   name       = "tf-test-project"
   project_id = "quota%{random_suffix}"
   org_id     = "%{org_id}"
+  deletion_policy = "DELETE"
 }
 
 resource "google_service_usage_consumer_quota_override" "override" {
@@ -145,7 +166,7 @@ func TestAccServiceUsageConsumerQuotaOverride_regionConsumerQuotaOverrideExample
 				ResourceName:            "google_service_usage_consumer_quota_override.override",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"force", "service", "metric", "limit"},
+				ImportStateVerifyIgnore: []string{"force", "limit", "metric", "service"},
 			},
 		},
 	})
@@ -158,6 +179,7 @@ resource "google_project" "my_project" {
   name       = "tf-test-project"
   project_id = "quota%{random_suffix}"
   org_id     = "%{org_id}"
+  deletion_policy = "DELETE"
 }
 
 resource "google_service_usage_consumer_quota_override" "override" {
@@ -195,7 +217,7 @@ func TestAccServiceUsageConsumerQuotaOverride_consumerQuotaOverrideCustomDimensi
 				ResourceName:            "google_service_usage_consumer_quota_override.override",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"force", "service", "metric", "limit"},
+				ImportStateVerifyIgnore: []string{"force", "limit", "metric", "service"},
 			},
 		},
 	})
@@ -208,6 +230,7 @@ resource "google_project" "my_project" {
   name       = "tf-test-project"
   project_id = "quota%{random_suffix}"
   org_id     = "%{org_id}"
+  deletion_policy = "DELETE"
 }
 
 resource "google_service_usage_consumer_quota_override" "override" {

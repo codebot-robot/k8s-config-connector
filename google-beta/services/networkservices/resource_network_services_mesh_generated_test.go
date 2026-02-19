@@ -19,15 +19,35 @@ package networkservices_test
 
 import (
 	"fmt"
+	"log"
+	"strconv"
 	"strings"
 	"testing"
+	"time"
 
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/terraform"
 
 	"github.com/hashicorp/terraform-provider-google-beta/google-beta/acctest"
+	"github.com/hashicorp/terraform-provider-google-beta/google-beta/envvar"
 	"github.com/hashicorp/terraform-provider-google-beta/google-beta/tpgresource"
 	transport_tpg "github.com/hashicorp/terraform-provider-google-beta/google-beta/transport"
+
+	"google.golang.org/api/googleapi"
+)
+
+var (
+	_ = fmt.Sprintf
+	_ = log.Print
+	_ = strconv.Atoi
+	_ = strings.Trim
+	_ = time.Now
+	_ = resource.TestMain
+	_ = terraform.NewState
+	_ = envvar.TestEnvVar
+	_ = tpgresource.SetLabels
+	_ = transport_tpg.Config{}
+	_ = googleapi.Error{}
 )
 
 func TestAccNetworkServicesMesh_networkServicesMeshBasicExample(t *testing.T) {
@@ -39,7 +59,7 @@ func TestAccNetworkServicesMesh_networkServicesMeshBasicExample(t *testing.T) {
 
 	acctest.VcrTest(t, resource.TestCase{
 		PreCheck:                 func() { acctest.AccTestPreCheck(t) },
-		ProtoV5ProviderFactories: acctest.ProtoV5ProviderBetaFactories(t),
+		ProtoV5ProviderFactories: acctest.ProtoV5ProviderFactories(t),
 		CheckDestroy:             testAccCheckNetworkServicesMeshDestroyProducer(t),
 		Steps: []resource.TestStep{
 			{
@@ -49,7 +69,7 @@ func TestAccNetworkServicesMesh_networkServicesMeshBasicExample(t *testing.T) {
 				ResourceName:            "google_network_services_mesh.default",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"name"},
+				ImportStateVerifyIgnore: []string{"labels", "location", "name", "terraform_labels"},
 			},
 		},
 	})
@@ -58,7 +78,6 @@ func TestAccNetworkServicesMesh_networkServicesMeshBasicExample(t *testing.T) {
 func testAccNetworkServicesMesh_networkServicesMeshBasicExample(context map[string]interface{}) string {
 	return acctest.Nprintf(`
 resource "google_network_services_mesh" "default" {
-  provider    = google-beta
   name        = "tf-test-my-mesh%{random_suffix}"
   labels      = {
     foo = "bar"
@@ -78,7 +97,7 @@ func TestAccNetworkServicesMesh_networkServicesMeshNoPortExample(t *testing.T) {
 
 	acctest.VcrTest(t, resource.TestCase{
 		PreCheck:                 func() { acctest.AccTestPreCheck(t) },
-		ProtoV5ProviderFactories: acctest.ProtoV5ProviderBetaFactories(t),
+		ProtoV5ProviderFactories: acctest.ProtoV5ProviderFactories(t),
 		CheckDestroy:             testAccCheckNetworkServicesMeshDestroyProducer(t),
 		Steps: []resource.TestStep{
 			{
@@ -88,7 +107,7 @@ func TestAccNetworkServicesMesh_networkServicesMeshNoPortExample(t *testing.T) {
 				ResourceName:            "google_network_services_mesh.default",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"name"},
+				ImportStateVerifyIgnore: []string{"labels", "location", "name", "terraform_labels"},
 			},
 		},
 	})
@@ -97,12 +116,45 @@ func TestAccNetworkServicesMesh_networkServicesMeshNoPortExample(t *testing.T) {
 func testAccNetworkServicesMesh_networkServicesMeshNoPortExample(context map[string]interface{}) string {
 	return acctest.Nprintf(`
 resource "google_network_services_mesh" "default" {
-  provider    = google-beta
   name        = "tf-test-my-mesh-noport%{random_suffix}"
   labels      = {
     foo = "bar"
   }
   description = "my description"
+}
+`, context)
+}
+
+func TestAccNetworkServicesMesh_networkServicesMeshLocationExample(t *testing.T) {
+	t.Parallel()
+
+	context := map[string]interface{}{
+		"random_suffix": acctest.RandString(t, 10),
+	}
+
+	acctest.VcrTest(t, resource.TestCase{
+		PreCheck:                 func() { acctest.AccTestPreCheck(t) },
+		ProtoV5ProviderFactories: acctest.ProtoV5ProviderFactories(t),
+		CheckDestroy:             testAccCheckNetworkServicesMeshDestroyProducer(t),
+		Steps: []resource.TestStep{
+			{
+				Config: testAccNetworkServicesMesh_networkServicesMeshLocationExample(context),
+			},
+			{
+				ResourceName:            "google_network_services_mesh.default",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"labels", "location", "name", "terraform_labels"},
+			},
+		},
+	})
+}
+
+func testAccNetworkServicesMesh_networkServicesMeshLocationExample(context map[string]interface{}) string {
+	return acctest.Nprintf(`
+resource "google_network_services_mesh" "default" {
+  name        = "tf-test-my-mesh%{random_suffix}"
+  location    = "global"
 }
 `, context)
 }
@@ -119,7 +171,7 @@ func testAccCheckNetworkServicesMeshDestroyProducer(t *testing.T) func(s *terraf
 
 			config := acctest.GoogleProviderConfig(t)
 
-			url, err := tpgresource.ReplaceVarsForTest(config, rs, "{{NetworkServicesBasePath}}projects/{{project}}/locations/global/meshes/{{name}}")
+			url, err := tpgresource.ReplaceVarsForTest(config, rs, "{{NetworkServicesBasePath}}projects/{{project}}/locations/{{location}}/meshes/{{name}}")
 			if err != nil {
 				return err
 			}

@@ -19,16 +19,35 @@ package cloudrun_test
 
 import (
 	"fmt"
+	"log"
+	"strconv"
 	"strings"
 	"testing"
+	"time"
 
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/terraform"
 
 	"github.com/hashicorp/terraform-provider-google-beta/google-beta/acctest"
 	"github.com/hashicorp/terraform-provider-google-beta/google-beta/envvar"
 	"github.com/hashicorp/terraform-provider-google-beta/google-beta/tpgresource"
 	transport_tpg "github.com/hashicorp/terraform-provider-google-beta/google-beta/transport"
+
+	"google.golang.org/api/googleapi"
+)
+
+var (
+	_ = fmt.Sprintf
+	_ = log.Print
+	_ = strconv.Atoi
+	_ = strings.Trim
+	_ = time.Now
+	_ = resource.TestMain
+	_ = terraform.NewState
+	_ = envvar.TestEnvVar
+	_ = tpgresource.SetLabels
+	_ = transport_tpg.Config{}
+	_ = googleapi.Error{}
 )
 
 func TestAccCloudRunService_cloudRunServiceBasicExample(t *testing.T) {
@@ -51,7 +70,7 @@ func TestAccCloudRunService_cloudRunServiceBasicExample(t *testing.T) {
 				ResourceName:            "google_cloud_run_service.default",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"name", "location"},
+				ImportStateVerifyIgnore: []string{"location", "metadata.0.annotations", "metadata.0.labels", "metadata.0.terraform_labels", "name"},
 			},
 		},
 	})
@@ -79,6 +98,71 @@ resource "google_cloud_run_service" "default" {
 `, context)
 }
 
+func TestAccCloudRunService_cloudRunServiceGpuExample(t *testing.T) {
+	t.Parallel()
+
+	context := map[string]interface{}{
+		"project":       envvar.GetTestProjectFromEnv(),
+		"random_suffix": acctest.RandString(t, 10),
+	}
+
+	acctest.VcrTest(t, resource.TestCase{
+		PreCheck:                 func() { acctest.AccTestPreCheck(t) },
+		ProtoV5ProviderFactories: acctest.ProtoV5ProviderFactories(t),
+		CheckDestroy:             testAccCheckCloudRunServiceDestroyProducer(t),
+		Steps: []resource.TestStep{
+			{
+				Config: testAccCloudRunService_cloudRunServiceGpuExample(context),
+			},
+			{
+				ResourceName:            "google_cloud_run_service.default",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"location", "metadata.0.annotations", "metadata.0.labels", "metadata.0.terraform_labels", "name"},
+			},
+		},
+	})
+}
+
+func testAccCloudRunService_cloudRunServiceGpuExample(context map[string]interface{}) string {
+	return acctest.Nprintf(`
+resource "google_cloud_run_service" "default" {
+  name     = "tf-test-cloudrun-srv%{random_suffix}"
+  location = "us-central1"
+
+  metadata {
+    annotations = {
+      "run.googleapis.com/launch-stage" = "BETA"
+    }
+  }
+
+  template {
+    metadata {
+      annotations = {
+        "autoscaling.knative.dev/maxScale": "1"
+        "run.googleapis.com/cpu-throttling": "false"
+      }
+    }
+    spec {
+      containers {
+        image = "gcr.io/cloudrun/hello"
+        resources {
+          limits = {
+            "cpu" = "4"
+            "memory" = "16Gi"
+            "nvidia.com/gpu" = "1"
+          }
+        }
+      }
+      node_selector = {
+        "run.googleapis.com/accelerator" = "nvidia-l4"
+      }
+    }
+  }
+}
+`, context)
+}
+
 func TestAccCloudRunService_cloudRunServiceSqlExample(t *testing.T) {
 	t.Parallel()
 
@@ -99,7 +183,7 @@ func TestAccCloudRunService_cloudRunServiceSqlExample(t *testing.T) {
 				ResourceName:            "google_cloud_run_service.default",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"name", "location", "autogenerate_revision_name"},
+				ImportStateVerifyIgnore: []string{"autogenerate_revision_name", "location", "metadata.0.annotations", "metadata.0.labels", "metadata.0.terraform_labels", "name"},
 			},
 		},
 	})
@@ -137,7 +221,7 @@ resource "google_sql_database_instance" "instance" {
     tier = "db-f1-micro"
   }
 
-  deletion_protection  = "%{deletion_protection}"
+  deletion_protection  = %{deletion_protection}
 }
 `, context)
 }
@@ -162,7 +246,7 @@ func TestAccCloudRunService_cloudRunServiceNoauthExample(t *testing.T) {
 				ResourceName:            "google_cloud_run_service.default",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"name", "location"},
+				ImportStateVerifyIgnore: []string{"location", "metadata.0.annotations", "metadata.0.labels", "metadata.0.terraform_labels", "name"},
 			},
 		},
 	})
@@ -223,7 +307,7 @@ func TestAccCloudRunService_cloudRunServiceMultipleEnvironmentVariablesExample(t
 				ResourceName:            "google_cloud_run_service.default",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"name", "location", "autogenerate_revision_name"},
+				ImportStateVerifyIgnore: []string{"autogenerate_revision_name", "location", "metadata.0.annotations", "metadata.0.labels", "metadata.0.terraform_labels", "name"},
 			},
 		},
 	})
@@ -292,7 +376,7 @@ func TestAccCloudRunService_cloudRunServiceSecretEnvironmentVariablesExample(t *
 				ResourceName:            "google_cloud_run_service.default",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"name", "location", "autogenerate_revision_name"},
+				ImportStateVerifyIgnore: []string{"autogenerate_revision_name", "location", "metadata.0.annotations", "metadata.0.labels", "metadata.0.terraform_labels", "name"},
 			},
 		},
 	})
@@ -386,7 +470,7 @@ func TestAccCloudRunService_cloudRunServiceSecretVolumesExample(t *testing.T) {
 				ResourceName:            "google_cloud_run_service.default",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"name", "location", "autogenerate_revision_name"},
+				ImportStateVerifyIgnore: []string{"autogenerate_revision_name", "location", "metadata.0.annotations", "metadata.0.labels", "metadata.0.terraform_labels", "name"},
 			},
 		},
 	})
@@ -471,7 +555,6 @@ func TestAccCloudRunService_cloudRunServiceProbesExample(t *testing.T) {
 	t.Parallel()
 
 	context := map[string]interface{}{
-		"project":       envvar.GetTestProjectFromEnv(),
 		"random_suffix": acctest.RandString(t, 10),
 	}
 
@@ -487,7 +570,7 @@ func TestAccCloudRunService_cloudRunServiceProbesExample(t *testing.T) {
 				ResourceName:            "google_cloud_run_service.default",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"name", "location"},
+				ImportStateVerifyIgnore: []string{"location", "metadata.0.annotations", "metadata.0.labels", "metadata.0.terraform_labels", "name"},
 			},
 		},
 	})
@@ -535,6 +618,75 @@ resource "google_cloud_run_service" "default" {
 `, context)
 }
 
+func TestAccCloudRunService_cloudRunServiceReadinessProbeExample(t *testing.T) {
+	t.Parallel()
+
+	context := map[string]interface{}{
+		"project":       envvar.GetTestProjectFromEnv(),
+		"random_suffix": acctest.RandString(t, 10),
+	}
+
+	acctest.VcrTest(t, resource.TestCase{
+		PreCheck:                 func() { acctest.AccTestPreCheck(t) },
+		ProtoV5ProviderFactories: acctest.ProtoV5ProviderFactories(t),
+		CheckDestroy:             testAccCheckCloudRunServiceDestroyProducer(t),
+		Steps: []resource.TestStep{
+			{
+				Config: testAccCloudRunService_cloudRunServiceReadinessProbeExample(context),
+			},
+			{
+				ResourceName:            "google_cloud_run_service.default",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"location", "metadata.0.annotations", "metadata.0.labels", "metadata.0.terraform_labels", "name"},
+			},
+		},
+	})
+}
+
+func testAccCloudRunService_cloudRunServiceReadinessProbeExample(context map[string]interface{}) string {
+	return acctest.Nprintf(`
+resource "google_cloud_run_service" "default" {
+  name     = "tf-test-cloudrun-srv-rp%{random_suffix}"
+  location = "us-central1"
+
+  metadata {
+    annotations = {
+      "run.googleapis.com/launch-stage" = "BETA"
+    }
+  }
+
+  template {
+    spec {
+      containers {
+        image = "us-docker.pkg.dev/cloudrun/container/hello"
+        readiness_probe {
+          timeout_seconds = 20
+          period_seconds = 30
+          success_threshold = 3
+          failure_threshold = 2
+          grpc {
+            port = 8080
+          }
+        }
+      }
+    }
+  }
+
+  traffic {
+    percent         = 100
+    latest_revision = true
+  }
+
+  lifecycle {
+    ignore_changes = [
+      metadata.0.annotations,
+    ]
+  }
+}
+`, context)
+}
+
 func TestAccCloudRunService_cloudRunServiceMulticontainerExample(t *testing.T) {
 	t.Parallel()
 
@@ -555,7 +707,7 @@ func TestAccCloudRunService_cloudRunServiceMulticontainerExample(t *testing.T) {
 				ResourceName:            "google_cloud_run_service.default",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"name", "location"},
+				ImportStateVerifyIgnore: []string{"location", "metadata.0.annotations", "metadata.0.labels", "metadata.0.terraform_labels", "name"},
 			},
 		},
 	})
@@ -568,11 +720,6 @@ resource "google_cloud_run_service" "default" {
   location = "us-central1"
   provider = google-beta
 
-  metadata {
-    annotations = {
-      "run.googleapis.com/launch-stage" = "BETA"
-    }
-  }
   template {
     metadata {
       annotations = {
@@ -581,39 +728,39 @@ resource "google_cloud_run_service" "default" {
     }
     spec {
       containers {
-	name = "hello-1"
-	ports {
-	  container_port = 8080
-	}
-	image = "us-docker.pkg.dev/cloudrun/container/hello"
-	volume_mounts {
-	  name = "shared-volume"
-	  mount_path = "/mnt/shared"
-	}
+        name = "hello-1"
+        ports {
+          container_port = 8080
+        }
+        image = "us-docker.pkg.dev/cloudrun/container/hello"
+        volume_mounts {
+          name = "shared-volume"
+          mount_path = "/mnt/shared"
+          }
       }
       containers {
-	name = "hello-2"
-	image = "us-docker.pkg.dev/cloudrun/container/hello"
-	env {
-	  name = "PORT"
-	  value = "8081"
-	}
-	startup_probe {
-	  http_get {
-	    port = 8081
-	  }
-	}
-	volume_mounts {
-	  name = "shared-volume"
-	  mount_path = "/mnt/shared"
-	}
+        name = "hello-2"
+        image = "us-docker.pkg.dev/cloudrun/container/hello"
+        env {
+          name = "PORT"
+          value = "8081"
+        }
+        startup_probe {
+          http_get {
+            port = 8081
+          }
+        }
+        volume_mounts {
+          name = "shared-volume"
+          mount_path = "/mnt/shared"
+        }
       }
       volumes {
-	name = "shared-volume"
-	empty_dir {
-	  medium = "Memory"
-	  size_limit = "128Mi"
-	}
+          name = "shared-volume"
+          empty_dir {
+          medium = "Memory"
+          size_limit = "128Mi"
+        }
       }
     }
   }
@@ -622,6 +769,57 @@ resource "google_cloud_run_service" "default" {
     ignore_changes = [
       metadata[0].annotations["run.googleapis.com/launch-stage"],
     ]
+  }
+}
+`, context)
+}
+
+func TestAccCloudRunService_cloudRunServiceIapExample(t *testing.T) {
+	t.Parallel()
+
+	context := map[string]interface{}{
+		"project":       envvar.GetTestProjectFromEnv(),
+		"random_suffix": acctest.RandString(t, 10),
+	}
+
+	acctest.VcrTest(t, resource.TestCase{
+		PreCheck:                 func() { acctest.AccTestPreCheck(t) },
+		ProtoV5ProviderFactories: acctest.ProtoV5ProviderBetaFactories(t),
+		CheckDestroy:             testAccCheckCloudRunServiceDestroyProducer(t),
+		Steps: []resource.TestStep{
+			{
+				Config: testAccCloudRunService_cloudRunServiceIapExample(context),
+			},
+			{
+				ResourceName:            "google_cloud_run_service.default",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"location", "metadata.0.annotations", "metadata.0.labels", "metadata.0.terraform_labels", "name"},
+			},
+		},
+	})
+}
+
+func testAccCloudRunService_cloudRunServiceIapExample(context map[string]interface{}) string {
+	return acctest.Nprintf(`
+resource "google_cloud_run_service" "default" {
+  provider = google-beta
+  name     = "tf-test-cloudrun-srv%{random_suffix}"
+  location = "us-central1"
+
+  metadata {
+    annotations = {
+      "run.googleapis.com/launch-stage" = "BETA"
+      "run.googleapis.com/iap-enabled": true
+    }
+  }
+
+  template {
+    spec {
+      containers {
+        image = "gcr.io/cloudrun/hello"
+      }
+    }
   }
 }
 `, context)

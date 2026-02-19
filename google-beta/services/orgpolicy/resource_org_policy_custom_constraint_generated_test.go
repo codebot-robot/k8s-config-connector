@@ -19,29 +19,49 @@ package orgpolicy_test
 
 import (
 	"fmt"
+	"log"
+	"strconv"
 	"strings"
 	"testing"
+	"time"
 
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/terraform"
 
 	"github.com/hashicorp/terraform-provider-google-beta/google-beta/acctest"
 	"github.com/hashicorp/terraform-provider-google-beta/google-beta/envvar"
 	"github.com/hashicorp/terraform-provider-google-beta/google-beta/tpgresource"
 	transport_tpg "github.com/hashicorp/terraform-provider-google-beta/google-beta/transport"
+
+	"google.golang.org/api/googleapi"
+)
+
+var (
+	_ = fmt.Sprintf
+	_ = log.Print
+	_ = strconv.Atoi
+	_ = strings.Trim
+	_ = time.Now
+	_ = resource.TestMain
+	_ = terraform.NewState
+	_ = envvar.TestEnvVar
+	_ = tpgresource.SetLabels
+	_ = transport_tpg.Config{}
+	_ = googleapi.Error{}
 )
 
 func TestAccOrgPolicyCustomConstraint_orgPolicyCustomConstraintBasicExample(t *testing.T) {
 	t.Parallel()
 
 	context := map[string]interface{}{
-		"org_id":        envvar.GetTestOrgFromEnv(t),
+		"org_id":        envvar.GetTestOrgTargetFromEnv(t),
+		"policy_name":   "custom.tfTestDisableGkeAutoUpgrade" + acctest.RandString(t, 10),
 		"random_suffix": acctest.RandString(t, 10),
 	}
 
 	acctest.VcrTest(t, resource.TestCase{
 		PreCheck:                 func() { acctest.AccTestPreCheck(t) },
-		ProtoV5ProviderFactories: acctest.ProtoV5ProviderBetaFactories(t),
+		ProtoV5ProviderFactories: acctest.ProtoV5ProviderFactories(t),
 		CheckDestroy:             testAccCheckOrgPolicyCustomConstraintDestroyProducer(t),
 		Steps: []resource.TestStep{
 			{
@@ -60,9 +80,8 @@ func TestAccOrgPolicyCustomConstraint_orgPolicyCustomConstraintBasicExample(t *t
 func testAccOrgPolicyCustomConstraint_orgPolicyCustomConstraintBasicExample(context map[string]interface{}) string {
 	return acctest.Nprintf(`
 resource "google_org_policy_custom_constraint" "constraint" {
-  provider = google-beta
 
-  name         = "custom.disableGkeAutoUpgrade"
+  name         = "%{policy_name}"
   parent       = "organizations/%{org_id}"
 
   action_type    = "ALLOW"
@@ -78,12 +97,13 @@ func TestAccOrgPolicyCustomConstraint_orgPolicyCustomConstraintFullExample(t *te
 
 	context := map[string]interface{}{
 		"org_id":        envvar.GetTestOrgTargetFromEnv(t),
+		"policy_name":   "custom.tfTestDisableGkeAutoUpgrade" + acctest.RandString(t, 10),
 		"random_suffix": acctest.RandString(t, 10),
 	}
 
 	acctest.VcrTest(t, resource.TestCase{
 		PreCheck:                 func() { acctest.AccTestPreCheck(t) },
-		ProtoV5ProviderFactories: acctest.ProtoV5ProviderBetaFactories(t),
+		ProtoV5ProviderFactories: acctest.ProtoV5ProviderFactories(t),
 		CheckDestroy:             testAccCheckOrgPolicyCustomConstraintDestroyProducer(t),
 		Steps: []resource.TestStep{
 			{
@@ -102,9 +122,8 @@ func TestAccOrgPolicyCustomConstraint_orgPolicyCustomConstraintFullExample(t *te
 func testAccOrgPolicyCustomConstraint_orgPolicyCustomConstraintFullExample(context map[string]interface{}) string {
 	return acctest.Nprintf(`
 resource "google_org_policy_custom_constraint" "constraint" {
-  provider = google-beta
 
-  name         = "custom.disableGkeAutoUpgrade"
+  name         = "%{policy_name}"
   parent       = "organizations/%{org_id}"
   display_name = "Disable GKE auto upgrade"
   description  = "Only allow GKE NodePool resource to be created or updated if AutoUpgrade is not enabled where this custom constraint is enforced."
@@ -116,7 +135,6 @@ resource "google_org_policy_custom_constraint" "constraint" {
 }
 
 resource "google_org_policy_policy" "bool" {
-  provider = google-beta
 
   name   = "organizations/%{org_id}/policies/${google_org_policy_custom_constraint.constraint.name}"
   parent = "organizations/%{org_id}"

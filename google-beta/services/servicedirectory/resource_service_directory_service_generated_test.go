@@ -19,15 +19,35 @@ package servicedirectory_test
 
 import (
 	"fmt"
+	"log"
+	"strconv"
 	"strings"
 	"testing"
+	"time"
 
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/terraform"
 
 	"github.com/hashicorp/terraform-provider-google-beta/google-beta/acctest"
+	"github.com/hashicorp/terraform-provider-google-beta/google-beta/envvar"
 	"github.com/hashicorp/terraform-provider-google-beta/google-beta/tpgresource"
 	transport_tpg "github.com/hashicorp/terraform-provider-google-beta/google-beta/transport"
+
+	"google.golang.org/api/googleapi"
+)
+
+var (
+	_ = fmt.Sprintf
+	_ = log.Print
+	_ = strconv.Atoi
+	_ = strings.Trim
+	_ = time.Now
+	_ = resource.TestMain
+	_ = terraform.NewState
+	_ = envvar.TestEnvVar
+	_ = tpgresource.SetLabels
+	_ = transport_tpg.Config{}
+	_ = googleapi.Error{}
 )
 
 func TestAccServiceDirectoryService_serviceDirectoryServiceBasicExample(t *testing.T) {
@@ -39,7 +59,7 @@ func TestAccServiceDirectoryService_serviceDirectoryServiceBasicExample(t *testi
 
 	acctest.VcrTest(t, resource.TestCase{
 		PreCheck:                 func() { acctest.AccTestPreCheck(t) },
-		ProtoV5ProviderFactories: acctest.ProtoV5ProviderBetaFactories(t),
+		ProtoV5ProviderFactories: acctest.ProtoV5ProviderFactories(t),
 		CheckDestroy:             testAccCheckServiceDirectoryServiceDestroyProducer(t),
 		Steps: []resource.TestStep{
 			{
@@ -58,13 +78,11 @@ func TestAccServiceDirectoryService_serviceDirectoryServiceBasicExample(t *testi
 func testAccServiceDirectoryService_serviceDirectoryServiceBasicExample(context map[string]interface{}) string {
 	return acctest.Nprintf(`
 resource "google_service_directory_namespace" "example" {
-  provider     = google-beta
   namespace_id = "tf-test-example-namespace%{random_suffix}"
   location     = "us-central1"
 }
 
 resource "google_service_directory_service" "example" {
-  provider   = google-beta
   service_id = "tf-test-example-service%{random_suffix}"
   namespace  = google_service_directory_namespace.example.id
 

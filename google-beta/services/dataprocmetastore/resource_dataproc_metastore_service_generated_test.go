@@ -19,15 +19,35 @@ package dataprocmetastore_test
 
 import (
 	"fmt"
+	"log"
+	"strconv"
 	"strings"
 	"testing"
+	"time"
 
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/terraform"
 
 	"github.com/hashicorp/terraform-provider-google-beta/google-beta/acctest"
+	"github.com/hashicorp/terraform-provider-google-beta/google-beta/envvar"
 	"github.com/hashicorp/terraform-provider-google-beta/google-beta/tpgresource"
 	transport_tpg "github.com/hashicorp/terraform-provider-google-beta/google-beta/transport"
+
+	"google.golang.org/api/googleapi"
+)
+
+var (
+	_ = fmt.Sprintf
+	_ = log.Print
+	_ = strconv.Atoi
+	_ = strings.Trim
+	_ = time.Now
+	_ = resource.TestMain
+	_ = terraform.NewState
+	_ = envvar.TestEnvVar
+	_ = tpgresource.SetLabels
+	_ = transport_tpg.Config{}
+	_ = googleapi.Error{}
 )
 
 func TestAccDataprocMetastoreService_dataprocMetastoreServiceBasicExample(t *testing.T) {
@@ -49,7 +69,7 @@ func TestAccDataprocMetastoreService_dataprocMetastoreServiceBasicExample(t *tes
 				ResourceName:            "google_dataproc_metastore_service.default",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"service_id", "location"},
+				ImportStateVerifyIgnore: []string{"labels", "location", "service_id", "tags", "terraform_labels"},
 			},
 		},
 	})
@@ -71,14 +91,71 @@ resource "google_dataproc_metastore_service" "default" {
   hive_metastore_config {
     version = "2.3.6"
   }
+
+  labels = {
+    env = "test"
+  }
 }
 `, context)
 }
 
-func TestAccDataprocMetastoreService_dataprocMetastoreServiceCmekTestExample(t *testing.T) {
+func TestAccDataprocMetastoreService_dataprocMetastoreServiceDeletionProtectionExample(t *testing.T) {
 	t.Parallel()
 
 	context := map[string]interface{}{
+		"deletion_protection": false,
+		"random_suffix":       acctest.RandString(t, 10),
+	}
+
+	acctest.VcrTest(t, resource.TestCase{
+		PreCheck:                 func() { acctest.AccTestPreCheck(t) },
+		ProtoV5ProviderFactories: acctest.ProtoV5ProviderFactories(t),
+		CheckDestroy:             testAccCheckDataprocMetastoreServiceDestroyProducer(t),
+		Steps: []resource.TestStep{
+			{
+				Config: testAccDataprocMetastoreService_dataprocMetastoreServiceDeletionProtectionExample(context),
+			},
+			{
+				ResourceName:            "google_dataproc_metastore_service.default",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"labels", "location", "service_id", "tags", "terraform_labels"},
+			},
+		},
+	})
+}
+
+func testAccDataprocMetastoreService_dataprocMetastoreServiceDeletionProtectionExample(context map[string]interface{}) string {
+	return acctest.Nprintf(`
+resource "google_dataproc_metastore_service" "default" {
+    service_id          = "tf-test-metastore-srv%{random_suffix}"
+    location            = "us-central1"
+    port                = 9080
+    tier                = "DEVELOPER"
+    deletion_protection = %{deletion_protection}
+  
+    maintenance_window {
+      hour_of_day = 2
+      day_of_week = "SUNDAY"
+    }
+  
+    hive_metastore_config {
+      version = "2.3.6"
+    }
+  
+    labels = {
+      env = "test"
+    }
+  }
+`, context)
+}
+
+func TestAccDataprocMetastoreService_dataprocMetastoreServiceCmekTestExample(t *testing.T) {
+	acctest.SkipIfVcr(t)
+	t.Parallel()
+
+	context := map[string]interface{}{
+		"kms_key_name":  acctest.BootstrapKMSKeyWithPurposeInLocationAndName(t, "ENCRYPT_DECRYPT", "us-central1", "tf-bootstrap-metastore-service-key1").CryptoKey.Name,
 		"random_suffix": acctest.RandString(t, 10),
 	}
 
@@ -94,7 +171,7 @@ func TestAccDataprocMetastoreService_dataprocMetastoreServiceCmekTestExample(t *
 				ResourceName:            "google_dataproc_metastore_service.default",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"service_id", "location"},
+				ImportStateVerifyIgnore: []string{"labels", "location", "service_id", "tags", "terraform_labels"},
 			},
 		},
 	})
@@ -112,36 +189,71 @@ resource "google_dataproc_metastore_service" "default" {
   location   = "us-central1"
 
   encryption_config {
-    kms_key = google_kms_crypto_key.crypto_key.id
+    kms_key = "%{kms_key_name}"
   }
 
   hive_metastore_config {
     version = "3.1.2"
   }
 
-  depends_on = [google_kms_crypto_key_iam_binding.crypto_key_binding]
+  depends_on = [
+    google_kms_crypto_key_iam_member.crypto_key_member_1,
+    google_kms_crypto_key_iam_member.crypto_key_member_2,
+  ]
 }
 
-resource "google_kms_crypto_key" "crypto_key" {
-  name     = "tf-test-example-key%{random_suffix}"
-  key_ring = google_kms_key_ring.key_ring.id
-
-  purpose  = "ENCRYPT_DECRYPT"
-}
-
-resource "google_kms_key_ring" "key_ring" {
-  name     = "tf-test-example-keyring%{random_suffix}"
-  location = "us-central1"
-}
-
-resource "google_kms_crypto_key_iam_binding" "crypto_key_binding" {
-  crypto_key_id = google_kms_crypto_key.crypto_key.id
+resource "google_kms_crypto_key_iam_member" "crypto_key_member_1" {
+  crypto_key_id = "%{kms_key_name}"
   role          = "roles/cloudkms.cryptoKeyEncrypterDecrypter"
 
-  members = [
-    "serviceAccount:service-${data.google_project.project.number}@gcp-sa-metastore.iam.gserviceaccount.com",
-    "serviceAccount:${data.google_storage_project_service_account.gcs_account.email_address}"
-  ]
+  member = "serviceAccount:service-${data.google_project.project.number}@gcp-sa-metastore.iam.gserviceaccount.com"
+}
+
+resource "google_kms_crypto_key_iam_member" "crypto_key_member_2" {
+  crypto_key_id = "%{kms_key_name}"
+  role          = "roles/cloudkms.cryptoKeyEncrypterDecrypter"
+
+  member = "serviceAccount:${data.google_storage_project_service_account.gcs_account.email_address}"
+}
+`, context)
+}
+
+func TestAccDataprocMetastoreService_dataprocMetastoreServiceEndpointExample(t *testing.T) {
+	t.Parallel()
+
+	context := map[string]interface{}{
+		"random_suffix": acctest.RandString(t, 10),
+	}
+
+	acctest.VcrTest(t, resource.TestCase{
+		PreCheck:                 func() { acctest.AccTestPreCheck(t) },
+		ProtoV5ProviderFactories: acctest.ProtoV5ProviderFactories(t),
+		CheckDestroy:             testAccCheckDataprocMetastoreServiceDestroyProducer(t),
+		Steps: []resource.TestStep{
+			{
+				Config: testAccDataprocMetastoreService_dataprocMetastoreServiceEndpointExample(context),
+			},
+			{
+				ResourceName:            "google_dataproc_metastore_service.endpoint",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"labels", "location", "service_id", "tags", "terraform_labels"},
+			},
+		},
+	})
+}
+
+func testAccDataprocMetastoreService_dataprocMetastoreServiceEndpointExample(context map[string]interface{}) string {
+	return acctest.Nprintf(`
+resource "google_dataproc_metastore_service" "endpoint" {
+  service_id = "tf-test-metastore-endpoint%{random_suffix}"
+  location   = "us-central1"
+  tier       = "DEVELOPER"
+
+  hive_metastore_config {
+    version           = "3.1.2"
+    endpoint_protocol = "GRPC"
+  }
 }
 `, context)
 }
@@ -155,7 +267,7 @@ func TestAccDataprocMetastoreService_dataprocMetastoreServiceAuxExample(t *testi
 
 	acctest.VcrTest(t, resource.TestCase{
 		PreCheck:                 func() { acctest.AccTestPreCheck(t) },
-		ProtoV5ProviderFactories: acctest.ProtoV5ProviderBetaFactories(t),
+		ProtoV5ProviderFactories: acctest.ProtoV5ProviderFactories(t),
 		CheckDestroy:             testAccCheckDataprocMetastoreServiceDestroyProducer(t),
 		Steps: []resource.TestStep{
 			{
@@ -165,7 +277,7 @@ func TestAccDataprocMetastoreService_dataprocMetastoreServiceAuxExample(t *testi
 				ResourceName:            "google_dataproc_metastore_service.aux",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"service_id", "location"},
+				ImportStateVerifyIgnore: []string{"labels", "location", "service_id", "tags", "terraform_labels"},
 			},
 		},
 	})
@@ -174,7 +286,6 @@ func TestAccDataprocMetastoreService_dataprocMetastoreServiceAuxExample(t *testi
 func testAccDataprocMetastoreService_dataprocMetastoreServiceAuxExample(context map[string]interface{}) string {
 	return acctest.Nprintf(`
 resource "google_dataproc_metastore_service" "aux" {
-  provider   = google-beta
   service_id = "tf-test-metastore-aux%{random_suffix}"
   location   = "us-central1"
   tier       = "DEVELOPER"
@@ -199,7 +310,7 @@ func TestAccDataprocMetastoreService_dataprocMetastoreServiceMetadataExample(t *
 
 	acctest.VcrTest(t, resource.TestCase{
 		PreCheck:                 func() { acctest.AccTestPreCheck(t) },
-		ProtoV5ProviderFactories: acctest.ProtoV5ProviderBetaFactories(t),
+		ProtoV5ProviderFactories: acctest.ProtoV5ProviderFactories(t),
 		CheckDestroy:             testAccCheckDataprocMetastoreServiceDestroyProducer(t),
 		Steps: []resource.TestStep{
 			{
@@ -209,7 +320,7 @@ func TestAccDataprocMetastoreService_dataprocMetastoreServiceMetadataExample(t *
 				ResourceName:            "google_dataproc_metastore_service.metadata",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"service_id", "location"},
+				ImportStateVerifyIgnore: []string{"labels", "location", "service_id", "tags", "terraform_labels"},
 			},
 		},
 	})
@@ -218,7 +329,6 @@ func TestAccDataprocMetastoreService_dataprocMetastoreServiceMetadataExample(t *
 func testAccDataprocMetastoreService_dataprocMetastoreServiceMetadataExample(context map[string]interface{}) string {
 	return acctest.Nprintf(`
 resource "google_dataproc_metastore_service" "metadata" {
-  provider   = google-beta
   service_id = "tf-test-metastore-metadata%{random_suffix}"
   location   = "us-central1"
   tier       = "DEVELOPER"
@@ -255,7 +365,7 @@ func TestAccDataprocMetastoreService_dataprocMetastoreServiceTelemetryExample(t 
 				ResourceName:            "google_dataproc_metastore_service.telemetry",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"service_id", "location"},
+				ImportStateVerifyIgnore: []string{"labels", "location", "service_id", "tags", "terraform_labels"},
 			},
 		},
 	})
@@ -264,7 +374,7 @@ func TestAccDataprocMetastoreService_dataprocMetastoreServiceTelemetryExample(t 
 func testAccDataprocMetastoreService_dataprocMetastoreServiceTelemetryExample(context map[string]interface{}) string {
 	return acctest.Nprintf(`
 resource "google_dataproc_metastore_service" "telemetry" {
-  service_id = "telemetry%{random_suffix}"
+  service_id = "tf-test-ms-telemetry%{random_suffix}"
   location   = "us-central1"
   port       = 9080
   tier       = "DEVELOPER"
@@ -299,7 +409,7 @@ func TestAccDataprocMetastoreService_dataprocMetastoreServiceDpms2Example(t *tes
 				ResourceName:            "google_dataproc_metastore_service.dpms2",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"service_id", "location"},
+				ImportStateVerifyIgnore: []string{"labels", "location", "service_id", "tags", "terraform_labels"},
 			},
 		},
 	})
@@ -308,7 +418,7 @@ func TestAccDataprocMetastoreService_dataprocMetastoreServiceDpms2Example(t *tes
 func testAccDataprocMetastoreService_dataprocMetastoreServiceDpms2Example(context map[string]interface{}) string {
 	return acctest.Nprintf(`
 resource "google_dataproc_metastore_service" "dpms2" {
-  service_id = "dpms2%{random_suffix}"
+  service_id = "tf-test-ms-dpms2%{random_suffix}"
   location   = "us-central1"
 
   # DPMS 2 requires SPANNER database type, and does not require
@@ -345,7 +455,7 @@ func TestAccDataprocMetastoreService_dataprocMetastoreServiceDpms2ScalingFactorE
 				ResourceName:            "google_dataproc_metastore_service.dpms2_scaling_factor",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"service_id", "location"},
+				ImportStateVerifyIgnore: []string{"labels", "location", "service_id", "tags", "terraform_labels"},
 			},
 		},
 	})
@@ -354,7 +464,7 @@ func TestAccDataprocMetastoreService_dataprocMetastoreServiceDpms2ScalingFactorE
 func testAccDataprocMetastoreService_dataprocMetastoreServiceDpms2ScalingFactorExample(context map[string]interface{}) string {
 	return acctest.Nprintf(`
 resource "google_dataproc_metastore_service" "dpms2_scaling_factor" {
-  service_id = "dpms2sf%{random_suffix}"
+  service_id = "tf-test-ms-dpms2sf%{random_suffix}"
   location   = "us-central1"
 
   # DPMS 2 requires SPANNER database type, and does not require
@@ -391,7 +501,7 @@ func TestAccDataprocMetastoreService_dataprocMetastoreServiceDpms2ScalingFactorL
 				ResourceName:            "google_dataproc_metastore_service.dpms2_scaling_factor_lt1",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"service_id", "location"},
+				ImportStateVerifyIgnore: []string{"labels", "location", "service_id", "tags", "terraform_labels"},
 			},
 		},
 	})
@@ -400,7 +510,7 @@ func TestAccDataprocMetastoreService_dataprocMetastoreServiceDpms2ScalingFactorL
 func testAccDataprocMetastoreService_dataprocMetastoreServiceDpms2ScalingFactorLt1Example(context map[string]interface{}) string {
 	return acctest.Nprintf(`
 resource "google_dataproc_metastore_service" "dpms2_scaling_factor_lt1" {
-  service_id = "dpms2sflt1%{random_suffix}"
+  service_id = "tf-test-ms-dpms2sflt1%{random_suffix}"
   location   = "us-central1"
 
   # DPMS 2 requires SPANNER database type, and does not require
@@ -413,6 +523,269 @@ resource "google_dataproc_metastore_service" "dpms2_scaling_factor_lt1" {
 
   scaling_config {
     scaling_factor = "0.1"
+  }
+}
+`, context)
+}
+
+func TestAccDataprocMetastoreService_dataprocMetastoreServiceScheduledBackupExample(t *testing.T) {
+	t.Parallel()
+
+	context := map[string]interface{}{
+		"random_suffix": acctest.RandString(t, 10),
+	}
+
+	acctest.VcrTest(t, resource.TestCase{
+		PreCheck:                 func() { acctest.AccTestPreCheck(t) },
+		ProtoV5ProviderFactories: acctest.ProtoV5ProviderFactories(t),
+		CheckDestroy:             testAccCheckDataprocMetastoreServiceDestroyProducer(t),
+		Steps: []resource.TestStep{
+			{
+				Config: testAccDataprocMetastoreService_dataprocMetastoreServiceScheduledBackupExample(context),
+			},
+			{
+				ResourceName:            "google_dataproc_metastore_service.backup",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"labels", "location", "service_id", "tags", "terraform_labels"},
+			},
+		},
+	})
+}
+
+func testAccDataprocMetastoreService_dataprocMetastoreServiceScheduledBackupExample(context map[string]interface{}) string {
+	return acctest.Nprintf(`
+resource "google_dataproc_metastore_service" "backup" {
+  service_id = "backup%{random_suffix}"
+  location   = "us-central1"
+  port       = 9080
+  tier       = "DEVELOPER"
+
+  maintenance_window {
+    hour_of_day = 2
+    day_of_week = "SUNDAY"
+  }
+
+  hive_metastore_config {
+    version = "2.3.6"
+  }
+
+  scheduled_backup {
+    enabled         = true
+    cron_schedule   = "0 0 * * *"
+    time_zone       = "UTC"
+    backup_location = "gs://${google_storage_bucket.bucket.name}"
+  }
+
+  labels = {
+    env = "test"
+  }
+}
+
+resource "google_storage_bucket" "bucket" {
+  name     = "backup%{random_suffix}"
+  location = "us-central1"
+}
+`, context)
+}
+
+func TestAccDataprocMetastoreService_dataprocMetastoreServiceAutoscalingMaxScalingFactorExample(t *testing.T) {
+	t.Parallel()
+
+	context := map[string]interface{}{
+		"random_suffix": acctest.RandString(t, 10),
+	}
+
+	acctest.VcrTest(t, resource.TestCase{
+		PreCheck:                 func() { acctest.AccTestPreCheck(t) },
+		ProtoV5ProviderFactories: acctest.ProtoV5ProviderFactories(t),
+		CheckDestroy:             testAccCheckDataprocMetastoreServiceDestroyProducer(t),
+		Steps: []resource.TestStep{
+			{
+				Config: testAccDataprocMetastoreService_dataprocMetastoreServiceAutoscalingMaxScalingFactorExample(context),
+			},
+			{
+				ResourceName:            "google_dataproc_metastore_service.test_resource",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"labels", "location", "service_id", "tags", "terraform_labels"},
+			},
+		},
+	})
+}
+
+func testAccDataprocMetastoreService_dataprocMetastoreServiceAutoscalingMaxScalingFactorExample(context map[string]interface{}) string {
+	return acctest.Nprintf(`
+resource "google_dataproc_metastore_service" "test_resource" {
+  service_id = "tf-test-test-service%{random_suffix}"
+  location   = "us-central1"
+
+  # DPMS 2 requires SPANNER database type, and does not require
+  # a maintenance window.
+  database_type = "SPANNER"
+
+  hive_metastore_config {
+    version           = "3.1.2"
+  }
+
+  scaling_config {
+    autoscaling_config {
+      autoscaling_enabled = true
+      limit_config {
+        max_scaling_factor = 1.0
+      }
+    }
+  }
+}
+`, context)
+}
+
+func TestAccDataprocMetastoreService_dataprocMetastoreServiceAutoscalingMinAndMaxScalingFactorExample(t *testing.T) {
+	t.Parallel()
+
+	context := map[string]interface{}{
+		"random_suffix": acctest.RandString(t, 10),
+	}
+
+	acctest.VcrTest(t, resource.TestCase{
+		PreCheck:                 func() { acctest.AccTestPreCheck(t) },
+		ProtoV5ProviderFactories: acctest.ProtoV5ProviderFactories(t),
+		CheckDestroy:             testAccCheckDataprocMetastoreServiceDestroyProducer(t),
+		Steps: []resource.TestStep{
+			{
+				Config: testAccDataprocMetastoreService_dataprocMetastoreServiceAutoscalingMinAndMaxScalingFactorExample(context),
+			},
+			{
+				ResourceName:            "google_dataproc_metastore_service.test_resource",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"labels", "location", "service_id", "tags", "terraform_labels"},
+			},
+		},
+	})
+}
+
+func testAccDataprocMetastoreService_dataprocMetastoreServiceAutoscalingMinAndMaxScalingFactorExample(context map[string]interface{}) string {
+	return acctest.Nprintf(`
+resource "google_dataproc_metastore_service" "test_resource" {
+  service_id = "tf-test-test-service%{random_suffix}"
+  location   = "us-central1"
+
+  # DPMS 2 requires SPANNER database type, and does not require
+  # a maintenance window.
+  database_type = "SPANNER"
+
+  hive_metastore_config {
+    version           = "3.1.2"
+  }
+
+  scaling_config {
+    autoscaling_config {
+      autoscaling_enabled = true
+      limit_config {
+        min_scaling_factor = 0.1
+        max_scaling_factor = 1.0
+      }
+    }
+  }
+}
+`, context)
+}
+
+func TestAccDataprocMetastoreService_dataprocMetastoreServiceAutoscalingMinScalingFactorExample(t *testing.T) {
+	t.Parallel()
+
+	context := map[string]interface{}{
+		"random_suffix": acctest.RandString(t, 10),
+	}
+
+	acctest.VcrTest(t, resource.TestCase{
+		PreCheck:                 func() { acctest.AccTestPreCheck(t) },
+		ProtoV5ProviderFactories: acctest.ProtoV5ProviderFactories(t),
+		CheckDestroy:             testAccCheckDataprocMetastoreServiceDestroyProducer(t),
+		Steps: []resource.TestStep{
+			{
+				Config: testAccDataprocMetastoreService_dataprocMetastoreServiceAutoscalingMinScalingFactorExample(context),
+			},
+			{
+				ResourceName:            "google_dataproc_metastore_service.test_resource",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"labels", "location", "service_id", "tags", "terraform_labels"},
+			},
+		},
+	})
+}
+
+func testAccDataprocMetastoreService_dataprocMetastoreServiceAutoscalingMinScalingFactorExample(context map[string]interface{}) string {
+	return acctest.Nprintf(`
+resource "google_dataproc_metastore_service" "test_resource" {
+  service_id = "tf-test-test-service%{random_suffix}"
+  location   = "us-central1"
+
+  # DPMS 2 requires SPANNER database type, and does not require
+  # a maintenance window.
+  database_type = "SPANNER"
+
+  hive_metastore_config {
+    version           = "3.1.2"
+  }
+
+  scaling_config {
+    autoscaling_config {
+      autoscaling_enabled = true
+      limit_config {
+        min_scaling_factor = 0.1
+      }
+    }
+  }
+}
+`, context)
+}
+
+func TestAccDataprocMetastoreService_dataprocMetastoreServiceAutoscalingNoLimitConfigExample(t *testing.T) {
+	t.Parallel()
+
+	context := map[string]interface{}{
+		"random_suffix": acctest.RandString(t, 10),
+	}
+
+	acctest.VcrTest(t, resource.TestCase{
+		PreCheck:                 func() { acctest.AccTestPreCheck(t) },
+		ProtoV5ProviderFactories: acctest.ProtoV5ProviderFactories(t),
+		CheckDestroy:             testAccCheckDataprocMetastoreServiceDestroyProducer(t),
+		Steps: []resource.TestStep{
+			{
+				Config: testAccDataprocMetastoreService_dataprocMetastoreServiceAutoscalingNoLimitConfigExample(context),
+			},
+			{
+				ResourceName:            "google_dataproc_metastore_service.test_resource",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"labels", "location", "service_id", "tags", "terraform_labels"},
+			},
+		},
+	})
+}
+
+func testAccDataprocMetastoreService_dataprocMetastoreServiceAutoscalingNoLimitConfigExample(context map[string]interface{}) string {
+	return acctest.Nprintf(`
+resource "google_dataproc_metastore_service" "test_resource" {
+  service_id = "tf-test-test-service%{random_suffix}"
+  location   = "us-central1"
+
+  # DPMS 2 requires SPANNER database type, and does not require
+  # a maintenance window.
+  database_type = "SPANNER"
+
+  hive_metastore_config {
+    version           = "3.1.2"
+  }
+
+  scaling_config {
+    autoscaling_config {
+      autoscaling_enabled = true
+    }
   }
 }
 `, context)

@@ -19,15 +19,35 @@ package alloydb_test
 
 import (
 	"fmt"
+	"log"
+	"strconv"
 	"strings"
 	"testing"
+	"time"
 
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/terraform"
 
 	"github.com/hashicorp/terraform-provider-google-beta/google-beta/acctest"
+	"github.com/hashicorp/terraform-provider-google-beta/google-beta/envvar"
 	"github.com/hashicorp/terraform-provider-google-beta/google-beta/tpgresource"
 	transport_tpg "github.com/hashicorp/terraform-provider-google-beta/google-beta/transport"
+
+	"google.golang.org/api/googleapi"
+)
+
+var (
+	_ = fmt.Sprintf
+	_ = log.Print
+	_ = strconv.Atoi
+	_ = strings.Trim
+	_ = time.Now
+	_ = resource.TestMain
+	_ = terraform.NewState
+	_ = envvar.TestEnvVar
+	_ = tpgresource.SetLabels
+	_ = transport_tpg.Config{}
+	_ = googleapi.Error{}
 )
 
 func TestAccAlloydbCluster_alloydbClusterBasicExample(t *testing.T) {
@@ -49,7 +69,7 @@ func TestAccAlloydbCluster_alloydbClusterBasicExample(t *testing.T) {
 				ResourceName:            "google_alloydb_cluster.default",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"initial_user", "restore_backup_source", "restore_continuous_backup_source", "cluster_id", "location"},
+				ImportStateVerifyIgnore: []string{"annotations", "cluster_id", "deletion_protection", "initial_user", "labels", "location", "restore_backup_source", "restore_backupdr_backup_source", "restore_backupdr_pitr_source", "restore_continuous_backup_source", "terraform_labels"},
 			},
 		},
 	})
@@ -60,13 +80,137 @@ func testAccAlloydbCluster_alloydbClusterBasicExample(context map[string]interfa
 resource "google_alloydb_cluster" "default" {
   cluster_id = "tf-test-alloydb-cluster%{random_suffix}"
   location   = "us-central1"
-  network    = google_compute_network.default.id
+  network_config {
+    network = google_compute_network.default.id
+  }
+
+  deletion_protection = false
 }
 
 data "google_project" "project" {}
 
 resource "google_compute_network" "default" {
   name = "tf-test-alloydb-cluster%{random_suffix}"
+}
+`, context)
+}
+
+func TestAccAlloydbCluster_alloydbClusterBeforeUpgradeExample(t *testing.T) {
+	t.Parallel()
+
+	context := map[string]interface{}{
+		"network_name":  acctest.BootstrapSharedTestNetwork(t, "alloydb-1"),
+		"random_suffix": acctest.RandString(t, 10),
+	}
+
+	acctest.VcrTest(t, resource.TestCase{
+		PreCheck:                 func() { acctest.AccTestPreCheck(t) },
+		ProtoV5ProviderFactories: acctest.ProtoV5ProviderFactories(t),
+		CheckDestroy:             testAccCheckAlloydbClusterDestroyProducer(t),
+		Steps: []resource.TestStep{
+			{
+				Config: testAccAlloydbCluster_alloydbClusterBeforeUpgradeExample(context),
+			},
+			{
+				ResourceName:            "google_alloydb_cluster.default",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"annotations", "cluster_id", "deletion_protection", "initial_user", "labels", "location", "restore_backup_source", "restore_backupdr_backup_source", "restore_backupdr_pitr_source", "restore_continuous_backup_source", "terraform_labels"},
+			},
+		},
+	})
+}
+
+func testAccAlloydbCluster_alloydbClusterBeforeUpgradeExample(context map[string]interface{}) string {
+	return acctest.Nprintf(`
+resource "google_alloydb_instance" "default" {
+  cluster       = google_alloydb_cluster.default.name
+  instance_id   = "tf-test-alloydb-instance%{random_suffix}"
+  instance_type = "PRIMARY"
+
+  machine_config {
+    cpu_count = 2
+  }
+
+}
+
+resource "google_alloydb_cluster" "default" {
+  cluster_id = "tf-test-alloydb-cluster%{random_suffix}"
+  location   = "us-central1"
+  network_config {
+    network = data.google_compute_network.default.id
+  }
+  database_version = "POSTGRES_14"
+
+  initial_user {
+    password = "tf-test-alloydb-cluster%{random_suffix}"
+  }
+
+  deletion_protection = false
+}
+
+data "google_compute_network" "default" {
+  name = "%{network_name}"
+}
+`, context)
+}
+
+func TestAccAlloydbCluster_alloydbClusterAfterUpgradeExample(t *testing.T) {
+	t.Parallel()
+
+	context := map[string]interface{}{
+		"network_name":  acctest.BootstrapSharedTestNetwork(t, "alloydb-1"),
+		"random_suffix": acctest.RandString(t, 10),
+	}
+
+	acctest.VcrTest(t, resource.TestCase{
+		PreCheck:                 func() { acctest.AccTestPreCheck(t) },
+		ProtoV5ProviderFactories: acctest.ProtoV5ProviderFactories(t),
+		CheckDestroy:             testAccCheckAlloydbClusterDestroyProducer(t),
+		Steps: []resource.TestStep{
+			{
+				Config: testAccAlloydbCluster_alloydbClusterAfterUpgradeExample(context),
+			},
+			{
+				ResourceName:            "google_alloydb_cluster.default",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"annotations", "cluster_id", "deletion_protection", "initial_user", "labels", "location", "restore_backup_source", "restore_backupdr_backup_source", "restore_backupdr_pitr_source", "restore_continuous_backup_source", "terraform_labels"},
+			},
+		},
+	})
+}
+
+func testAccAlloydbCluster_alloydbClusterAfterUpgradeExample(context map[string]interface{}) string {
+	return acctest.Nprintf(`
+resource "google_alloydb_instance" "default" {
+  cluster       = google_alloydb_cluster.default.name
+  instance_id   = "tf-test-alloydb-instance%{random_suffix}"
+  instance_type = "PRIMARY"
+
+  machine_config {
+    cpu_count = 2
+  }
+
+}
+
+resource "google_alloydb_cluster" "default" {
+  cluster_id = "tf-test-alloydb-cluster%{random_suffix}"
+  location   = "us-central1"
+  network_config {
+    network = data.google_compute_network.default.id
+  }
+  database_version = "POSTGRES_15"
+
+  initial_user {
+    password = "tf-test-alloydb-cluster%{random_suffix}"
+  }
+
+  deletion_protection = false
+}
+
+data "google_compute_network" "default" {
+  name = "%{network_name}"
 }
 `, context)
 }
@@ -90,7 +234,7 @@ func TestAccAlloydbCluster_alloydbClusterFullExample(t *testing.T) {
 				ResourceName:            "google_alloydb_cluster.full",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"initial_user", "restore_backup_source", "restore_continuous_backup_source", "cluster_id", "location"},
+				ImportStateVerifyIgnore: []string{"annotations", "cluster_id", "deletion_protection", "initial_user", "labels", "location", "restore_backup_source", "restore_backupdr_backup_source", "restore_backupdr_pitr_source", "restore_continuous_backup_source", "terraform_labels"},
 			},
 		},
 	})
@@ -99,9 +243,12 @@ func TestAccAlloydbCluster_alloydbClusterFullExample(t *testing.T) {
 func testAccAlloydbCluster_alloydbClusterFullExample(context map[string]interface{}) string {
 	return acctest.Nprintf(`
 resource "google_alloydb_cluster" "full" {
-  cluster_id   = "tf-test-alloydb-cluster-full%{random_suffix}"
-  location     = "us-central1"
-  network      = google_compute_network.default.id
+  cluster_id = "tf-test-alloydb-cluster-full%{random_suffix}"
+  location   = "us-central1"
+  network_config {
+    network = google_compute_network.default.id
+  }
+  database_version = "POSTGRES_15"
 
   initial_user {
     user     = "tf-test-alloydb-cluster-full%{random_suffix}"
@@ -141,12 +288,90 @@ resource "google_alloydb_cluster" "full" {
   labels = {
     test = "tf-test-alloydb-cluster-full%{random_suffix}"
   }
+
+  deletion_protection = false
 }
 
 data "google_project" "project" {}
 
 resource "google_compute_network" "default" {
   name = "tf-test-alloydb-cluster-full%{random_suffix}"
+}
+`, context)
+}
+
+func TestAccAlloydbCluster_alloydbSecondaryClusterBasicTestExample(t *testing.T) {
+	t.Parallel()
+
+	context := map[string]interface{}{
+		"network_name":  acctest.BootstrapSharedServiceNetworkingConnection(t, "alloydb-1"),
+		"random_suffix": acctest.RandString(t, 10),
+	}
+
+	acctest.VcrTest(t, resource.TestCase{
+		PreCheck:                 func() { acctest.AccTestPreCheck(t) },
+		ProtoV5ProviderFactories: acctest.ProtoV5ProviderFactories(t),
+		CheckDestroy:             testAccCheckAlloydbClusterDestroyProducer(t),
+		Steps: []resource.TestStep{
+			{
+				Config: testAccAlloydbCluster_alloydbSecondaryClusterBasicTestExample(context),
+			},
+			{
+				ResourceName:            "google_alloydb_cluster.secondary",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"annotations", "cluster_id", "deletion_protection", "initial_user", "labels", "location", "restore_backup_source", "restore_backupdr_backup_source", "restore_backupdr_pitr_source", "restore_continuous_backup_source", "terraform_labels"},
+			},
+		},
+	})
+}
+
+func testAccAlloydbCluster_alloydbSecondaryClusterBasicTestExample(context map[string]interface{}) string {
+	return acctest.Nprintf(`
+resource "google_alloydb_cluster" "primary" {
+  cluster_id = "tf-test-alloydb-primary-cluster%{random_suffix}"
+  location   = "us-central1"
+  network_config {
+    network = data.google_compute_network.default.id
+  }
+
+  deletion_protection = false
+}
+
+resource "google_alloydb_instance" "primary" {
+  cluster       = google_alloydb_cluster.primary.name
+  instance_id   = "tf-test-alloydb-primary-instance%{random_suffix}"
+  instance_type = "PRIMARY"
+
+  machine_config {
+    cpu_count = 2
+  }
+}
+
+resource "google_alloydb_cluster" "secondary" {
+  cluster_id   = "tf-test-alloydb-secondary-cluster%{random_suffix}"
+  location     = "us-east1"
+  network_config {
+    network = data.google_compute_network.default.id
+  }
+  cluster_type = "SECONDARY"
+
+  continuous_backup_config {
+    enabled = false
+  }
+
+  secondary_config {
+    primary_cluster_name = google_alloydb_cluster.primary.name
+  }
+
+  deletion_protection = false
+  depends_on = [google_alloydb_instance.primary]
+}
+
+data "google_project" "project" {}
+
+data "google_compute_network" "default" {
+  name = "%{network_name}"
 }
 `, context)
 }

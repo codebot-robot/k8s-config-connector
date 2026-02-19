@@ -1,4 +1,4 @@
-TEST?=$$(go list ./... | grep -v github.com/hashicorp/terraform-provider-google-beta/scripts)
+TEST?=$$(go list -e ./... | grep -v github.com/hashicorp/terraform-provider-google-beta/scripts)
 WEBSITE_REPO=github.com/hashicorp/terraform-website
 PKG_NAME=google
 DIR_NAME=google-beta
@@ -8,11 +8,14 @@ default: build
 build: lint
 	go install
 
-test: lint
+test: lint testnolint
+
+# Used in CI to prevent lint failures from being interpreted as test failures
+testnolint:
 	go test $(TESTARGS) -timeout=30s $(TEST)
 
 testacc: lint
-	TF_ACC=1 TF_SCHEMA_PANIC_ON_ERROR=1 go test $(TEST) -v $(TESTARGS) -timeout 240m -ldflags="-X=github.com/hashicorp/terraform-provider-google-beta/version.ProviderVersion=acc"
+	TF_ACC_REFRESH_AFTER_APPLY=1 TF_ACC=1 TF_SCHEMA_PANIC_ON_ERROR=1 go test $(TEST) -v $(TESTARGS) -timeout 240m -ldflags="-X=github.com/hashicorp/terraform-provider-google-beta/version.ProviderVersion=acc"
 
 fmt:
 	@echo "==> Fixing source code with gofmt..."
@@ -20,7 +23,7 @@ fmt:
 
 # Currently required by tf-deploy compile
 fmtcheck:
-	@sh -c "'$(CURDIR)/scripts/gofmtcheck.sh'"
+	sh -c "'$(CURDIR)/scripts/gofmtcheck.sh'"
 
 vet:
 	go vet
@@ -45,5 +48,5 @@ endif
 docscheck:
 	@sh -c "'$(CURDIR)/scripts/docscheck.sh'"
 
-.PHONY: build test testacc fmt fmtcheck vet lint  errcheck test-compile website website-test docscheck
+.PHONY: build test testnolint testacc fmt fmtcheck vet lint test-compile website website-test docscheck
 

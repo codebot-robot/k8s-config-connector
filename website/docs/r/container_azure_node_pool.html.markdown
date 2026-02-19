@@ -23,7 +23,7 @@ description: |-
 An Anthos node pool running on Azure.
 
 For more information, see:
-* [Multicloud overview](https://cloud.google.com/anthos/clusters/docs/multi-cloud)
+* [Multicloud overview](https://cloud.google.com/kubernetes-engine/multi-cloud/docs)
 ## Example Usage - basic_azure_node_pool
 A basic example of a containerazure azure node pool
 ```hcl
@@ -100,6 +100,10 @@ resource "google_container_azure_node_pool" "primary" {
 
     tags = {
       owner = "mmv2"
+    }
+
+    labels = {
+      key_one = "label_one"
     }
 
     vm_size = "Standard_DS2_v2"
@@ -183,6 +187,10 @@ The `config` block supports:
   (Optional)
   (Beta only) The OS image type to use on node pool instances.
     
+* `labels` -
+  (Optional)
+  Optional. The initial labels assigned to nodes of this node pool. An object containing a list of "key": value pairs. Example: { "name": "wrench", "mass": "1.3kg", "count": "3" }.
+    
 * `proxy_config` -
   (Optional)
   Proxy configuration for outbound HTTP(S) traffic.
@@ -203,12 +211,6 @@ The `config` block supports:
   (Optional)
   Optional. The Azure VM size name. Example: `Standard_DS2_v2`. See (/anthos/clusters/docs/azure/reference/supported-vms) for options. When unspecified, it defaults to `Standard_DS2_v2`.
     
-The `ssh_config` block supports:
-    
-* `authorized_key` -
-  (Required)
-  The SSH public key data for VMs managed by Anthos. This accepts the authorized_keys file format used in OpenSSH according to the sshd(8) manual page.
-    
 The `max_pods_constraint` block supports:
     
 * `max_pods_per_node` -
@@ -220,6 +222,9 @@ The `max_pods_constraint` block supports:
 * `annotations` -
   (Optional)
   Optional. Annotations on the node pool. This field has the same restrictions as Kubernetes annotations. The total size of all keys and values combined is limited to 256k. Keys can have 2 segments: prefix (optional) and name (required), separated by a slash (/). Prefix must be a DNS subdomain. Name must be 63 characters or less, begin and end with alphanumerics, with dashes (-), underscores (_), dots (.), and alphanumerics between.
+
+**Note**: This field is non-authoritative, and will only manage the annotations present in your configuration.
+Please refer to the field `effective_annotations` for all of the annotations present on the resource.
   
 * `azure_availability_zone` -
   (Optional)
@@ -251,6 +256,12 @@ The `root_volume` block supports:
   (Optional)
   Optional. The size of the disk, in GiBs. When unspecified, a default value is provided. See the specific reference in the parent resource.
     
+The `ssh_config` block supports:
+    
+* `authorized_key` -
+  (Required)
+  The SSH public key data for VMs managed by Anthos. This accepts the authorized_keys file format used in OpenSSH according to the sshd(8) manual page.
+    
 The `management` block supports:
     
 * `auto_repair` -
@@ -265,6 +276,9 @@ In addition to the arguments listed above, the following computed attributes are
 
 * `create_time` -
   Output only. The time at which this node pool was created.
+  
+* `effective_annotations` -
+  All of annotations (key/value pairs) present on the resource in GCP, including the annotations configured through Terraform, other clients and services.
   
 * `etag` -
   Allows clients to perform consistent read-modify-writes through optimistic concurrency control. May be sent on update and delete requests to ensure the client has an up-to-date value before proceeding.
@@ -293,6 +307,21 @@ This resource provides the following
 ## Import
 
 NodePool can be imported using any of these accepted formats:
+* `projects/{{project}}/locations/{{location}}/azureClusters/{{cluster}}/azureNodePools/{{name}}`
+* `{{project}}/{{location}}/{{cluster}}/{{name}}`
+* `{{location}}/{{cluster}}/{{name}}`
+
+In Terraform v1.5.0 and later, use an [`import` block](https://developer.hashicorp.com/terraform/language/import) to import NodePool using one of the formats above. For example:
+
+
+```tf
+import {
+  id = "projects/{{project}}/locations/{{location}}/azureClusters/{{cluster}}/azureNodePools/{{name}}"
+  to = google_container_azure_node_pool.default
+}
+```
+
+When using the [`terraform import` command](https://developer.hashicorp.com/terraform/cli/commands/import), NodePool can be imported using one of the formats above. For example:
 
 ```
 $ terraform import google_container_azure_node_pool.default projects/{{project}}/locations/{{location}}/azureClusters/{{cluster}}/azureNodePools/{{name}}

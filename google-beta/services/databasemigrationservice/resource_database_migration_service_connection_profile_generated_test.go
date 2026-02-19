@@ -19,15 +19,35 @@ package databasemigrationservice_test
 
 import (
 	"fmt"
+	"log"
+	"strconv"
 	"strings"
 	"testing"
+	"time"
 
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/terraform"
 
 	"github.com/hashicorp/terraform-provider-google-beta/google-beta/acctest"
+	"github.com/hashicorp/terraform-provider-google-beta/google-beta/envvar"
 	"github.com/hashicorp/terraform-provider-google-beta/google-beta/tpgresource"
 	transport_tpg "github.com/hashicorp/terraform-provider-google-beta/google-beta/transport"
+
+	"google.golang.org/api/googleapi"
+)
+
+var (
+	_ = fmt.Sprintf
+	_ = log.Print
+	_ = strconv.Atoi
+	_ = strings.Trim
+	_ = time.Now
+	_ = resource.TestMain
+	_ = terraform.NewState
+	_ = envvar.TestEnvVar
+	_ = tpgresource.SetLabels
+	_ = transport_tpg.Config{}
+	_ = googleapi.Error{}
 )
 
 func TestAccDatabaseMigrationServiceConnectionProfile_databaseMigrationServiceConnectionProfileCloudsqlExample(t *testing.T) {
@@ -49,7 +69,7 @@ func TestAccDatabaseMigrationServiceConnectionProfile_databaseMigrationServiceCo
 				ResourceName:            "google_database_migration_service_connection_profile.cloudsqlprofile",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"connection_profile_id", "location", "mysql.0.password", "mysql.0.ssl.0.ca_certificate", "mysql.0.ssl.0.client_certificate", "mysql.0.ssl.0.client_key"},
+				ImportStateVerifyIgnore: []string{"connection_profile_id", "labels", "location", "mysql.0.password", "mysql.0.ssl.0.ca_certificate", "mysql.0.ssl.0.client_certificate", "mysql.0.ssl.0.client_key", "terraform_labels"},
 			},
 		},
 	})
@@ -103,6 +123,7 @@ resource "google_database_migration_service_connection_profile" "cloudsqlprofile
       client_key         = google_sql_ssl_cert.sql_client_cert.private_key
       client_certificate = google_sql_ssl_cert.sql_client_cert.cert
       ca_certificate     = google_sql_ssl_cert.sql_client_cert.server_ca_cert
+      type = "SERVER_CLIENT"
     }
     cloud_sql_id = "tf-test-my-database%{random_suffix}"
   }
@@ -164,7 +185,7 @@ func TestAccDatabaseMigrationServiceConnectionProfile_databaseMigrationServiceCo
 				ResourceName:            "google_database_migration_service_connection_profile.postgresprofile",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"connection_profile_id", "location", "postgresql.0.password", "postgresql.0.ssl.0.ca_certificate", "postgresql.0.ssl.0.client_certificate", "postgresql.0.ssl.0.client_key"},
+				ImportStateVerifyIgnore: []string{"connection_profile_id", "labels", "location", "postgresql.0.password", "postgresql.0.ssl.0.ca_certificate", "postgresql.0.ssl.0.client_certificate", "postgresql.0.ssl.0.client_key", "terraform_labels"},
 			},
 		},
 	})
@@ -213,6 +234,7 @@ resource "google_database_migration_service_connection_profile" "postgresprofile
       client_key = google_sql_ssl_cert.sql_client_cert.private_key
       client_certificate = google_sql_ssl_cert.sql_client_cert.cert
       ca_certificate = google_sql_ssl_cert.sql_client_cert.server_ca_cert
+      type = "SERVER_CLIENT"
     }
     cloud_sql_id = "tf-test-my-database%{random_suffix}"
   }
@@ -221,11 +243,10 @@ resource "google_database_migration_service_connection_profile" "postgresprofile
 `, context)
 }
 
-func TestAccDatabaseMigrationServiceConnectionProfile_databaseMigrationServiceConnectionProfileAlloydbExample(t *testing.T) {
+func TestAccDatabaseMigrationServiceConnectionProfile_databaseMigrationServiceConnectionProfilePostgresNoSslExample(t *testing.T) {
 	t.Parallel()
 
 	context := map[string]interface{}{
-		"network_name":  acctest.BootstrapSharedTestNetwork(t, "profile-alloydb"),
 		"random_suffix": acctest.RandString(t, 10),
 	}
 
@@ -235,75 +256,334 @@ func TestAccDatabaseMigrationServiceConnectionProfile_databaseMigrationServiceCo
 		CheckDestroy:             testAccCheckDatabaseMigrationServiceConnectionProfileDestroyProducer(t),
 		Steps: []resource.TestStep{
 			{
-				Config: testAccDatabaseMigrationServiceConnectionProfile_databaseMigrationServiceConnectionProfileAlloydbExample(context),
+				Config: testAccDatabaseMigrationServiceConnectionProfile_databaseMigrationServiceConnectionProfilePostgresNoSslExample(context),
 			},
 			{
-				ResourceName:            "google_database_migration_service_connection_profile.alloydbprofile",
+				ResourceName:            "google_database_migration_service_connection_profile.postgresprofile",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"connection_profile_id", "location", "alloydb.0.settings.0.initial_user.0.password"},
+				ImportStateVerifyIgnore: []string{"connection_profile_id", "labels", "location", "postgresql.0.password", "postgresql.0.ssl.0.ca_certificate", "postgresql.0.ssl.0.client_certificate", "postgresql.0.ssl.0.client_key", "terraform_labels"},
 			},
 		},
 	})
 }
 
-func testAccDatabaseMigrationServiceConnectionProfile_databaseMigrationServiceConnectionProfileAlloydbExample(context map[string]interface{}) string {
+func testAccDatabaseMigrationServiceConnectionProfile_databaseMigrationServiceConnectionProfilePostgresNoSslExample(context map[string]interface{}) string {
 	return acctest.Nprintf(`
-data "google_project" "project" {
+resource "google_sql_database_instance" "postgresqldb" {
+  name             = "tf-test-my-database%{random_suffix}"
+  database_version = "POSTGRES_12"
+  settings {
+    tier = "db-custom-2-13312"
+  }
+  deletion_protection = false
 }
 
-data "google_compute_network" "default" {
-  name = "%{network_name}"
+resource "google_sql_ssl_cert" "sql_client_cert" {
+  common_name = "tf-test-my-cert%{random_suffix}"
+  instance    = google_sql_database_instance.postgresqldb.name
+
+  depends_on = [google_sql_database_instance.postgresqldb]
 }
 
-resource "google_compute_global_address" "private_ip_alloc" {
-  name          =  "tf-test-private-ip-alloc%{random_suffix}"
-  address_type  = "INTERNAL"
-  purpose       = "VPC_PEERING"
-  prefix_length = 16
-  network       = data.google_compute_network.default.id
+resource "google_sql_user" "sqldb_user" {
+  name     = "tf-test-my-username%{random_suffix}"
+  instance = google_sql_database_instance.postgresqldb.name
+  password = "tf-test-my-password%{random_suffix}"
+
+
+  depends_on = [google_sql_ssl_cert.sql_client_cert]
 }
 
-resource "google_service_networking_connection" "vpc_connection" {
-  network                 = data.google_compute_network.default.id
-  service                 = "servicenetworking.googleapis.com"
-  reserved_peering_ranges = [google_compute_global_address.private_ip_alloc.name]
-}
-
-
-resource "google_database_migration_service_connection_profile" "alloydbprofile" {
+resource "google_database_migration_service_connection_profile" "postgresprofile" {
   location = "us-central1"
   connection_profile_id = "tf-test-my-profileid%{random_suffix}"
   display_name = "tf-test-my-profileid%{random_suffix}_display"
   labels = { 
     foo = "bar" 
   }
-  alloydb {
-    cluster_id = "tf-test-dbmsalloycluster%{random_suffix}"
-    settings {
-      initial_user {
-        user = "alloyuser%{random_suffix}"
-        password = "alloypass%{random_suffix}"
-      }
-      vpc_network = data.google_compute_network.default.id
-      labels  = { 
-        alloyfoo = "alloybar" 
-      }
-      primary_instance_settings {
-        id = "priminstid"
-        machine_config {
-          cpu_count = 2
-        }
-        database_flags = { 
-        }
-        labels = { 
-          alloysinstfoo = "allowinstbar" 
-        }
-      }
+  postgresql {
+    host = google_sql_database_instance.postgresqldb.ip_address.0.ip_address
+    port = 5432
+    username = google_sql_user.sqldb_user.name
+    password = google_sql_user.sqldb_user.password
+    ssl {
+      type = "NONE"
     }
+    cloud_sql_id = "tf-test-my-database%{random_suffix}"
+  }
+  depends_on = [google_sql_user.sqldb_user]
+}
+`, context)
+}
+
+func TestAccDatabaseMigrationServiceConnectionProfile_databaseMigrationServiceConnectionProfilePostgresRequiredSslExample(t *testing.T) {
+	t.Parallel()
+
+	context := map[string]interface{}{
+		"random_suffix": acctest.RandString(t, 10),
+	}
+
+	acctest.VcrTest(t, resource.TestCase{
+		PreCheck:                 func() { acctest.AccTestPreCheck(t) },
+		ProtoV5ProviderFactories: acctest.ProtoV5ProviderFactories(t),
+		CheckDestroy:             testAccCheckDatabaseMigrationServiceConnectionProfileDestroyProducer(t),
+		Steps: []resource.TestStep{
+			{
+				Config: testAccDatabaseMigrationServiceConnectionProfile_databaseMigrationServiceConnectionProfilePostgresRequiredSslExample(context),
+			},
+			{
+				ResourceName:            "google_database_migration_service_connection_profile.postgresprofile",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"connection_profile_id", "labels", "location", "postgresql.0.password", "postgresql.0.ssl.0.ca_certificate", "postgresql.0.ssl.0.client_certificate", "postgresql.0.ssl.0.client_key", "terraform_labels"},
+			},
+		},
+	})
+}
+
+func testAccDatabaseMigrationServiceConnectionProfile_databaseMigrationServiceConnectionProfilePostgresRequiredSslExample(context map[string]interface{}) string {
+	return acctest.Nprintf(`
+resource "google_sql_database_instance" "postgresqldb" {
+  name             = "tf-test-my-database%{random_suffix}"
+  database_version = "POSTGRES_12"
+  settings {
+    tier = "db-custom-2-13312"
+  }
+  deletion_protection = false
+}
+
+resource "google_sql_ssl_cert" "sql_client_cert" {
+  common_name = "tf-test-my-cert%{random_suffix}"
+  instance    = google_sql_database_instance.postgresqldb.name
+
+  depends_on = [google_sql_database_instance.postgresqldb]
+}
+
+resource "google_sql_user" "sqldb_user" {
+  name     = "tf-test-my-username%{random_suffix}"
+  instance = google_sql_database_instance.postgresqldb.name
+  password = "tf-test-my-password%{random_suffix}"
+
+
+  depends_on = [google_sql_ssl_cert.sql_client_cert]
+}
+
+resource "google_database_migration_service_connection_profile" "postgresprofile" {
+  location = "us-central1"
+  connection_profile_id = "tf-test-my-profileid%{random_suffix}"
+  display_name = "tf-test-my-profileid%{random_suffix}_display"
+  labels = { 
+    foo = "bar" 
+  }
+  postgresql {
+    host = google_sql_database_instance.postgresqldb.ip_address.0.ip_address
+    port = 5432
+    username = google_sql_user.sqldb_user.name
+    password = google_sql_user.sqldb_user.password
+    ssl {
+      type = "REQUIRED"
+    }
+    cloud_sql_id = "tf-test-my-database%{random_suffix}"
+  }
+  depends_on = [google_sql_user.sqldb_user]
+}
+`, context)
+}
+
+func TestAccDatabaseMigrationServiceConnectionProfile_databaseMigrationServiceConnectionProfileExistingMysqlExample(t *testing.T) {
+	t.Parallel()
+
+	context := map[string]interface{}{
+		"random_suffix": acctest.RandString(t, 10),
+	}
+
+	acctest.VcrTest(t, resource.TestCase{
+		PreCheck:                 func() { acctest.AccTestPreCheck(t) },
+		ProtoV5ProviderFactories: acctest.ProtoV5ProviderFactories(t),
+		CheckDestroy:             testAccCheckDatabaseMigrationServiceConnectionProfileDestroyProducer(t),
+		Steps: []resource.TestStep{
+			{
+				Config: testAccDatabaseMigrationServiceConnectionProfile_databaseMigrationServiceConnectionProfileExistingMysqlExample(context),
+			},
+			{
+				ResourceName:            "google_database_migration_service_connection_profile.existing-mysql",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"connection_profile_id", "labels", "location", "terraform_labels"},
+			},
+		},
+	})
+}
+
+func testAccDatabaseMigrationServiceConnectionProfile_databaseMigrationServiceConnectionProfileExistingMysqlExample(context map[string]interface{}) string {
+	return acctest.Nprintf(`
+data "google_project" "project" {
+}
+
+resource "google_sql_database_instance" "destination_csql" {
+  name             = "tf-test-destination-csql%{random_suffix}"
+  database_version = "MYSQL_5_7"
+  settings {
+    tier = "db-n1-standard-1"
+    deletion_protection_enabled = false
+  }
+  deletion_protection = false
+}
+
+resource "google_database_migration_service_connection_profile" "existing-mysql" {
+  location              = "us-central1"
+  connection_profile_id = "tf-test-destination-cp%{random_suffix}"
+  display_name          = "tf-test-destination-cp%{random_suffix}_display"
+  labels = {
+    foo = "bar"
+  }
+  mysql {
+    cloud_sql_id = "tf-test-destination-csql%{random_suffix}"
+  }
+  depends_on = [google_sql_database_instance.destination_csql]
+}
+`, context)
+}
+
+func TestAccDatabaseMigrationServiceConnectionProfile_databaseMigrationServiceConnectionProfileExistingPostgresExample(t *testing.T) {
+	t.Parallel()
+
+	context := map[string]interface{}{
+		"random_suffix": acctest.RandString(t, 10),
+	}
+
+	acctest.VcrTest(t, resource.TestCase{
+		PreCheck:                 func() { acctest.AccTestPreCheck(t) },
+		ProtoV5ProviderFactories: acctest.ProtoV5ProviderFactories(t),
+		CheckDestroy:             testAccCheckDatabaseMigrationServiceConnectionProfileDestroyProducer(t),
+		Steps: []resource.TestStep{
+			{
+				Config: testAccDatabaseMigrationServiceConnectionProfile_databaseMigrationServiceConnectionProfileExistingPostgresExample(context),
+			},
+			{
+				ResourceName:            "google_database_migration_service_connection_profile.existing-psql",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"connection_profile_id", "labels", "location", "terraform_labels"},
+			},
+		},
+	})
+}
+
+func testAccDatabaseMigrationServiceConnectionProfile_databaseMigrationServiceConnectionProfileExistingPostgresExample(context map[string]interface{}) string {
+	return acctest.Nprintf(`
+data "google_project" "project" {
+}
+
+resource "google_sql_database_instance" "destination_csql" {
+  name             = "tf-test-destination-csql%{random_suffix}"
+  database_version = "POSTGRES_15"
+  settings {
+    tier = "db-custom-2-13312"
+    deletion_protection_enabled = false
+  }
+  deletion_protection = false
+}
+
+resource "google_database_migration_service_connection_profile" "existing-psql" {
+  location              = "us-central1"
+  connection_profile_id = "tf-test-destination-cp%{random_suffix}"
+  display_name          = "tf-test-destination-cp%{random_suffix}_display"
+  labels = {
+    foo = "bar"
+  }
+  postgresql {
+    cloud_sql_id = "tf-test-destination-csql%{random_suffix}"
+  }
+  depends_on = [google_sql_database_instance.destination_csql]
+}
+`, context)
+}
+
+func TestAccDatabaseMigrationServiceConnectionProfile_databaseMigrationServiceConnectionProfileExistingAlloydbExample(t *testing.T) {
+	t.Parallel()
+
+	context := map[string]interface{}{
+		"random_suffix": acctest.RandString(t, 10),
+	}
+
+	acctest.VcrTest(t, resource.TestCase{
+		PreCheck:                 func() { acctest.AccTestPreCheck(t) },
+		ProtoV5ProviderFactories: acctest.ProtoV5ProviderFactories(t),
+		CheckDestroy:             testAccCheckDatabaseMigrationServiceConnectionProfileDestroyProducer(t),
+		Steps: []resource.TestStep{
+			{
+				Config: testAccDatabaseMigrationServiceConnectionProfile_databaseMigrationServiceConnectionProfileExistingAlloydbExample(context),
+			},
+			{
+				ResourceName:            "google_database_migration_service_connection_profile.existing-alloydb",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"connection_profile_id", "labels", "location", "terraform_labels"},
+			},
+		},
+	})
+}
+
+func testAccDatabaseMigrationServiceConnectionProfile_databaseMigrationServiceConnectionProfileExistingAlloydbExample(context map[string]interface{}) string {
+	return acctest.Nprintf(`
+data "google_project" "project" {
+}
+
+resource "google_alloydb_cluster" "destination_alloydb" {
+  cluster_id = "tf-test-destination-alloydb%{random_suffix}"
+  location   = "us-central1"
+  network_config {
+    network = google_compute_network.default.id
+  }
+  database_version = "POSTGRES_15"
+
+  initial_user {
+    user     = "tf-test-destination-alloydb%{random_suffix}"
+    password = "tf-test-destination-alloydb%{random_suffix}"
   }
 
+  deletion_protection = false
+}
+
+resource "google_alloydb_instance" "destination_alloydb_primary" {
+  cluster       = google_alloydb_cluster.destination_alloydb.name
+  instance_id   = "tf-test-destination-alloydb%{random_suffix}-primary"
+  instance_type = "PRIMARY"
+
   depends_on = [google_service_networking_connection.vpc_connection]
+}
+
+resource "google_compute_global_address" "private_ip_alloc" {
+  name          =  "tf-test-destination-alloydb%{random_suffix}"
+  address_type  = "INTERNAL"
+  purpose       = "VPC_PEERING"
+  prefix_length = 16
+  network       = google_compute_network.default.id
+}
+
+resource "google_service_networking_connection" "vpc_connection" {
+  network                 = google_compute_network.default.id
+  service                 = "servicenetworking.googleapis.com"
+  reserved_peering_ranges = [google_compute_global_address.private_ip_alloc.name]
+}
+
+resource "google_compute_network" "default" {
+  name = "tf-test-destination-alloydb%{random_suffix}"
+}
+
+resource "google_database_migration_service_connection_profile" "existing-alloydb" {
+  location              = "us-central1"
+  connection_profile_id = "tf-test-destination-cp%{random_suffix}"
+  display_name          = "tf-test-destination-cp%{random_suffix}_display"
+  labels = {
+    foo = "bar"
+  }
+  postgresql {
+    alloydb_cluster_id = "tf-test-destination-alloydb%{random_suffix}"
+  }
+  depends_on = [google_alloydb_cluster.destination_alloydb, google_alloydb_instance.destination_alloydb_primary]
 }
 `, context)
 }

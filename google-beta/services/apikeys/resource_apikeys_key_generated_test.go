@@ -23,8 +23,8 @@ import (
 	"fmt"
 	dcl "github.com/GoogleCloudPlatform/declarative-resource-client-library/dcl"
 	apikeys "github.com/GoogleCloudPlatform/declarative-resource-client-library/services/google/apikeys/beta"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/terraform"
 	"strings"
 	"testing"
 
@@ -190,13 +190,38 @@ func TestAccApikeysKey_ServerKey(t *testing.T) {
 		},
 	})
 }
+func TestAccApikeysKey_ServiceAccountKeyHandWritten(t *testing.T) {
+	t.Parallel()
+
+	context := map[string]interface{}{
+		"billing_acct":  envvar.GetTestBillingAccountFromEnv(t),
+		"org_id":        envvar.GetTestOrgFromEnv(t),
+		"project_name":  envvar.GetTestProjectFromEnv(),
+		"random_suffix": acctest.RandString(t, 10),
+	}
+
+	acctest.VcrTest(t, resource.TestCase{
+		PreCheck:                 func() { acctest.AccTestPreCheck(t) },
+		ProtoV5ProviderFactories: acctest.ProtoV5ProviderFactories(t),
+		CheckDestroy:             testAccCheckApikeysKeyDestroyProducer(t),
+		Steps: []resource.TestStep{
+			{
+				Config: testAccApikeysKey_ServiceAccountKeyHandWritten(context),
+			},
+			{
+				ResourceName:      "google_apikeys_key.primary",
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+		},
+	})
+}
 
 func testAccApikeysKey_AndroidKey(context map[string]interface{}) string {
 	return acctest.Nprintf(`
 resource "google_apikeys_key" "primary" {
   name         = "tf-test-key%{random_suffix}"
   display_name = "sample-key"
-  project      = google_project.basic.name
 
   restrictions {
     android_key_restrictions {
@@ -213,12 +238,6 @@ resource "google_apikeys_key" "primary" {
   }
 }
 
-resource "google_project" "basic" {
-  project_id = "tf-test-app%{random_suffix}"
-  name       = "tf-test-app%{random_suffix}"
-  org_id     = "%{org_id}"
-}
-
 
 `, context)
 }
@@ -228,7 +247,6 @@ func testAccApikeysKey_AndroidKeyUpdate0(context map[string]interface{}) string 
 resource "google_apikeys_key" "primary" {
   name         = "tf-test-key%{random_suffix}"
   display_name = "sample-key"
-  project      = google_project.basic.name
 
   restrictions {
     android_key_restrictions {
@@ -245,12 +263,6 @@ resource "google_apikeys_key" "primary" {
   }
 }
 
-resource "google_project" "basic" {
-  project_id = "tf-test-app%{random_suffix}"
-  name       = "tf-test-app%{random_suffix}"
-  org_id     = "%{org_id}"
-}
-
 
 `, context)
 }
@@ -260,7 +272,6 @@ func testAccApikeysKey_BasicKey(context map[string]interface{}) string {
 resource "google_apikeys_key" "primary" {
   name         = "tf-test-key%{random_suffix}"
   display_name = "sample-key"
-  project      = google_project.basic.name
 
   restrictions {
     api_targets {
@@ -274,12 +285,6 @@ resource "google_apikeys_key" "primary" {
   }
 }
 
-resource "google_project" "basic" {
-  project_id = "tf-test-app%{random_suffix}"
-  name       = "tf-test-app%{random_suffix}"
-  org_id     = "%{org_id}"
-}
-
 
 `, context)
 }
@@ -289,7 +294,6 @@ func testAccApikeysKey_BasicKeyUpdate0(context map[string]interface{}) string {
 resource "google_apikeys_key" "primary" {
   name         = "tf-test-key%{random_suffix}"
   display_name = "sample-key-update"
-  project      = google_project.basic.name
 
   restrictions {
     api_targets {
@@ -303,12 +307,6 @@ resource "google_apikeys_key" "primary" {
   }
 }
 
-resource "google_project" "basic" {
-  project_id = "tf-test-app%{random_suffix}"
-  name       = "tf-test-app%{random_suffix}"
-  org_id     = "%{org_id}"
-}
-
 
 `, context)
 }
@@ -318,7 +316,6 @@ func testAccApikeysKey_IosKey(context map[string]interface{}) string {
 resource "google_apikeys_key" "primary" {
   name         = "tf-test-key%{random_suffix}"
   display_name = "sample-key"
-  project      = google_project.basic.name
 
   restrictions {
     api_targets {
@@ -332,12 +329,6 @@ resource "google_apikeys_key" "primary" {
   }
 }
 
-resource "google_project" "basic" {
-  project_id = "tf-test-app%{random_suffix}"
-  name       = "tf-test-app%{random_suffix}"
-  org_id     = "%{org_id}"
-}
-
 
 `, context)
 }
@@ -347,7 +338,6 @@ func testAccApikeysKey_IosKeyUpdate0(context map[string]interface{}) string {
 resource "google_apikeys_key" "primary" {
   name         = "tf-test-key%{random_suffix}"
   display_name = "sample-key"
-  project      = google_project.basic.name
 
   restrictions {
     api_targets {
@@ -361,12 +351,6 @@ resource "google_apikeys_key" "primary" {
   }
 }
 
-resource "google_project" "basic" {
-  project_id = "tf-test-app%{random_suffix}"
-  name       = "tf-test-app%{random_suffix}"
-  org_id     = "%{org_id}"
-}
-
 
 `, context)
 }
@@ -376,13 +360,6 @@ func testAccApikeysKey_MinimalKey(context map[string]interface{}) string {
 resource "google_apikeys_key" "primary" {
   name         = "tf-test-key%{random_suffix}"
   display_name = "sample-key"
-  project      = google_project.basic.name
-}
-
-resource "google_project" "basic" {
-  project_id = "tf-test-app%{random_suffix}"
-  name       = "tf-test-app%{random_suffix}"
-  org_id     = "%{org_id}"
 }
 
 
@@ -394,7 +371,6 @@ func testAccApikeysKey_ServerKey(context map[string]interface{}) string {
 resource "google_apikeys_key" "primary" {
   name         = "tf-test-key%{random_suffix}"
   display_name = "sample-key"
-  project      = google_project.basic.name
 
   restrictions {
     api_targets {
@@ -408,12 +384,6 @@ resource "google_apikeys_key" "primary" {
   }
 }
 
-resource "google_project" "basic" {
-  project_id = "tf-test-app%{random_suffix}"
-  name       = "tf-test-app%{random_suffix}"
-  org_id     = "%{org_id}"
-}
-
 
 `, context)
 }
@@ -423,7 +393,6 @@ func testAccApikeysKey_ServerKeyUpdate0(context map[string]interface{}) string {
 resource "google_apikeys_key" "primary" {
   name         = "tf-test-key%{random_suffix}"
   display_name = "sample-key"
-  project      = google_project.basic.name
 
   restrictions {
     api_targets {
@@ -437,13 +406,31 @@ resource "google_apikeys_key" "primary" {
   }
 }
 
-resource "google_project" "basic" {
-  project_id = "tf-test-app%{random_suffix}"
-  name       = "tf-test-app%{random_suffix}"
-  org_id     = "%{org_id}"
+
+`, context)
 }
 
+func testAccApikeysKey_ServiceAccountKeyHandWritten(context map[string]interface{}) string {
+	return acctest.Nprintf(`
+resource "google_apikeys_key" "primary" {
+  name                  = "tf-test-key%{random_suffix}"
+  display_name          = "sample-key"
+  project               = google_project.project.project_id
+  service_account_email = google_service_account.key_service_account.email
+}
 
+resource "google_project" "project" {
+  project_id      = "tf-test-app%{random_suffix}"
+  name            = "tf-test-app%{random_suffix}"
+  org_id          = "%{org_id}"
+  deletion_policy = "DELETE"
+}
+
+resource "google_service_account" "key_service_account" {
+  account_id   = "tf-test-app%{random_suffix}"
+  project      = google_project.project.project_id
+  display_name = "Test Service Account"
+}
 `, context)
 }
 
@@ -465,11 +452,12 @@ func testAccCheckApikeysKeyDestroyProducer(t *testing.T) func(s *terraform.State
 			}
 
 			obj := &apikeys.Key{
-				Name:        dcl.String(rs.Primary.Attributes["name"]),
-				DisplayName: dcl.String(rs.Primary.Attributes["display_name"]),
-				Project:     dcl.StringOrNil(rs.Primary.Attributes["project"]),
-				KeyString:   dcl.StringOrNil(rs.Primary.Attributes["key_string"]),
-				Uid:         dcl.StringOrNil(rs.Primary.Attributes["uid"]),
+				Name:                dcl.String(rs.Primary.Attributes["name"]),
+				DisplayName:         dcl.String(rs.Primary.Attributes["display_name"]),
+				Project:             dcl.StringOrNil(rs.Primary.Attributes["project"]),
+				ServiceAccountEmail: dcl.String(rs.Primary.Attributes["service_account_email"]),
+				KeyString:           dcl.StringOrNil(rs.Primary.Attributes["key_string"]),
+				Uid:                 dcl.StringOrNil(rs.Primary.Attributes["uid"]),
 			}
 
 			client := transport_tpg.NewDCLApikeysClient(config, config.UserAgent, billingProject, 0)

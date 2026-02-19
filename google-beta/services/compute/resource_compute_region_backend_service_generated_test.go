@@ -19,15 +19,35 @@ package compute_test
 
 import (
 	"fmt"
+	"log"
+	"strconv"
 	"strings"
 	"testing"
+	"time"
 
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/terraform"
 
 	"github.com/hashicorp/terraform-provider-google-beta/google-beta/acctest"
+	"github.com/hashicorp/terraform-provider-google-beta/google-beta/envvar"
 	"github.com/hashicorp/terraform-provider-google-beta/google-beta/tpgresource"
 	transport_tpg "github.com/hashicorp/terraform-provider-google-beta/google-beta/transport"
+
+	"google.golang.org/api/googleapi"
+)
+
+var (
+	_ = fmt.Sprintf
+	_ = log.Print
+	_ = strconv.Atoi
+	_ = strings.Trim
+	_ = time.Now
+	_ = resource.TestMain
+	_ = terraform.NewState
+	_ = envvar.TestEnvVar
+	_ = tpgresource.SetLabels
+	_ = transport_tpg.Config{}
+	_ = googleapi.Error{}
 )
 
 func TestAccComputeRegionBackendService_regionBackendServiceBasicExample(t *testing.T) {
@@ -49,7 +69,7 @@ func TestAccComputeRegionBackendService_regionBackendServiceBasicExample(t *test
 				ResourceName:            "google_compute_region_backend_service.default",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"network", "region"},
+				ImportStateVerifyIgnore: []string{"iap.0.oauth2_client_secret", "network", "params", "region"},
 			},
 		},
 	})
@@ -77,6 +97,47 @@ resource "google_compute_health_check" "default" {
 `, context)
 }
 
+func TestAccComputeRegionBackendService_regionBackendServiceExternalIapExample(t *testing.T) {
+	t.Parallel()
+
+	context := map[string]interface{}{
+		"random_suffix": acctest.RandString(t, 10),
+	}
+
+	acctest.VcrTest(t, resource.TestCase{
+		PreCheck:                 func() { acctest.AccTestPreCheck(t) },
+		ProtoV5ProviderFactories: acctest.ProtoV5ProviderFactories(t),
+		CheckDestroy:             testAccCheckComputeRegionBackendServiceDestroyProducer(t),
+		Steps: []resource.TestStep{
+			{
+				Config: testAccComputeRegionBackendService_regionBackendServiceExternalIapExample(context),
+			},
+			{
+				ResourceName:            "google_compute_region_backend_service.default",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"iap.0.oauth2_client_secret", "network", "params", "region"},
+			},
+		},
+	})
+}
+
+func testAccComputeRegionBackendService_regionBackendServiceExternalIapExample(context map[string]interface{}) string {
+	return acctest.Nprintf(`
+resource "google_compute_region_backend_service" "default" {
+  name                  = "tf-test-tf-test-region-service-external%{random_suffix}"
+  region                = "us-central1"
+  protocol              = "HTTP"
+  load_balancing_scheme = "EXTERNAL"
+  iap {
+    enabled              = true
+    oauth2_client_id     = "abc"
+    oauth2_client_secret = "xyz"
+  }
+}
+`, context)
+}
+
 func TestAccComputeRegionBackendService_regionBackendServiceCacheExample(t *testing.T) {
 	t.Parallel()
 
@@ -96,7 +157,7 @@ func TestAccComputeRegionBackendService_regionBackendServiceCacheExample(t *test
 				ResourceName:            "google_compute_region_backend_service.default",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"network", "region"},
+				ImportStateVerifyIgnore: []string{"iap.0.oauth2_client_secret", "network", "params", "region"},
 			},
 		},
 	})
@@ -157,7 +218,7 @@ func TestAccComputeRegionBackendService_regionBackendServiceIlbRoundRobinExample
 				ResourceName:            "google_compute_region_backend_service.default",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"network", "region"},
+				ImportStateVerifyIgnore: []string{"iap.0.oauth2_client_secret", "network", "params", "region"},
 			},
 		},
 	})
@@ -202,7 +263,7 @@ func TestAccComputeRegionBackendService_regionBackendServiceExternalExample(t *t
 				ResourceName:            "google_compute_region_backend_service.default",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"network", "region"},
+				ImportStateVerifyIgnore: []string{"iap.0.oauth2_client_secret", "network", "params", "region"},
 			},
 		},
 	})
@@ -250,7 +311,7 @@ func TestAccComputeRegionBackendService_regionBackendServiceExternalWeightedExam
 				ResourceName:            "google_compute_region_backend_service.default",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"network", "region"},
+				ImportStateVerifyIgnore: []string{"iap.0.oauth2_client_secret", "network", "params", "region"},
 			},
 		},
 	})
@@ -297,7 +358,7 @@ func TestAccComputeRegionBackendService_regionBackendServiceIlbRingHashExample(t
 				ResourceName:            "google_compute_region_backend_service.default",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"network", "region"},
+				ImportStateVerifyIgnore: []string{"iap.0.oauth2_client_secret", "network", "params", "region"},
 			},
 		},
 	})
@@ -339,6 +400,63 @@ resource "google_compute_health_check" "health_check" {
 `, context)
 }
 
+func TestAccComputeRegionBackendService_regionBackendServiceIlbStatefulSessionAffinityExample(t *testing.T) {
+	t.Parallel()
+
+	context := map[string]interface{}{
+		"random_suffix": acctest.RandString(t, 10),
+	}
+
+	acctest.VcrTest(t, resource.TestCase{
+		PreCheck:                 func() { acctest.AccTestPreCheck(t) },
+		ProtoV5ProviderFactories: acctest.ProtoV5ProviderBetaFactories(t),
+		CheckDestroy:             testAccCheckComputeRegionBackendServiceDestroyProducer(t),
+		Steps: []resource.TestStep{
+			{
+				Config: testAccComputeRegionBackendService_regionBackendServiceIlbStatefulSessionAffinityExample(context),
+			},
+			{
+				ResourceName:            "google_compute_region_backend_service.default",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"iap.0.oauth2_client_secret", "network", "params", "region"},
+			},
+		},
+	})
+}
+
+func testAccComputeRegionBackendService_regionBackendServiceIlbStatefulSessionAffinityExample(context map[string]interface{}) string {
+	return acctest.Nprintf(`
+resource "google_compute_region_backend_service" "default" {
+  provider = google-beta
+
+  region = "us-central1"
+  name = "tf-test-region-service%{random_suffix}"
+  health_checks = [google_compute_health_check.health_check.id]
+  load_balancing_scheme = "INTERNAL_MANAGED"
+  locality_lb_policy = "RING_HASH"
+  session_affinity = "STRONG_COOKIE_AFFINITY"
+  protocol = "HTTP"
+  
+  strong_session_affinity_cookie {
+    ttl {
+      seconds = 11
+      nanos = 1111
+    }
+    name = "mycookie"
+  }  
+}
+
+resource "google_compute_health_check" "health_check" {
+  provider = google-beta
+  name               = "tf-test-rbs-health-check%{random_suffix}"
+  http_health_check {
+    port = 80
+  }
+}
+`, context)
+}
+
 func TestAccComputeRegionBackendService_regionBackendServiceBalancingModeExample(t *testing.T) {
 	t.Parallel()
 
@@ -358,7 +476,7 @@ func TestAccComputeRegionBackendService_regionBackendServiceBalancingModeExample
 				ResourceName:            "google_compute_region_backend_service.default",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"network", "region"},
+				ImportStateVerifyIgnore: []string{"iap.0.oauth2_client_secret", "network", "params", "region"},
 			},
 		},
 	})
@@ -377,7 +495,7 @@ resource "google_compute_region_backend_service" "default" {
 
   region      = "us-central1"
   name        = "tf-test-region-service%{random_suffix}"
-  protocol    = "HTTP"
+  protocol    = "H2C"
   timeout_sec = 10
 
   health_checks = [google_compute_region_health_check.default.id]
@@ -459,7 +577,7 @@ func TestAccComputeRegionBackendService_regionBackendServiceConnectionTrackingEx
 				ResourceName:            "google_compute_region_backend_service.default",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"network", "region"},
+				ImportStateVerifyIgnore: []string{"iap.0.oauth2_client_secret", "network", "params", "region"},
 			},
 		},
 	})
@@ -492,6 +610,379 @@ resource "google_compute_region_health_check" "health_check" {
   tcp_health_check {
     port = 22
   }
+}
+`, context)
+}
+
+func TestAccComputeRegionBackendService_regionBackendServiceIpAddressSelectionPolicyExample(t *testing.T) {
+	t.Parallel()
+
+	context := map[string]interface{}{
+		"random_suffix": acctest.RandString(t, 10),
+	}
+
+	acctest.VcrTest(t, resource.TestCase{
+		PreCheck:                 func() { acctest.AccTestPreCheck(t) },
+		ProtoV5ProviderFactories: acctest.ProtoV5ProviderFactories(t),
+		CheckDestroy:             testAccCheckComputeRegionBackendServiceDestroyProducer(t),
+		Steps: []resource.TestStep{
+			{
+				Config: testAccComputeRegionBackendService_regionBackendServiceIpAddressSelectionPolicyExample(context),
+			},
+			{
+				ResourceName:            "google_compute_region_backend_service.default",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"iap.0.oauth2_client_secret", "network", "params", "region"},
+			},
+		},
+	})
+}
+
+func testAccComputeRegionBackendService_regionBackendServiceIpAddressSelectionPolicyExample(context map[string]interface{}) string {
+	return acctest.Nprintf(`
+resource "google_compute_region_backend_service" "default" {
+  name                            = "tf-test-region-service%{random_suffix}"
+  region                          = "us-central1"
+  health_checks                   = [google_compute_region_health_check.health_check.id]
+
+  load_balancing_scheme = "EXTERNAL_MANAGED"
+  protocol              = "HTTP"
+  ip_address_selection_policy = "IPV6_ONLY"
+}
+
+resource "google_compute_region_health_check" "health_check" {
+  name               = "tf-test-rbs-health-check%{random_suffix}"
+  region             = "us-central1"
+
+  tcp_health_check {
+    port = 80
+  }
+}
+`, context)
+}
+
+func TestAccComputeRegionBackendService_regionBackendServiceIlbCustomMetricsExample(t *testing.T) {
+	t.Parallel()
+
+	context := map[string]interface{}{
+		"random_suffix": acctest.RandString(t, 10),
+	}
+
+	acctest.VcrTest(t, resource.TestCase{
+		PreCheck:                 func() { acctest.AccTestPreCheck(t) },
+		ProtoV5ProviderFactories: acctest.ProtoV5ProviderFactories(t),
+		CheckDestroy:             testAccCheckComputeRegionBackendServiceDestroyProducer(t),
+		Steps: []resource.TestStep{
+			{
+				Config: testAccComputeRegionBackendService_regionBackendServiceIlbCustomMetricsExample(context),
+			},
+			{
+				ResourceName:            "google_compute_region_backend_service.default",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"iap.0.oauth2_client_secret", "network", "params", "region"},
+			},
+		},
+	})
+}
+
+func testAccComputeRegionBackendService_regionBackendServiceIlbCustomMetricsExample(context map[string]interface{}) string {
+	return acctest.Nprintf(`
+resource "google_compute_network" "default" {
+  name                    = "network%{random_suffix}"
+}
+
+// Zonal NEG with GCE_VM_IP_PORT
+resource "google_compute_network_endpoint_group" "default" {
+  name                  = "tf-test-network-endpoint%{random_suffix}"
+  network               = google_compute_network.default.id
+  default_port          = "90"
+  zone                  = "us-central1-a"
+  network_endpoint_type = "GCE_VM_IP_PORT"
+}
+
+resource "google_compute_region_backend_service" "default" {
+  region = "us-central1"
+  name = "tf-test-region-service%{random_suffix}"
+  health_checks = [google_compute_health_check.health_check.id]
+  load_balancing_scheme = "INTERNAL_MANAGED"
+  locality_lb_policy    = "WEIGHTED_ROUND_ROBIN"
+  custom_metrics {
+    name    = "orca.application_utilization"
+    # At least one metric should be not dry_run.
+    dry_run = false
+  }
+  backend {
+    group = google_compute_network_endpoint_group.default.id
+    balancing_mode = "CUSTOM_METRICS"
+    custom_metrics {
+      name    = "orca.cpu_utilization"
+      max_utilization = 0.9
+      dry_run = true
+    }
+    custom_metrics {
+      name    = "orca.named_metrics.foo"
+      # At least one metric should be not dry_run.
+      dry_run = false
+    }
+  }
+}
+
+resource "google_compute_health_check" "health_check" {
+  name               = "tf-test-rbs-health-check%{random_suffix}"
+  http_health_check {
+    port = 80
+  }
+}
+`, context)
+}
+
+func TestAccComputeRegionBackendService_regionBackendServiceDynamicForwardingExample(t *testing.T) {
+	t.Parallel()
+
+	context := map[string]interface{}{
+		"random_suffix": acctest.RandString(t, 10),
+	}
+
+	acctest.VcrTest(t, resource.TestCase{
+		PreCheck:                 func() { acctest.AccTestPreCheck(t) },
+		ProtoV5ProviderFactories: acctest.ProtoV5ProviderBetaFactories(t),
+		CheckDestroy:             testAccCheckComputeRegionBackendServiceDestroyProducer(t),
+		Steps: []resource.TestStep{
+			{
+				Config: testAccComputeRegionBackendService_regionBackendServiceDynamicForwardingExample(context),
+			},
+			{
+				ResourceName:            "google_compute_region_backend_service.default",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"iap.0.oauth2_client_secret", "network", "params", "region"},
+			},
+		},
+	})
+}
+
+func testAccComputeRegionBackendService_regionBackendServiceDynamicForwardingExample(context map[string]interface{}) string {
+	return acctest.Nprintf(`
+resource "google_compute_region_backend_service" "default" {
+  provider                        = google-beta
+  name                            = "tf-test-region-service%{random_suffix}"
+  region                          = "us-central1"
+  load_balancing_scheme           = "EXTERNAL_MANAGED"
+  dynamic_forwarding {
+    ip_port_selection {
+      enabled = true
+    }
+  }
+}
+`, context)
+}
+
+func TestAccComputeRegionBackendService_regionBackendServiceHaPolicyExample(t *testing.T) {
+	t.Parallel()
+
+	context := map[string]interface{}{
+		"random_suffix": acctest.RandString(t, 10),
+	}
+
+	acctest.VcrTest(t, resource.TestCase{
+		PreCheck:                 func() { acctest.AccTestPreCheck(t) },
+		ProtoV5ProviderFactories: acctest.ProtoV5ProviderFactories(t),
+		CheckDestroy:             testAccCheckComputeRegionBackendServiceDestroyProducer(t),
+		Steps: []resource.TestStep{
+			{
+				Config: testAccComputeRegionBackendService_regionBackendServiceHaPolicyExample(context),
+			},
+			{
+				ResourceName:            "google_compute_region_backend_service.default",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"iap.0.oauth2_client_secret", "network", "params", "region"},
+			},
+		},
+	})
+}
+
+func testAccComputeRegionBackendService_regionBackendServiceHaPolicyExample(context map[string]interface{}) string {
+	return acctest.Nprintf(`
+resource "google_compute_network" "default" {
+  name = "tf-test-rbs-net%{random_suffix}"
+}
+
+resource "google_compute_region_backend_service" "default" {
+  region                          = "us-central1"
+  name                            = "tf-test-region-service%{random_suffix}"
+  protocol                        = "UDP"
+  load_balancing_scheme           = "EXTERNAL"
+  network                         = google_compute_network.default.id
+  ha_policy  {
+    fast_ip_move                  = "GARP_RA"
+  }
+  // Must explicitly disable connection draining to override default value.
+  connection_draining_timeout_sec = 0
+}
+`, context)
+}
+
+func TestAccComputeRegionBackendService_regionBackendServiceHaPolicyManualLeaderExample(t *testing.T) {
+	t.Parallel()
+
+	context := map[string]interface{}{
+		"random_suffix": acctest.RandString(t, 10),
+	}
+
+	acctest.VcrTest(t, resource.TestCase{
+		PreCheck:                 func() { acctest.AccTestPreCheck(t) },
+		ProtoV5ProviderFactories: acctest.ProtoV5ProviderFactories(t),
+		CheckDestroy:             testAccCheckComputeRegionBackendServiceDestroyProducer(t),
+		Steps: []resource.TestStep{
+			{
+				Config: testAccComputeRegionBackendService_regionBackendServiceHaPolicyManualLeaderExample(context),
+			},
+			{
+				ResourceName:            "google_compute_region_backend_service.default",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"iap.0.oauth2_client_secret", "network", "params", "region"},
+			},
+		},
+	})
+}
+
+func testAccComputeRegionBackendService_regionBackendServiceHaPolicyManualLeaderExample(context map[string]interface{}) string {
+	return acctest.Nprintf(`
+resource "google_compute_network" "default" {
+  name                    = "tf-test-rbs-net%{random_suffix}"
+  auto_create_subnetworks = false
+}
+
+resource "google_compute_subnetwork" "default" {
+  name          = "tf-test-rbs-subnet%{random_suffix}"
+  ip_cidr_range = "10.1.2.0/24"
+  region        = "us-central1"
+  network       = google_compute_network.default.id
+}
+
+resource "google_compute_network_endpoint" "endpoint" {
+  network_endpoint_group = google_compute_network_endpoint_group.neg.name
+
+  instance   = google_compute_instance.endpoint-instance.name
+  ip_address = google_compute_instance.endpoint-instance.network_interface[0].network_ip
+}
+
+data "google_compute_image" "my_image" {
+  family  = "debian-12"
+  project = "debian-cloud"
+}
+
+resource "google_compute_instance" "endpoint-instance" {
+  name         = "tf-test-rbs-instance%{random_suffix}"
+  machine_type = "e2-medium"
+
+  boot_disk {
+    initialize_params {
+      image = data.google_compute_image.my_image.self_link
+    }
+  }
+
+  network_interface {
+    subnetwork = google_compute_subnetwork.default.id
+    access_config {
+    }
+  }
+}
+
+resource "google_compute_network_endpoint_group" "neg" {
+  name                  = "tf-test-rbs-neg%{random_suffix}"
+  network_endpoint_type = "GCE_VM_IP"
+  network               = google_compute_network.default.id
+  subnetwork            = google_compute_subnetwork.default.id
+  zone                  = "us-central1-a"
+}
+
+resource "google_compute_region_backend_service" "default" {
+  region                          = "us-central1"
+  name                            = "tf-test-region-service%{random_suffix}"
+  protocol                        = "UDP"
+  load_balancing_scheme           = "EXTERNAL"
+  network                         = google_compute_network.default.id
+  backend {
+    group                         = google_compute_network_endpoint_group.neg.self_link
+    balancing_mode                = "CONNECTION"
+  }
+  ha_policy  {
+    fast_ip_move                  = "GARP_RA"
+    leader {
+      backend_group               = google_compute_network_endpoint_group.neg.self_link
+      network_endpoint {
+        instance                  = google_compute_instance.endpoint-instance.name
+      }
+    }
+  }
+  // Must explicitly disable connection draining to override default value.
+  connection_draining_timeout_sec = 0
+}
+`, context)
+}
+
+func TestAccComputeRegionBackendService_regionBackendServiceTlsSettingsExample(t *testing.T) {
+	t.Parallel()
+
+	context := map[string]interface{}{
+		"random_suffix": acctest.RandString(t, 10),
+	}
+
+	acctest.VcrTest(t, resource.TestCase{
+		PreCheck:                 func() { acctest.AccTestPreCheck(t) },
+		ProtoV5ProviderFactories: acctest.ProtoV5ProviderFactories(t),
+		CheckDestroy:             testAccCheckComputeRegionBackendServiceDestroyProducer(t),
+		Steps: []resource.TestStep{
+			{
+				Config: testAccComputeRegionBackendService_regionBackendServiceTlsSettingsExample(context),
+			},
+			{
+				ResourceName:            "google_compute_region_backend_service.default",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"iap.0.oauth2_client_secret", "network", "params", "region"},
+			},
+		},
+	})
+}
+
+func testAccComputeRegionBackendService_regionBackendServiceTlsSettingsExample(context map[string]interface{}) string {
+	return acctest.Nprintf(`
+resource "google_compute_region_backend_service" "default" {
+  region = "europe-north1"
+  name          = "tf-test-region-service%{random_suffix}"
+  health_checks = [google_compute_region_health_check.default.id]
+  load_balancing_scheme = "EXTERNAL_MANAGED"
+  protocol = "HTTPS"
+  tls_settings {
+    sni = "example.com"
+    subject_alt_names {
+        dns_name = "example.com"
+    }
+    subject_alt_names {
+        uniform_resource_identifier = "https://example.com"
+    }
+    authentication_config = "//networksecurity.googleapis.com/${google_network_security_backend_authentication_config.default.id}"
+  }
+}
+
+resource "google_compute_region_health_check" "default" {
+  name = "tf-test-health-check%{random_suffix}"
+  region = "europe-north1"
+  http_health_check {
+    port = 80
+  }
+}
+
+resource "google_network_security_backend_authentication_config" "default" {
+  name             = "authentication%{random_suffix}"
+  location = "europe-north1"
+  well_known_roots = "PUBLIC_ROOTS"
 }
 `, context)
 }

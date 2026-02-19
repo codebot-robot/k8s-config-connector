@@ -19,15 +19,35 @@ package healthcare_test
 
 import (
 	"fmt"
+	"log"
+	"strconv"
 	"strings"
 	"testing"
+	"time"
 
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/terraform"
 
 	"github.com/hashicorp/terraform-provider-google-beta/google-beta/acctest"
+	"github.com/hashicorp/terraform-provider-google-beta/google-beta/envvar"
 	"github.com/hashicorp/terraform-provider-google-beta/google-beta/tpgresource"
 	transport_tpg "github.com/hashicorp/terraform-provider-google-beta/google-beta/transport"
+
+	"google.golang.org/api/googleapi"
+)
+
+var (
+	_ = fmt.Sprintf
+	_ = log.Print
+	_ = strconv.Atoi
+	_ = strings.Trim
+	_ = time.Now
+	_ = resource.TestMain
+	_ = terraform.NewState
+	_ = envvar.TestEnvVar
+	_ = tpgresource.SetLabels
+	_ = transport_tpg.Config{}
+	_ = googleapi.Error{}
 )
 
 func TestAccHealthcareFhirStore_healthcareFhirStoreBasicExample(t *testing.T) {
@@ -49,7 +69,7 @@ func TestAccHealthcareFhirStore_healthcareFhirStoreBasicExample(t *testing.T) {
 				ResourceName:            "google_healthcare_fhir_store.default",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"self_link", "dataset"},
+				ImportStateVerifyIgnore: []string{"dataset", "labels", "self_link", "terraform_labels"},
 			},
 		},
 	})
@@ -69,7 +89,7 @@ resource "google_healthcare_fhir_store" "default" {
   enable_history_import          = false
   default_search_handling_strict = false
 
-  notification_config {
+  notification_configs {
     pubsub_topic = google_pubsub_topic.topic.id
   }
 
@@ -91,9 +111,18 @@ resource "google_healthcare_dataset" "dataset" {
 
 func TestAccHealthcareFhirStore_healthcareFhirStoreStreamingConfigExample(t *testing.T) {
 	t.Parallel()
+	acctest.BootstrapIamMembers(t, []acctest.IamMember{
+		{
+			Member: "serviceAccount:service-{project_number}@gcp-sa-healthcare.iam.gserviceaccount.com",
+			Role:   "roles/bigquery.dataEditor",
+		},
+		{
+			Member: "serviceAccount:service-{project_number}@gcp-sa-healthcare.iam.gserviceaccount.com",
+			Role:   "roles/bigquery.jobUser",
+		},
+	})
 
 	context := map[string]interface{}{
-		"policyChanged": acctest.BootstrapPSARoles(t, "service-", "gcp-sa-healthcare", []string{"roles/bigquery.dataEditor", "roles/bigquery.jobUser"}),
 		"random_suffix": acctest.RandString(t, 10),
 	}
 
@@ -109,7 +138,7 @@ func TestAccHealthcareFhirStore_healthcareFhirStoreStreamingConfigExample(t *tes
 				ResourceName:            "google_healthcare_fhir_store.default",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"self_link", "dataset"},
+				ImportStateVerifyIgnore: []string{"dataset", "labels", "self_link", "terraform_labels"},
 			},
 		},
 	})
@@ -184,7 +213,7 @@ func TestAccHealthcareFhirStore_healthcareFhirStoreNotificationConfigExample(t *
 				ResourceName:            "google_healthcare_fhir_store.default",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"self_link", "dataset"},
+				ImportStateVerifyIgnore: []string{"dataset", "labels", "self_link", "terraform_labels"},
 			},
 		},
 	})
@@ -231,7 +260,7 @@ func TestAccHealthcareFhirStore_healthcareFhirStoreNotificationConfigsExample(t 
 
 	acctest.VcrTest(t, resource.TestCase{
 		PreCheck:                 func() { acctest.AccTestPreCheck(t) },
-		ProtoV5ProviderFactories: acctest.ProtoV5ProviderBetaFactories(t),
+		ProtoV5ProviderFactories: acctest.ProtoV5ProviderFactories(t),
 		CheckDestroy:             testAccCheckHealthcareFhirStoreDestroyProducer(t),
 		Steps: []resource.TestStep{
 			{
@@ -241,7 +270,7 @@ func TestAccHealthcareFhirStore_healthcareFhirStoreNotificationConfigsExample(t 
 				ResourceName:            "google_healthcare_fhir_store.default",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"self_link", "dataset"},
+				ImportStateVerifyIgnore: []string{"dataset", "labels", "self_link", "terraform_labels"},
 			},
 		},
 	})
@@ -250,7 +279,6 @@ func TestAccHealthcareFhirStore_healthcareFhirStoreNotificationConfigsExample(t 
 func testAccHealthcareFhirStore_healthcareFhirStoreNotificationConfigsExample(context map[string]interface{}) string {
 	return acctest.Nprintf(`
 resource "google_healthcare_fhir_store" "default" {
-  provider = google-beta
   name     = "tf-test-example-fhir-store%{random_suffix}"
   dataset  = google_healthcare_dataset.dataset.id
   version  = "R4"
@@ -272,12 +300,153 @@ resource "google_healthcare_fhir_store" "default" {
 }
 
 resource "google_pubsub_topic" "topic" {
-  provider = google-beta
   name     = "tf-test-fhir-notifications%{random_suffix}"
 }
 
 resource "google_healthcare_dataset" "dataset" {
+  name     = "tf-test-example-dataset%{random_suffix}"
+  location = "us-central1"
+}
+`, context)
+}
+
+func TestAccHealthcareFhirStore_healthcareFhirStoreConsentConfigExample(t *testing.T) {
+	t.Parallel()
+
+	context := map[string]interface{}{
+		"random_suffix": acctest.RandString(t, 10),
+	}
+
+	acctest.VcrTest(t, resource.TestCase{
+		PreCheck:                 func() { acctest.AccTestPreCheck(t) },
+		ProtoV5ProviderFactories: acctest.ProtoV5ProviderBetaFactories(t),
+		CheckDestroy:             testAccCheckHealthcareFhirStoreDestroyProducer(t),
+		Steps: []resource.TestStep{
+			{
+				Config: testAccHealthcareFhirStore_healthcareFhirStoreConsentConfigExample(context),
+			},
+			{
+				ResourceName:            "google_healthcare_fhir_store.default",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"dataset", "labels", "self_link", "terraform_labels"},
+			},
+		},
+	})
+}
+
+func testAccHealthcareFhirStore_healthcareFhirStoreConsentConfigExample(context map[string]interface{}) string {
+	return acctest.Nprintf(`
+resource "google_healthcare_fhir_store" "default" {
+  name    = "tf-test-example-fhir-store%{random_suffix}"
+  dataset = google_healthcare_dataset.dataset.id
+  version = "R4"
+  complex_data_type_reference_parsing = "DISABLED"
+
+  enable_update_create           = false
+  disable_referential_integrity  = false
+  disable_resource_versioning    = false
+  enable_history_import          = false
+  default_search_handling_strict = false
+
+  notification_configs {
+    pubsub_topic = google_pubsub_topic.topic.id
+  }
+
+  labels = {
+    label1 = "labelvalue1"
+  }
+
+  consent_config {
+    version = "V1"
+    access_enforced = true
+    consent_header_handling {
+        profile = "REQUIRED_ON_READ"
+    }
+    access_determination_log_config {
+        log_level = "VERBOSE"
+    }
+  }
+
   provider = google-beta
+}
+
+resource "google_pubsub_topic" "topic" {
+  name     = "tf-test-fhir-notifications%{random_suffix}"
+
+  provider = google-beta
+}
+
+resource "google_healthcare_dataset" "dataset" {
+  name     = "tf-test-example-dataset%{random_suffix}"
+  location = "us-central1"
+
+  provider = google-beta
+}
+`, context)
+}
+
+func TestAccHealthcareFhirStore_healthcareFhirStoreValidationConfigExample(t *testing.T) {
+	t.Parallel()
+
+	context := map[string]interface{}{
+		"random_suffix": acctest.RandString(t, 10),
+	}
+
+	acctest.VcrTest(t, resource.TestCase{
+		PreCheck:                 func() { acctest.AccTestPreCheck(t) },
+		ProtoV5ProviderFactories: acctest.ProtoV5ProviderFactories(t),
+		CheckDestroy:             testAccCheckHealthcareFhirStoreDestroyProducer(t),
+		Steps: []resource.TestStep{
+			{
+				Config: testAccHealthcareFhirStore_healthcareFhirStoreValidationConfigExample(context),
+			},
+			{
+				ResourceName:            "google_healthcare_fhir_store.default",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"dataset", "labels", "self_link", "terraform_labels"},
+			},
+		},
+	})
+}
+
+func testAccHealthcareFhirStore_healthcareFhirStoreValidationConfigExample(context map[string]interface{}) string {
+	return acctest.Nprintf(`
+resource "google_healthcare_fhir_store" "default" {
+  name    = "tf-test-example-fhir-store%{random_suffix}"
+  dataset = google_healthcare_dataset.dataset.id
+  version = "R4"
+  complex_data_type_reference_parsing = "DISABLED"
+
+  enable_update_create           = false
+  disable_referential_integrity  = false
+  disable_resource_versioning    = false
+  enable_history_import          = false
+  default_search_handling_strict = false
+
+  notification_configs {
+    pubsub_topic = google_pubsub_topic.topic.id
+  }
+
+  labels = {
+    label1 = "labelvalue1"
+  }
+
+  validation_config {
+    disable_profile_validation = true
+    enabled_implementation_guides = []
+    disable_required_field_validation = true
+    disable_reference_type_validation = true
+    disable_fhirpath_validation = true
+  }
+}
+
+resource "google_pubsub_topic" "topic" {
+  name     = "tf-test-fhir-notifications%{random_suffix}"
+}
+
+resource "google_healthcare_dataset" "dataset" {
   name     = "tf-test-example-dataset%{random_suffix}"
   location = "us-central1"
 }

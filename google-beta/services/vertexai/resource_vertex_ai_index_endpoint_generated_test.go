@@ -19,22 +19,112 @@ package vertexai_test
 
 import (
 	"fmt"
+	"log"
+	"strconv"
 	"strings"
 	"testing"
+	"time"
 
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/terraform"
 
 	"github.com/hashicorp/terraform-provider-google-beta/google-beta/acctest"
+	"github.com/hashicorp/terraform-provider-google-beta/google-beta/envvar"
 	"github.com/hashicorp/terraform-provider-google-beta/google-beta/tpgresource"
 	transport_tpg "github.com/hashicorp/terraform-provider-google-beta/google-beta/transport"
+
+	"google.golang.org/api/googleapi"
 )
 
-func TestAccVertexAIIndexEndpoint_vertexAiIndexEndpointExample(t *testing.T) {
+var (
+	_ = fmt.Sprintf
+	_ = log.Print
+	_ = strconv.Atoi
+	_ = strings.Trim
+	_ = time.Now
+	_ = resource.TestMain
+	_ = terraform.NewState
+	_ = envvar.TestEnvVar
+	_ = tpgresource.SetLabels
+	_ = transport_tpg.Config{}
+	_ = googleapi.Error{}
+)
+
+func TestAccVertexAIIndexEndpoint_vertexAiIndexEndpointTestExample(t *testing.T) {
 	t.Parallel()
 
 	context := map[string]interface{}{
-		"network_name":  acctest.BootstrapSharedTestNetwork(t, "vertex-ai-index-endpoint"),
+		"kms_key_name":  acctest.BootstrapKMSKeyInLocation(t, "us-central1").CryptoKey.Name,
+		"network_name":  acctest.BootstrapSharedServiceNetworkingConnection(t, "vpc-network-1"),
+		"random_suffix": acctest.RandString(t, 10),
+	}
+
+	acctest.VcrTest(t, resource.TestCase{
+		PreCheck:                 func() { acctest.AccTestPreCheck(t) },
+		ProtoV5ProviderFactories: acctest.ProtoV5ProviderBetaFactories(t),
+		CheckDestroy:             testAccCheckVertexAIIndexEndpointDestroyProducer(t),
+		Steps: []resource.TestStep{
+			{
+				Config: testAccVertexAIIndexEndpoint_vertexAiIndexEndpointTestExample(context),
+			},
+			{
+				ResourceName:            "google_vertex_ai_index_endpoint.index_endpoint",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"etag", "labels", "public_endpoint_enabled", "region", "terraform_labels"},
+			},
+		},
+	})
+}
+
+func testAccVertexAIIndexEndpoint_vertexAiIndexEndpointTestExample(context map[string]interface{}) string {
+	return acctest.Nprintf(`
+resource "google_project_service_identity" "vertexai_sa" {
+  provider = google-beta
+  service = "aiplatform.googleapis.com"
+}
+
+resource "google_kms_crypto_key_iam_member" "vertexai_encrypterdecrypter" {
+  provider = google-beta
+  crypto_key_id = "%{kms_key_name}"
+  role          = "roles/cloudkms.cryptoKeyEncrypterDecrypter"
+  member        =  google_project_service_identity.vertexai_sa.member
+}
+
+resource "google_vertex_ai_index_endpoint" "index_endpoint" {
+  provider = google-beta
+  display_name = "sample-endpoint"
+  description  = "A sample vertex endpoint"
+  region       = "us-central1"
+  labels       = {
+    label-one = "value-one"
+  }
+  network      = "projects/${data.google_project.project.number}/global/networks/${data.google_compute_network.vertex_network.name}"
+
+  encryption_spec {
+    kms_key_name = "%{kms_key_name}"
+  }
+
+  depends_on = [
+    google_kms_crypto_key_iam_member.vertexai_encrypterdecrypter,
+  ]
+}
+
+data "google_compute_network" "vertex_network" {
+  provider = google-beta
+  name       = "%{network_name}"
+}
+
+data "google_project" "project" {
+  provider = google-beta
+}
+`, context)
+}
+
+func TestAccVertexAIIndexEndpoint_vertexAiIndexEndpointWithPscExample(t *testing.T) {
+	t.Parallel()
+
+	context := map[string]interface{}{
 		"random_suffix": acctest.RandString(t, 10),
 	}
 
@@ -44,19 +134,19 @@ func TestAccVertexAIIndexEndpoint_vertexAiIndexEndpointExample(t *testing.T) {
 		CheckDestroy:             testAccCheckVertexAIIndexEndpointDestroyProducer(t),
 		Steps: []resource.TestStep{
 			{
-				Config: testAccVertexAIIndexEndpoint_vertexAiIndexEndpointExample(context),
+				Config: testAccVertexAIIndexEndpoint_vertexAiIndexEndpointWithPscExample(context),
 			},
 			{
 				ResourceName:            "google_vertex_ai_index_endpoint.index_endpoint",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"etag", "public_endpoint_enabled", "region"},
+				ImportStateVerifyIgnore: []string{"etag", "labels", "public_endpoint_enabled", "region", "terraform_labels"},
 			},
 		},
 	})
 }
 
-func testAccVertexAIIndexEndpoint_vertexAiIndexEndpointExample(context map[string]interface{}) string {
+func testAccVertexAIIndexEndpoint_vertexAiIndexEndpointWithPscExample(context map[string]interface{}) string {
 	return acctest.Nprintf(`
 resource "google_vertex_ai_index_endpoint" "index_endpoint" {
   display_name = "sample-endpoint"
@@ -65,31 +155,52 @@ resource "google_vertex_ai_index_endpoint" "index_endpoint" {
   labels       = {
     label-one = "value-one"
   }
-  network      = "projects/${data.google_project.project.number}/global/networks/${data.google_compute_network.vertex_network.name}"
-  depends_on   = [
-    google_service_networking_connection.vertex_vpc_connection
-  ]
-}
 
-resource "google_service_networking_connection" "vertex_vpc_connection" {
-  network                 = data.google_compute_network.vertex_network.id
-  service                 = "servicenetworking.googleapis.com"
-  reserved_peering_ranges = [google_compute_global_address.vertex_range.name]
-}
-
-resource "google_compute_global_address" "vertex_range" {
-  name          = "tf-test-address-name%{random_suffix}"
-  purpose       = "VPC_PEERING"
-  address_type  = "INTERNAL"
-  prefix_length = 24
-  network       = data.google_compute_network.vertex_network.id
-}
-
-data "google_compute_network" "vertex_network" {
-  name       = "%{network_name}"
+  private_service_connect_config {
+    enable_private_service_connect = true
+    project_allowlist = [
+        data.google_project.project.name,
+    ]
+  }
 }
 
 data "google_project" "project" {}
+`, context)
+}
+
+func TestAccVertexAIIndexEndpoint_vertexAiIndexEndpointWithFalsePscExample(t *testing.T) {
+	t.Parallel()
+
+	context := map[string]interface{}{
+		"random_suffix": acctest.RandString(t, 10),
+	}
+
+	acctest.VcrTest(t, resource.TestCase{
+		PreCheck:                 func() { acctest.AccTestPreCheck(t) },
+		ProtoV5ProviderFactories: acctest.ProtoV5ProviderFactories(t),
+		CheckDestroy:             testAccCheckVertexAIIndexEndpointDestroyProducer(t),
+		Steps: []resource.TestStep{
+			{
+				Config: testAccVertexAIIndexEndpoint_vertexAiIndexEndpointWithFalsePscExample(context),
+			},
+		},
+	})
+}
+
+func testAccVertexAIIndexEndpoint_vertexAiIndexEndpointWithFalsePscExample(context map[string]interface{}) string {
+	return acctest.Nprintf(`
+resource "google_vertex_ai_index_endpoint" "index_endpoint" {
+  display_name = "sample-endpoint"
+  description  = "A sample vertex endpoint"
+  region       = "us-central1"
+  labels       = {
+    label-one = "value-one"
+  }
+
+  private_service_connect_config {
+    enable_private_service_connect = false
+  }
+}
 `, context)
 }
 
@@ -113,7 +224,7 @@ func TestAccVertexAIIndexEndpoint_vertexAiIndexEndpointWithPublicEndpointExample
 				ResourceName:            "google_vertex_ai_index_endpoint.index_endpoint",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"etag", "public_endpoint_enabled", "region"},
+				ImportStateVerifyIgnore: []string{"etag", "labels", "public_endpoint_enabled", "region", "terraform_labels"},
 			},
 		},
 	})

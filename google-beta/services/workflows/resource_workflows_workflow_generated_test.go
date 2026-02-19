@@ -19,15 +19,35 @@ package workflows_test
 
 import (
 	"fmt"
+	"log"
+	"strconv"
 	"strings"
 	"testing"
+	"time"
 
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/terraform"
 
 	"github.com/hashicorp/terraform-provider-google-beta/google-beta/acctest"
+	"github.com/hashicorp/terraform-provider-google-beta/google-beta/envvar"
 	"github.com/hashicorp/terraform-provider-google-beta/google-beta/tpgresource"
 	transport_tpg "github.com/hashicorp/terraform-provider-google-beta/google-beta/transport"
+
+	"google.golang.org/api/googleapi"
+)
+
+var (
+	_ = fmt.Sprintf
+	_ = log.Print
+	_ = strconv.Atoi
+	_ = strings.Trim
+	_ = time.Now
+	_ = resource.TestMain
+	_ = terraform.NewState
+	_ = envvar.TestEnvVar
+	_ = tpgresource.SetLabels
+	_ = transport_tpg.Config{}
+	_ = googleapi.Error{}
 )
 
 func TestAccWorkflowsWorkflow_workflowBasicExample(t *testing.T) {
@@ -61,6 +81,14 @@ resource "google_workflows_workflow" "example" {
   region        = "us-central1"
   description   = "Magic"
   service_account = google_service_account.test_account.id
+  call_log_level = "LOG_ERRORS_ONLY"
+  labels = {
+    env = "test"
+  }
+  user_env_vars = {
+    url = "https://timeapi.io/api/Time/current/zone?timeZone=Europe/Amsterdam"
+  }
+  deletion_protection = false
   source_contents = <<-EOF
   # This is a sample workflow. You can replace it with your source code.
   #
@@ -76,7 +104,87 @@ resource "google_workflows_workflow" "example" {
   - getCurrentTime:
       call: http.get
       args:
-          url: https://timeapi.io/api/Time/current/zone?timeZone=Europe/Amsterdam
+          url: $${sys.get_env("url")}
+      result: currentTime
+  - readWikipedia:
+      call: http.get
+      args:
+          url: https://en.wikipedia.org/w/api.php
+          query:
+              action: opensearch
+              search: $${currentTime.body.dayOfWeek}
+      result: wikiResult
+  - returnOutput:
+      return: $${wikiResult.body[1]}
+EOF
+}
+`, context)
+}
+
+func TestAccWorkflowsWorkflow_workflowTagsExample(t *testing.T) {
+	t.Parallel()
+
+	context := map[string]interface{}{
+		"random_suffix": acctest.RandString(t, 10),
+	}
+
+	acctest.VcrTest(t, resource.TestCase{
+		PreCheck:                 func() { acctest.AccTestPreCheck(t) },
+		ProtoV5ProviderFactories: acctest.ProtoV5ProviderFactories(t),
+		CheckDestroy:             testAccCheckWorkflowsWorkflowDestroyProducer(t),
+		Steps: []resource.TestStep{
+			{
+				Config: testAccWorkflowsWorkflow_workflowTagsExample(context),
+			},
+		},
+	})
+}
+
+func testAccWorkflowsWorkflow_workflowTagsExample(context map[string]interface{}) string {
+	return acctest.Nprintf(`
+data "google_project" "project" {
+}
+
+resource "google_tags_tag_key" "tag_key" {
+  parent = "projects/${data.google_project.project.number}"
+  short_name = "tf_test_tag_key%{random_suffix}"
+}
+
+resource "google_tags_tag_value" "tag_value" {
+  parent = "tagKeys/${google_tags_tag_key.tag_key.name}"
+  short_name = "tf_test_tag_value%{random_suffix}"
+}
+
+resource "google_service_account" "test_account" {
+  account_id   = "tf-test-my-account%{random_suffix}"
+  display_name = "Test Service Account"
+}
+
+resource "google_workflows_workflow" "example" {
+  name          = "workflow%{random_suffix}"
+  region        = "us-central1"
+  description   = "Magic"
+  service_account = google_service_account.test_account.id
+  deletion_protection = false
+  tags = {
+    "${data.google_project.project.project_id}/${google_tags_tag_key.tag_key.short_name}" = "${google_tags_tag_value.tag_value.short_name}"
+  }
+  source_contents = <<-EOF
+  # This is a sample workflow. You can replace it with your source code.
+  #
+  # This workflow does the following:
+  # - reads current time and date information from an external API and stores
+  #   the response in currentTime variable
+  # - retrieves a list of Wikipedia articles related to the day of the week
+  #   from currentTime
+  # - returns the list of articles as an output of the workflow
+  #
+  # Note: In Terraform you need to escape the $$ or it will cause errors.
+
+  - getCurrentTime:
+      call: http.get
+      args:
+          url: $${sys.get_env("url")}
       result: currentTime
   - readWikipedia:
       call: http.get

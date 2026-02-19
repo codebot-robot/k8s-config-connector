@@ -19,15 +19,35 @@ package compute_test
 
 import (
 	"fmt"
+	"log"
+	"strconv"
 	"strings"
 	"testing"
+	"time"
 
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/terraform"
 
 	"github.com/hashicorp/terraform-provider-google-beta/google-beta/acctest"
+	"github.com/hashicorp/terraform-provider-google-beta/google-beta/envvar"
 	"github.com/hashicorp/terraform-provider-google-beta/google-beta/tpgresource"
 	transport_tpg "github.com/hashicorp/terraform-provider-google-beta/google-beta/transport"
+
+	"google.golang.org/api/googleapi"
+)
+
+var (
+	_ = fmt.Sprintf
+	_ = log.Print
+	_ = strconv.Atoi
+	_ = strings.Trim
+	_ = time.Now
+	_ = resource.TestMain
+	_ = terraform.NewState
+	_ = envvar.TestEnvVar
+	_ = tpgresource.SetLabels
+	_ = transport_tpg.Config{}
+	_ = googleapi.Error{}
 )
 
 func TestAccComputeBackendBucket_backendBucketBasicExample(t *testing.T) {
@@ -46,9 +66,10 @@ func TestAccComputeBackendBucket_backendBucketBasicExample(t *testing.T) {
 				Config: testAccComputeBackendBucket_backendBucketBasicExample(context),
 			},
 			{
-				ResourceName:      "google_compute_backend_bucket.image_backend",
-				ImportState:       true,
-				ImportStateVerify: true,
+				ResourceName:            "google_compute_backend_bucket.image_backend",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"params"},
 			},
 		},
 	})
@@ -86,9 +107,10 @@ func TestAccComputeBackendBucket_backendBucketFullExample(t *testing.T) {
 				Config: testAccComputeBackendBucket_backendBucketFullExample(context),
 			},
 			{
-				ResourceName:      "google_compute_backend_bucket.image_backend_full",
-				ImportState:       true,
-				ImportStateVerify: true,
+				ResourceName:            "google_compute_backend_bucket.image_backend_full",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"params"},
 			},
 		},
 	})
@@ -137,9 +159,10 @@ func TestAccComputeBackendBucket_backendBucketSecurityPolicyExample(t *testing.T
 				Config: testAccComputeBackendBucket_backendBucketSecurityPolicyExample(context),
 			},
 			{
-				ResourceName:      "google_compute_backend_bucket.image_backend",
-				ImportState:       true,
-				ImportStateVerify: true,
+				ResourceName:            "google_compute_backend_bucket.image_backend",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"params"},
 			},
 		},
 	})
@@ -184,9 +207,10 @@ func TestAccComputeBackendBucket_backendBucketQueryStringWhitelistExample(t *tes
 				Config: testAccComputeBackendBucket_backendBucketQueryStringWhitelistExample(context),
 			},
 			{
-				ResourceName:      "google_compute_backend_bucket.image_backend",
-				ImportState:       true,
-				ImportStateVerify: true,
+				ResourceName:            "google_compute_backend_bucket.image_backend",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"params"},
 			},
 		},
 	})
@@ -229,9 +253,10 @@ func TestAccComputeBackendBucket_backendBucketIncludeHttpHeadersExample(t *testi
 				Config: testAccComputeBackendBucket_backendBucketIncludeHttpHeadersExample(context),
 			},
 			{
-				ResourceName:      "google_compute_backend_bucket.image_backend",
-				ImportState:       true,
-				ImportStateVerify: true,
+				ResourceName:            "google_compute_backend_bucket.image_backend",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"params"},
 			},
 		},
 	})
@@ -274,9 +299,10 @@ func TestAccComputeBackendBucket_externalCdnLbWithBackendBucketExample(t *testin
 				Config: testAccComputeBackendBucket_externalCdnLbWithBackendBucketExample(context),
 			},
 			{
-				ResourceName:      "google_compute_backend_bucket.default",
-				ImportState:       true,
-				ImportStateVerify: true,
+				ResourceName:            "google_compute_backend_bucket.default",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"params"},
 			},
 		},
 	})
@@ -404,9 +430,10 @@ func TestAccComputeBackendBucket_backendBucketBypassCacheExample(t *testing.T) {
 				Config: testAccComputeBackendBucket_backendBucketBypassCacheExample(context),
 			},
 			{
-				ResourceName:      "google_compute_backend_bucket.image_backend",
-				ImportState:       true,
-				ImportStateVerify: true,
+				ResourceName:            "google_compute_backend_bucket.image_backend",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"params"},
 			},
 		},
 	})
@@ -449,9 +476,10 @@ func TestAccComputeBackendBucket_backendBucketCoalescingExample(t *testing.T) {
 				Config: testAccComputeBackendBucket_backendBucketCoalescingExample(context),
 			},
 			{
-				ResourceName:      "google_compute_backend_bucket.image_backend",
-				ImportState:       true,
-				ImportStateVerify: true,
+				ResourceName:            "google_compute_backend_bucket.image_backend",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"params"},
 			},
 		},
 	})
@@ -472,6 +500,83 @@ resource "google_compute_backend_bucket" "image_backend" {
 resource "google_storage_bucket" "image_bucket" {
   name     = "tf-test-image-store-bucket%{random_suffix}"
   location = "EU"
+}
+`, context)
+}
+
+func TestAccComputeBackendBucket_backendBucketGlobalIlbExample(t *testing.T) {
+	acctest.SkipIfVcr(t)
+	t.Parallel()
+
+	context := map[string]interface{}{
+		"billing_account": envvar.GetTestBillingAccountFromEnv(t),
+		"org_id":          envvar.GetTestOrgFromEnv(t),
+		"random_suffix":   acctest.RandString(t, 10),
+	}
+
+	acctest.VcrTest(t, resource.TestCase{
+		PreCheck:                 func() { acctest.AccTestPreCheck(t) },
+		ProtoV5ProviderFactories: acctest.ProtoV5ProviderFactories(t),
+		ExternalProviders: map[string]resource.ExternalProvider{
+			"time": {},
+		},
+		CheckDestroy: testAccCheckComputeBackendBucketDestroyProducer(t),
+		Steps: []resource.TestStep{
+			{
+				Config: testAccComputeBackendBucket_backendBucketGlobalIlbExample(context),
+			},
+			{
+				ResourceName:            "google_compute_backend_bucket.global-ilb-backend",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"params"},
+			},
+		},
+	})
+}
+
+func testAccComputeBackendBucket_backendBucketGlobalIlbExample(context map[string]interface{}) string {
+	return acctest.Nprintf(`
+# Note: This example must be run in a project without Cloud Armor tier configured,
+# as it may cause conflicts with the INTERNAL_MANAGED load balancing scheme.
+# This test is skipped in VCR mode due to non-determinism in project creation and resource management.
+
+resource "google_project" "unarmored" {
+  project_id      = "tf-test%{random_suffix}"
+  name            = "tf-test%{random_suffix}"
+  org_id          = "%{org_id}"
+  billing_account = "%{billing_account}"
+  deletion_policy = "DELETE"
+}
+
+resource "google_project_service" "compute" {
+  project = google_project.unarmored.number
+  service = "compute.googleapis.com"
+  disable_on_destroy = true
+}
+
+resource "time_sleep" "wait_120_seconds" {
+  create_duration = "120s"
+  depends_on = [google_project_service.compute]
+}
+
+resource "google_compute_backend_bucket" "global-ilb-backend" {
+  name                  = "tf-test-global-ilb-backend-bucket%{random_suffix}"
+  project               = google_project.unarmored.number
+  bucket_name           = google_storage_bucket.global-ilb-backend.name
+  load_balancing_scheme = "INTERNAL_MANAGED"
+
+  depends_on = [time_sleep.wait_120_seconds]
+}
+
+resource "google_storage_bucket" "global-ilb-backend" {
+  name                        = "tf-test-global-ilb-bucket%{random_suffix}"
+  project                     = google_project.unarmored.number
+  location                    = "US-CENTRAL1"
+  force_destroy               = true
+  uniform_bucket_level_access = true
+
+  depends_on = [time_sleep.wait_120_seconds]
 }
 `, context)
 }

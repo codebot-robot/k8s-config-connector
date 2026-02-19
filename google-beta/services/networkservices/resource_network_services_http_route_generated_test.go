@@ -19,15 +19,35 @@ package networkservices_test
 
 import (
 	"fmt"
+	"log"
+	"strconv"
 	"strings"
 	"testing"
+	"time"
 
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/terraform"
 
 	"github.com/hashicorp/terraform-provider-google-beta/google-beta/acctest"
+	"github.com/hashicorp/terraform-provider-google-beta/google-beta/envvar"
 	"github.com/hashicorp/terraform-provider-google-beta/google-beta/tpgresource"
 	transport_tpg "github.com/hashicorp/terraform-provider-google-beta/google-beta/transport"
+
+	"google.golang.org/api/googleapi"
+)
+
+var (
+	_ = fmt.Sprintf
+	_ = log.Print
+	_ = strconv.Atoi
+	_ = strings.Trim
+	_ = time.Now
+	_ = resource.TestMain
+	_ = terraform.NewState
+	_ = envvar.TestEnvVar
+	_ = tpgresource.SetLabels
+	_ = transport_tpg.Config{}
+	_ = googleapi.Error{}
 )
 
 func TestAccNetworkServicesHttpRoute_networkServicesHttpRouteBasicExample(t *testing.T) {
@@ -39,7 +59,7 @@ func TestAccNetworkServicesHttpRoute_networkServicesHttpRouteBasicExample(t *tes
 
 	acctest.VcrTest(t, resource.TestCase{
 		PreCheck:                 func() { acctest.AccTestPreCheck(t) },
-		ProtoV5ProviderFactories: acctest.ProtoV5ProviderBetaFactories(t),
+		ProtoV5ProviderFactories: acctest.ProtoV5ProviderFactories(t),
 		CheckDestroy:             testAccCheckNetworkServicesHttpRouteDestroyProducer(t),
 		Steps: []resource.TestStep{
 			{
@@ -49,7 +69,7 @@ func TestAccNetworkServicesHttpRoute_networkServicesHttpRouteBasicExample(t *tes
 				ResourceName:            "google_network_services_http_route.default",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"name"},
+				ImportStateVerifyIgnore: []string{"labels", "name", "terraform_labels"},
 			},
 		},
 	})
@@ -58,7 +78,6 @@ func TestAccNetworkServicesHttpRoute_networkServicesHttpRouteBasicExample(t *tes
 func testAccNetworkServicesHttpRoute_networkServicesHttpRouteBasicExample(context map[string]interface{}) string {
 	return acctest.Nprintf(`
 resource "google_network_services_http_route" "default" {
-  provider               = google-beta
   name                   = "tf-test-my-http-route%{random_suffix}"
   labels                 = {
     foo = "bar"
@@ -87,7 +106,7 @@ func TestAccNetworkServicesHttpRoute_networkServicesHttpRouteMatchesAndActionsEx
 
 	acctest.VcrTest(t, resource.TestCase{
 		PreCheck:                 func() { acctest.AccTestPreCheck(t) },
-		ProtoV5ProviderFactories: acctest.ProtoV5ProviderBetaFactories(t),
+		ProtoV5ProviderFactories: acctest.ProtoV5ProviderFactories(t),
 		CheckDestroy:             testAccCheckNetworkServicesHttpRouteDestroyProducer(t),
 		Steps: []resource.TestStep{
 			{
@@ -97,7 +116,7 @@ func TestAccNetworkServicesHttpRoute_networkServicesHttpRouteMatchesAndActionsEx
 				ResourceName:            "google_network_services_http_route.default",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"name"},
+				ImportStateVerifyIgnore: []string{"labels", "name", "terraform_labels"},
 			},
 		},
 	})
@@ -106,7 +125,6 @@ func TestAccNetworkServicesHttpRoute_networkServicesHttpRouteMatchesAndActionsEx
 func testAccNetworkServicesHttpRoute_networkServicesHttpRouteMatchesAndActionsExample(context map[string]interface{}) string {
 	return acctest.Nprintf(`
 resource "google_network_services_http_route" "default" {
-  provider               = google-beta
   name                   = "tf-test-my-http-route%{random_suffix}"
   labels                 = {
     foo = "bar"
@@ -201,7 +219,7 @@ func TestAccNetworkServicesHttpRoute_networkServicesHttpRouteActionsExample(t *t
 
 	acctest.VcrTest(t, resource.TestCase{
 		PreCheck:                 func() { acctest.AccTestPreCheck(t) },
-		ProtoV5ProviderFactories: acctest.ProtoV5ProviderBetaFactories(t),
+		ProtoV5ProviderFactories: acctest.ProtoV5ProviderFactories(t),
 		CheckDestroy:             testAccCheckNetworkServicesHttpRouteDestroyProducer(t),
 		Steps: []resource.TestStep{
 			{
@@ -211,7 +229,7 @@ func TestAccNetworkServicesHttpRoute_networkServicesHttpRouteActionsExample(t *t
 				ResourceName:            "google_network_services_http_route.default",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"name"},
+				ImportStateVerifyIgnore: []string{"labels", "name", "terraform_labels"},
 			},
 		},
 	})
@@ -220,7 +238,6 @@ func TestAccNetworkServicesHttpRoute_networkServicesHttpRouteActionsExample(t *t
 func testAccNetworkServicesHttpRoute_networkServicesHttpRouteActionsExample(context map[string]interface{}) string {
 	return acctest.Nprintf(`
 resource "google_network_services_http_route" "default" {
-  provider               = google-beta
   name                   = "tf-test-my-http-route%{random_suffix}"
   labels                 = {
     foo = "bar"
@@ -288,7 +305,7 @@ func TestAccNetworkServicesHttpRoute_networkServicesHttpRouteMeshBasicExample(t 
 
 	acctest.VcrTest(t, resource.TestCase{
 		PreCheck:                 func() { acctest.AccTestPreCheck(t) },
-		ProtoV5ProviderFactories: acctest.ProtoV5ProviderBetaFactories(t),
+		ProtoV5ProviderFactories: acctest.ProtoV5ProviderFactories(t),
 		CheckDestroy:             testAccCheckNetworkServicesHttpRouteDestroyProducer(t),
 		Steps: []resource.TestStep{
 			{
@@ -298,7 +315,7 @@ func TestAccNetworkServicesHttpRoute_networkServicesHttpRouteMeshBasicExample(t 
 				ResourceName:            "google_network_services_http_route.default",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"name"},
+				ImportStateVerifyIgnore: []string{"labels", "name", "terraform_labels"},
 			},
 		},
 	})
@@ -307,7 +324,6 @@ func TestAccNetworkServicesHttpRoute_networkServicesHttpRouteMeshBasicExample(t 
 func testAccNetworkServicesHttpRoute_networkServicesHttpRouteMeshBasicExample(context map[string]interface{}) string {
 	return acctest.Nprintf(`
 resource "google_network_services_mesh" "default" {
-  provider    = google-beta
   name        = "tf-test-my-http-route%{random_suffix}"
   labels      = {
     foo = "bar"
@@ -316,7 +332,6 @@ resource "google_network_services_mesh" "default" {
 }
 
 resource "google_network_services_http_route" "default" {
-  provider               = google-beta
   name                   = "tf-test-my-http-route%{random_suffix}"
   labels                 = {
     foo = "bar"

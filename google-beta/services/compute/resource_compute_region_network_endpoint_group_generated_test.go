@@ -19,15 +19,35 @@ package compute_test
 
 import (
 	"fmt"
+	"log"
+	"strconv"
 	"strings"
 	"testing"
+	"time"
 
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/terraform"
 
 	"github.com/hashicorp/terraform-provider-google-beta/google-beta/acctest"
+	"github.com/hashicorp/terraform-provider-google-beta/google-beta/envvar"
 	"github.com/hashicorp/terraform-provider-google-beta/google-beta/tpgresource"
 	transport_tpg "github.com/hashicorp/terraform-provider-google-beta/google-beta/transport"
+
+	"google.golang.org/api/googleapi"
+)
+
+var (
+	_ = fmt.Sprintf
+	_ = log.Print
+	_ = strconv.Atoi
+	_ = strings.Trim
+	_ = time.Now
+	_ = resource.TestMain
+	_ = terraform.NewState
+	_ = envvar.TestEnvVar
+	_ = tpgresource.SetLabels
+	_ = transport_tpg.Config{}
+	_ = googleapi.Error{}
 )
 
 func TestAccComputeRegionNetworkEndpointGroup_regionNetworkEndpointGroupFunctionsExample(t *testing.T) {
@@ -50,7 +70,7 @@ func TestAccComputeRegionNetworkEndpointGroup_regionNetworkEndpointGroupFunction
 				ResourceName:            "google_compute_region_network_endpoint_group.function_neg",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"network", "subnetwork", "region"},
+				ImportStateVerifyIgnore: []string{"network", "psc_data.0.producer_port", "region", "subnetwork"},
 			},
 		},
 	})
@@ -71,7 +91,7 @@ resource "google_compute_region_network_endpoint_group" "function_neg" {
 resource "google_cloudfunctions_function" "function_neg" {
   name        = "tf-test-function-neg%{random_suffix}"
   description = "My function"
-  runtime     = "nodejs10"
+  runtime     = "nodejs20"
 
   available_memory_mb   = 128
   source_archive_bucket = google_storage_bucket.bucket.name
@@ -113,7 +133,7 @@ func TestAccComputeRegionNetworkEndpointGroup_regionNetworkEndpointGroupCloudrun
 				ResourceName:            "google_compute_region_network_endpoint_group.cloudrun_neg",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"network", "subnetwork", "region"},
+				ImportStateVerifyIgnore: []string{"network", "psc_data.0.producer_port", "region", "subnetwork"},
 			},
 		},
 	})
@@ -170,7 +190,7 @@ func TestAccComputeRegionNetworkEndpointGroup_regionNetworkEndpointGroupAppengin
 				ResourceName:            "google_compute_region_network_endpoint_group.appengine_neg",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"network", "subnetwork", "region"},
+				ImportStateVerifyIgnore: []string{"network", "psc_data.0.producer_port", "region", "subnetwork"},
 			},
 		},
 	})
@@ -191,8 +211,12 @@ resource "google_compute_region_network_endpoint_group" "appengine_neg" {
 
 resource "google_app_engine_flexible_app_version" "appengine_neg" {
   version_id = "v1"
-  service    = "appengine-network-endpoint-group"
+  service    = "tf-test-appengine-neg%{random_suffix}"
   runtime    = "nodejs"
+  flexible_runtime_settings {
+    operating_system = "ubuntu22"
+    runtime_version = "20"
+  }
 
   entrypoint {
     shell = "node ./app.js"
@@ -241,12 +265,51 @@ resource "google_app_engine_flexible_app_version" "appengine_neg" {
 resource "google_storage_bucket" "appengine_neg" {
   name     = "tf-test-appengine-neg%{random_suffix}"
   location = "US"
+  uniform_bucket_level_access = true
 }
 
 resource "google_storage_bucket_object" "appengine_neg" {
   name   = "hello-world.zip"
   bucket = google_storage_bucket.appengine_neg.name
   source = "./test-fixtures/hello-world.zip"
+}
+`, context)
+}
+
+func TestAccComputeRegionNetworkEndpointGroup_regionNetworkEndpointGroupAppengineEmptyExample(t *testing.T) {
+	t.Parallel()
+
+	context := map[string]interface{}{
+		"random_suffix": acctest.RandString(t, 10),
+	}
+
+	acctest.VcrTest(t, resource.TestCase{
+		PreCheck:                 func() { acctest.AccTestPreCheck(t) },
+		ProtoV5ProviderFactories: acctest.ProtoV5ProviderFactories(t),
+		CheckDestroy:             testAccCheckComputeRegionNetworkEndpointGroupDestroyProducer(t),
+		Steps: []resource.TestStep{
+			{
+				Config: testAccComputeRegionNetworkEndpointGroup_regionNetworkEndpointGroupAppengineEmptyExample(context),
+			},
+			{
+				ResourceName:            "google_compute_region_network_endpoint_group.appengine_neg",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"network", "psc_data.0.producer_port", "region", "subnetwork"},
+			},
+		},
+	})
+}
+
+func testAccComputeRegionNetworkEndpointGroup_regionNetworkEndpointGroupAppengineEmptyExample(context map[string]interface{}) string {
+	return acctest.Nprintf(`
+// App Engine Example
+resource "google_compute_region_network_endpoint_group" "appengine_neg" {
+  name                  = "tf-test-appengine-neg%{random_suffix}"
+  network_endpoint_type = "SERVERLESS"
+  region                = "us-central1"
+  app_engine {
+  }
 }
 `, context)
 }
@@ -270,7 +333,7 @@ func TestAccComputeRegionNetworkEndpointGroup_regionNetworkEndpointGroupPscExamp
 				ResourceName:            "google_compute_region_network_endpoint_group.psc_neg",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"network", "subnetwork", "region"},
+				ImportStateVerifyIgnore: []string{"network", "psc_data.0.producer_port", "region", "subnetwork"},
 			},
 		},
 	})
@@ -307,7 +370,7 @@ func TestAccComputeRegionNetworkEndpointGroup_regionNetworkEndpointGroupPscServi
 				ResourceName:            "google_compute_region_network_endpoint_group.psc_neg_service_attachment",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"network", "subnetwork", "region"},
+				ImportStateVerifyIgnore: []string{"network", "psc_data.0.producer_port", "region", "subnetwork"},
 			},
 		},
 	})
@@ -356,7 +419,7 @@ resource "google_compute_forwarding_rule" "default" {
 
   load_balancing_scheme = "INTERNAL"
   backend_service       = google_compute_region_backend_service.default.id
-  all_ports             = true
+  ports                 = ["80", "88", "443"]
   network               = google_compute_network.default.name
   subnetwork            = google_compute_subnetwork.default.name
 }
@@ -378,9 +441,144 @@ resource "google_compute_region_network_endpoint_group" "psc_neg_service_attachm
 
   network_endpoint_type = "PRIVATE_SERVICE_CONNECT"
   psc_target_service    = google_compute_service_attachment.default.self_link
-
-  network               = google_compute_network.default.self_link
+  psc_data {
+    producer_port = "88"
+  }
   subnetwork            = google_compute_subnetwork.default.self_link
+}
+`, context)
+}
+
+func TestAccComputeRegionNetworkEndpointGroup_regionNetworkEndpointGroupInternetIpPortExample(t *testing.T) {
+	t.Parallel()
+
+	context := map[string]interface{}{
+		"random_suffix": acctest.RandString(t, 10),
+	}
+
+	acctest.VcrTest(t, resource.TestCase{
+		PreCheck:                 func() { acctest.AccTestPreCheck(t) },
+		ProtoV5ProviderFactories: acctest.ProtoV5ProviderFactories(t),
+		CheckDestroy:             testAccCheckComputeRegionNetworkEndpointGroupDestroyProducer(t),
+		Steps: []resource.TestStep{
+			{
+				Config: testAccComputeRegionNetworkEndpointGroup_regionNetworkEndpointGroupInternetIpPortExample(context),
+			},
+			{
+				ResourceName:            "google_compute_region_network_endpoint_group.region_network_endpoint_group_internet_ip_port",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"network", "psc_data.0.producer_port", "region", "subnetwork"},
+			},
+		},
+	})
+}
+
+func testAccComputeRegionNetworkEndpointGroup_regionNetworkEndpointGroupInternetIpPortExample(context map[string]interface{}) string {
+	return acctest.Nprintf(`
+resource "google_compute_region_network_endpoint_group" "region_network_endpoint_group_internet_ip_port" {
+  name                  = "tf-test-ip-port-neg%{random_suffix}"
+  region                = "us-central1"
+  network               = google_compute_network.default.id
+
+  network_endpoint_type = "INTERNET_IP_PORT"
+}
+
+resource "google_compute_network" "default" {
+  name                    = "network%{random_suffix}"
+}
+`, context)
+}
+
+func TestAccComputeRegionNetworkEndpointGroup_regionNetworkEndpointGroupInternetFqdnPortExample(t *testing.T) {
+	t.Parallel()
+
+	context := map[string]interface{}{
+		"random_suffix": acctest.RandString(t, 10),
+	}
+
+	acctest.VcrTest(t, resource.TestCase{
+		PreCheck:                 func() { acctest.AccTestPreCheck(t) },
+		ProtoV5ProviderFactories: acctest.ProtoV5ProviderFactories(t),
+		CheckDestroy:             testAccCheckComputeRegionNetworkEndpointGroupDestroyProducer(t),
+		Steps: []resource.TestStep{
+			{
+				Config: testAccComputeRegionNetworkEndpointGroup_regionNetworkEndpointGroupInternetFqdnPortExample(context),
+			},
+			{
+				ResourceName:            "google_compute_region_network_endpoint_group.region_network_endpoint_group_internet_fqdn_port",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"network", "psc_data.0.producer_port", "region", "subnetwork"},
+			},
+		},
+	})
+}
+
+func testAccComputeRegionNetworkEndpointGroup_regionNetworkEndpointGroupInternetFqdnPortExample(context map[string]interface{}) string {
+	return acctest.Nprintf(`
+resource "google_compute_region_network_endpoint_group" "region_network_endpoint_group_internet_fqdn_port" {
+  name                  = "tf-test-ip-port-neg%{random_suffix}"
+  region                = "us-central1"
+  network               = google_compute_network.default.id
+
+  network_endpoint_type = "INTERNET_FQDN_PORT"
+}
+
+resource "google_compute_network" "default" {
+  name                    = "network%{random_suffix}"
+}
+`, context)
+}
+
+func TestAccComputeRegionNetworkEndpointGroup_regionNetworkEndpointGroupPortmapExample(t *testing.T) {
+	t.Parallel()
+
+	context := map[string]interface{}{
+		"random_suffix": acctest.RandString(t, 10),
+	}
+
+	acctest.VcrTest(t, resource.TestCase{
+		PreCheck:                 func() { acctest.AccTestPreCheck(t) },
+		ProtoV5ProviderFactories: acctest.ProtoV5ProviderBetaFactories(t),
+		CheckDestroy:             testAccCheckComputeRegionNetworkEndpointGroupDestroyProducer(t),
+		Steps: []resource.TestStep{
+			{
+				Config: testAccComputeRegionNetworkEndpointGroup_regionNetworkEndpointGroupPortmapExample(context),
+			},
+			{
+				ResourceName:            "google_compute_region_network_endpoint_group.region_network_endpoint_group_portmap",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"network", "psc_data.0.producer_port", "region", "subnetwork"},
+			},
+		},
+	})
+}
+
+func testAccComputeRegionNetworkEndpointGroup_regionNetworkEndpointGroupPortmapExample(context map[string]interface{}) string {
+	return acctest.Nprintf(`
+resource "google_compute_region_network_endpoint_group" "region_network_endpoint_group_portmap" {
+  name                  = "tf-test-portmap-neg%{random_suffix}"
+  region                = "us-central1"
+  network               = google_compute_network.default.id
+  subnetwork            = google_compute_subnetwork.default.id
+
+  network_endpoint_type = "GCE_VM_IP_PORTMAP"
+  provider              = google-beta
+}
+
+resource "google_compute_network" "default" {
+  name                    = "network%{random_suffix}"
+  provider              = google-beta
+}
+
+resource "google_compute_subnetwork" "default" {
+  name          = "subnetwork%{random_suffix}"
+  ip_cidr_range = "10.0.0.0/16"
+  region        = "us-central1"
+  network       = google_compute_network.default.id
+  provider              = google-beta
 }
 `, context)
 }

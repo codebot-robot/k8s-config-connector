@@ -19,30 +19,53 @@ package firestore_test
 
 import (
 	"fmt"
+	"log"
+	"strconv"
 	"strings"
 	"testing"
+	"time"
 
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/terraform"
 
 	"github.com/hashicorp/terraform-provider-google-beta/google-beta/acctest"
 	"github.com/hashicorp/terraform-provider-google-beta/google-beta/envvar"
 	"github.com/hashicorp/terraform-provider-google-beta/google-beta/tpgresource"
 	transport_tpg "github.com/hashicorp/terraform-provider-google-beta/google-beta/transport"
+
+	"google.golang.org/api/googleapi"
+)
+
+var (
+	_ = fmt.Sprintf
+	_ = log.Print
+	_ = strconv.Atoi
+	_ = strings.Trim
+	_ = time.Now
+	_ = resource.TestMain
+	_ = terraform.NewState
+	_ = envvar.TestEnvVar
+	_ = tpgresource.SetLabels
+	_ = transport_tpg.Config{}
+	_ = googleapi.Error{}
 )
 
 func TestAccFirestoreDocument_firestoreDocumentBasicExample(t *testing.T) {
 	t.Parallel()
 
 	context := map[string]interface{}{
-		"project_id":    envvar.GetTestFirestoreProjectFromEnv(t),
+		"org_id":        envvar.GetTestOrgFromEnv(t),
 		"random_suffix": acctest.RandString(t, 10),
 	}
 
 	acctest.VcrTest(t, resource.TestCase{
 		PreCheck:                 func() { acctest.AccTestPreCheck(t) },
 		ProtoV5ProviderFactories: acctest.ProtoV5ProviderFactories(t),
-		CheckDestroy:             testAccCheckFirestoreDocumentDestroyProducer(t),
+		ExternalProviders: map[string]resource.ExternalProvider{
+			"random": {},
+			"time":   {},
+		},
+		CheckDestroy: testAccCheckFirestoreDocumentDestroyProducer(t),
 		Steps: []resource.TestStep{
 			{
 				Config: testAccFirestoreDocument_firestoreDocumentBasicExample(context),
@@ -51,7 +74,7 @@ func TestAccFirestoreDocument_firestoreDocumentBasicExample(t *testing.T) {
 				ResourceName:            "google_firestore_document.mydoc",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"database", "collection", "document_id"},
+				ImportStateVerifyIgnore: []string{"collection", "database", "document_id"},
 			},
 		},
 	})
@@ -59,8 +82,39 @@ func TestAccFirestoreDocument_firestoreDocumentBasicExample(t *testing.T) {
 
 func testAccFirestoreDocument_firestoreDocumentBasicExample(context map[string]interface{}) string {
 	return acctest.Nprintf(`
+resource "google_project" "project" {
+  project_id = "tf-test-project-id%{random_suffix}"
+  name       = "tf-test-project-id%{random_suffix}"
+  org_id     = "%{org_id}"
+  deletion_policy = "DELETE"
+}
+
+resource "time_sleep" "wait_60_seconds" {
+  depends_on = [google_project.project]
+
+  create_duration = "60s"
+}
+
+resource "google_project_service" "firestore" {
+  project = google_project.project.project_id
+  service = "firestore.googleapis.com"
+
+  # Needed for CI tests for permissions to propagate, should not be needed for actual usage
+  depends_on = [time_sleep.wait_60_seconds]
+}
+
+resource "google_firestore_database" "database" {
+  project     = google_project.project.project_id
+  name        = "(default)"
+  location_id = "nam5"
+  type        = "FIRESTORE_NATIVE"
+
+  depends_on = [google_project_service.firestore]
+}
+
 resource "google_firestore_document" "mydoc" {
-  project     = "%{project_id}"
+  project     = google_project.project.project_id
+  database    = google_firestore_database.database.name
   collection  = "somenewcollection"
   document_id = "tf-test-my-doc-id%{random_suffix}"
   fields      = "{\"something\":{\"mapValue\":{\"fields\":{\"akey\":{\"stringValue\":\"avalue\"}}}}}"
@@ -72,14 +126,18 @@ func TestAccFirestoreDocument_firestoreDocumentNestedDocumentExample(t *testing.
 	t.Parallel()
 
 	context := map[string]interface{}{
-		"project_id":    envvar.GetTestFirestoreProjectFromEnv(t),
+		"org_id":        envvar.GetTestOrgFromEnv(t),
 		"random_suffix": acctest.RandString(t, 10),
 	}
 
 	acctest.VcrTest(t, resource.TestCase{
 		PreCheck:                 func() { acctest.AccTestPreCheck(t) },
 		ProtoV5ProviderFactories: acctest.ProtoV5ProviderFactories(t),
-		CheckDestroy:             testAccCheckFirestoreDocumentDestroyProducer(t),
+		ExternalProviders: map[string]resource.ExternalProvider{
+			"random": {},
+			"time":   {},
+		},
+		CheckDestroy: testAccCheckFirestoreDocumentDestroyProducer(t),
 		Steps: []resource.TestStep{
 			{
 				Config: testAccFirestoreDocument_firestoreDocumentNestedDocumentExample(context),
@@ -88,7 +146,7 @@ func TestAccFirestoreDocument_firestoreDocumentNestedDocumentExample(t *testing.
 				ResourceName:            "google_firestore_document.mydoc",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"database", "collection", "document_id"},
+				ImportStateVerifyIgnore: []string{"collection", "database", "document_id"},
 			},
 		},
 	})
@@ -96,22 +154,55 @@ func TestAccFirestoreDocument_firestoreDocumentNestedDocumentExample(t *testing.
 
 func testAccFirestoreDocument_firestoreDocumentNestedDocumentExample(context map[string]interface{}) string {
 	return acctest.Nprintf(`
+resource "google_project" "project" {
+  project_id      = "tf-test-project-id%{random_suffix}"
+  name            = "tf-test-project-id%{random_suffix}"
+  org_id          = "%{org_id}"
+  deletion_policy = "DELETE"
+}
+
+resource "time_sleep" "wait_60_seconds" {
+  depends_on = [google_project.project]
+
+  create_duration = "60s"
+}
+
+resource "google_project_service" "firestore" {
+  project = google_project.project.project_id
+  service = "firestore.googleapis.com"
+
+  # Needed for CI tests for permissions to propagate, should not be needed for actual usage
+  depends_on = [time_sleep.wait_60_seconds]
+}
+
+resource "google_firestore_database" "database" {
+  project     = google_project.project.project_id
+  name        = "(default)"
+  location_id = "nam5"
+  type        = "FIRESTORE_NATIVE"
+
+  depends_on = [google_project_service.firestore]
+}
+
 resource "google_firestore_document" "mydoc" {
-  project     = "%{project_id}"
+  project     = google_project.project.project_id
+  database    = google_firestore_database.database.name
   collection  = "somenewcollection"
   document_id = "tf-test-my-doc-id%{random_suffix}"
   fields      = "{\"something\":{\"mapValue\":{\"fields\":{\"akey\":{\"stringValue\":\"avalue\"}}}}}"
 }
 
 resource "google_firestore_document" "sub_document" {
-  project     = "%{project_id}"
+  project     = google_project.project.project_id
+  database    = google_firestore_database.database.name
   collection  = "${google_firestore_document.mydoc.path}/subdocs"
   document_id = "bitcoinkey"
   fields      = "{\"something\":{\"mapValue\":{\"fields\":{\"ayo\":{\"stringValue\":\"val2\"}}}}}"
 }
 
 resource "google_firestore_document" "sub_sub_document" {
-  project     = "%{project_id}"
+  project     = google_project.project.project_id
+  database    = google_firestore_database.database.name
   collection  = "${google_firestore_document.sub_document.path}/subsubdocs"
   document_id = "asecret"
   fields      = "{\"something\":{\"mapValue\":{\"fields\":{\"secret\":{\"stringValue\":\"hithere\"}}}}}"

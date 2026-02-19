@@ -19,18 +19,39 @@ package bigtable_test
 
 import (
 	"fmt"
+	"log"
+	"strconv"
 	"strings"
 	"testing"
+	"time"
 
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/terraform"
 
 	"github.com/hashicorp/terraform-provider-google-beta/google-beta/acctest"
+	"github.com/hashicorp/terraform-provider-google-beta/google-beta/envvar"
 	"github.com/hashicorp/terraform-provider-google-beta/google-beta/tpgresource"
 	transport_tpg "github.com/hashicorp/terraform-provider-google-beta/google-beta/transport"
+
+	"google.golang.org/api/googleapi"
+)
+
+var (
+	_ = fmt.Sprintf
+	_ = log.Print
+	_ = strconv.Atoi
+	_ = strings.Trim
+	_ = time.Now
+	_ = resource.TestMain
+	_ = terraform.NewState
+	_ = envvar.TestEnvVar
+	_ = tpgresource.SetLabels
+	_ = transport_tpg.Config{}
+	_ = googleapi.Error{}
 )
 
 func TestAccBigtableAppProfile_bigtableAppProfileAnyclusterExample(t *testing.T) {
+	acctest.SkipIfVcr(t)
 	t.Parallel()
 
 	context := map[string]interface{}{
@@ -50,7 +71,7 @@ func TestAccBigtableAppProfile_bigtableAppProfileAnyclusterExample(t *testing.T)
 				ResourceName:            "google_bigtable_app_profile.ap",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"app_profile_id", "instance", "ignore_warnings", "ignore_warnings"},
+				ImportStateVerifyIgnore: []string{"app_profile_id", "ignore_warnings", "ignore_warnings", "instance"},
 			},
 		},
 	})
@@ -77,9 +98,9 @@ resource "google_bigtable_instance" "instance" {
     zone         = "us-central1-c"
     num_nodes    = 3
     storage_type = "HDD"
-  }  
+  }
 
-  deletion_protection  = "%{deletion_protection}"
+  deletion_protection  = %{deletion_protection}
 }
 
 resource "google_bigtable_app_profile" "ap" {
@@ -95,6 +116,7 @@ resource "google_bigtable_app_profile" "ap" {
 }
 
 func TestAccBigtableAppProfile_bigtableAppProfileSingleclusterExample(t *testing.T) {
+	acctest.SkipIfVcr(t)
 	t.Parallel()
 
 	context := map[string]interface{}{
@@ -114,7 +136,7 @@ func TestAccBigtableAppProfile_bigtableAppProfileSingleclusterExample(t *testing
 				ResourceName:            "google_bigtable_app_profile.ap",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"app_profile_id", "instance", "ignore_warnings", "ignore_warnings"},
+				ImportStateVerifyIgnore: []string{"app_profile_id", "ignore_warnings", "ignore_warnings", "instance"},
 			},
 		},
 	})
@@ -131,7 +153,7 @@ resource "google_bigtable_instance" "instance" {
     storage_type = "HDD"
   }
 
-  deletion_protection  = "%{deletion_protection}"
+  deletion_protection  = %{deletion_protection}
 }
 
 resource "google_bigtable_app_profile" "ap" {
@@ -150,6 +172,7 @@ resource "google_bigtable_app_profile" "ap" {
 }
 
 func TestAccBigtableAppProfile_bigtableAppProfileMulticlusterExample(t *testing.T) {
+	acctest.SkipIfVcr(t)
 	t.Parallel()
 
 	context := map[string]interface{}{
@@ -169,7 +192,7 @@ func TestAccBigtableAppProfile_bigtableAppProfileMulticlusterExample(t *testing.
 				ResourceName:            "google_bigtable_app_profile.ap",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"app_profile_id", "instance", "ignore_warnings", "ignore_warnings"},
+				ImportStateVerifyIgnore: []string{"app_profile_id", "ignore_warnings", "ignore_warnings", "instance"},
 			},
 		},
 	})
@@ -198,7 +221,7 @@ resource "google_bigtable_instance" "instance" {
     storage_type = "HDD"
   }
 
-  deletion_protection  = "%{deletion_protection}"
+  deletion_protection  = %{deletion_protection}
 }
 
 resource "google_bigtable_app_profile" "ap" {
@@ -210,6 +233,66 @@ resource "google_bigtable_app_profile" "ap" {
   multi_cluster_routing_cluster_ids = ["cluster-1", "cluster-2"]
 
   ignore_warnings               = true
+}
+`, context)
+}
+
+func TestAccBigtableAppProfile_bigtableAppProfilePriorityExample(t *testing.T) {
+	acctest.SkipIfVcr(t)
+	t.Parallel()
+
+	context := map[string]interface{}{
+		"deletion_protection": false,
+		"random_suffix":       acctest.RandString(t, 10),
+	}
+
+	acctest.VcrTest(t, resource.TestCase{
+		PreCheck:                 func() { acctest.AccTestPreCheck(t) },
+		ProtoV5ProviderFactories: acctest.ProtoV5ProviderFactories(t),
+		CheckDestroy:             testAccCheckBigtableAppProfileDestroyProducer(t),
+		Steps: []resource.TestStep{
+			{
+				Config: testAccBigtableAppProfile_bigtableAppProfilePriorityExample(context),
+			},
+			{
+				ResourceName:            "google_bigtable_app_profile.ap",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"app_profile_id", "ignore_warnings", "ignore_warnings", "instance"},
+			},
+		},
+	})
+}
+
+func testAccBigtableAppProfile_bigtableAppProfilePriorityExample(context map[string]interface{}) string {
+	return acctest.Nprintf(`
+resource "google_bigtable_instance" "instance" {
+  name = "tf-test-bt-instance%{random_suffix}"
+  cluster {
+    cluster_id   = "cluster-1"
+    zone         = "us-central1-b"
+    num_nodes    = 3
+    storage_type = "HDD"
+  }
+
+  deletion_protection  = %{deletion_protection}
+}
+
+resource "google_bigtable_app_profile" "ap" {
+  instance       = google_bigtable_instance.instance.name
+  app_profile_id = "tf-test-bt-profile%{random_suffix}"
+
+  // Requests will be routed to the following cluster.
+  single_cluster_routing {
+    cluster_id                 = "cluster-1"
+    allow_transactional_writes = true
+  }
+
+  standard_isolation {
+    priority = "PRIORITY_LOW"
+  }
+
+  ignore_warnings = true
 }
 `, context)
 }

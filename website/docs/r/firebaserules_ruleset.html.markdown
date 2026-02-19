@@ -80,6 +80,14 @@ The `source` block supports:
   (Optional)
   `Language` of the `Source` bundle. If unspecified, the language will default to `FIREBASE_RULES`. Possible values: LANGUAGE_UNSPECIFIED, FIREBASE_RULES, EVENT_FLOW_TRIGGERS
     
+- - -
+
+* `project` -
+  (Optional)
+  The project for the resource
+  
+
+
 The `files` block supports:
     
 * `content` -
@@ -94,14 +102,6 @@ The `files` block supports:
   (Required)
   File name.
     
-- - -
-
-* `project` -
-  (Optional)
-  The project for the resource
-  
-
-
 ## Attributes Reference
 
 In addition to the arguments listed above, the following computed attributes are exported:
@@ -128,6 +128,21 @@ This resource provides the following
 ## Import
 
 Ruleset can be imported using any of these accepted formats:
+* `projects/{{project}}/rulesets/{{name}}`
+* `{{project}}/{{name}}`
+* `{{name}}`
+
+In Terraform v1.5.0 and later, use an [`import` block](https://developer.hashicorp.com/terraform/language/import) to import Ruleset using one of the formats above. For example:
+
+
+```tf
+import {
+  id = "projects/{{project}}/rulesets/{{name}}"
+  to = google_firebaserules_ruleset.default
+}
+```
+
+When using the [`terraform import` command](https://developer.hashicorp.com/terraform/cli/commands/import), Ruleset can be imported using one of the formats above. For example:
 
 ```
 $ terraform import google_firebaserules_ruleset.default projects/{{project}}/rulesets/{{name}}

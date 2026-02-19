@@ -19,16 +19,35 @@ package gkehub2_test
 
 import (
 	"fmt"
+	"log"
+	"strconv"
 	"strings"
 	"testing"
+	"time"
 
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/terraform"
 
 	"github.com/hashicorp/terraform-provider-google-beta/google-beta/acctest"
 	"github.com/hashicorp/terraform-provider-google-beta/google-beta/envvar"
 	"github.com/hashicorp/terraform-provider-google-beta/google-beta/tpgresource"
 	transport_tpg "github.com/hashicorp/terraform-provider-google-beta/google-beta/transport"
+
+	"google.golang.org/api/googleapi"
+)
+
+var (
+	_ = fmt.Sprintf
+	_ = log.Print
+	_ = strconv.Atoi
+	_ = strings.Trim
+	_ = time.Now
+	_ = resource.TestMain
+	_ = terraform.NewState
+	_ = envvar.TestEnvVar
+	_ = tpgresource.SetLabels
+	_ = transport_tpg.Config{}
+	_ = googleapi.Error{}
 )
 
 func TestAccGKEHub2Namespace_gkehubNamespaceBasicExample(t *testing.T) {
@@ -51,7 +70,7 @@ func TestAccGKEHub2Namespace_gkehubNamespaceBasicExample(t *testing.T) {
 				ResourceName:            "google_gke_hub_namespace.namespace",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"scope_namespace_id", "scope", "scope_id", "scope"},
+				ImportStateVerifyIgnore: []string{"labels", "scope", "scope", "scope_id", "scope_namespace_id", "terraform_labels"},
 			},
 		},
 	})
@@ -59,15 +78,15 @@ func TestAccGKEHub2Namespace_gkehubNamespaceBasicExample(t *testing.T) {
 
 func testAccGKEHub2Namespace_gkehubNamespaceBasicExample(context map[string]interface{}) string {
 	return acctest.Nprintf(`
-resource "google_gke_hub_scope" "namespace" {
+resource "google_gke_hub_scope" "scope" {
   scope_id = "tf-test-scope%{random_suffix}"
 }
 
 
 resource "google_gke_hub_namespace" "namespace" { 
   scope_namespace_id = "tf-test-namespace%{random_suffix}"
-  scope_id = "tf-test-scope%{random_suffix}"
-  scope = "${google_gke_hub_scope.namespace.name}"
+  scope_id = google_gke_hub_scope.scope.scope_id
+  scope = google_gke_hub_scope.scope.name
   namespace_labels = {
       keyb = "valueb"
       keya = "valuea"
@@ -78,7 +97,7 @@ resource "google_gke_hub_namespace" "namespace" {
       keya = "valuea"
       keyc = "valuec" 
   }
-  depends_on = [google_gke_hub_scope.namespace]
+  depends_on = [google_gke_hub_scope.scope]
 }
 `, context)
 }

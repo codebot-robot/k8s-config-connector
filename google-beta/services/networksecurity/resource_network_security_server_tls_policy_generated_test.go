@@ -19,15 +19,35 @@ package networksecurity_test
 
 import (
 	"fmt"
+	"log"
+	"strconv"
 	"strings"
 	"testing"
+	"time"
 
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/terraform"
 
 	"github.com/hashicorp/terraform-provider-google-beta/google-beta/acctest"
+	"github.com/hashicorp/terraform-provider-google-beta/google-beta/envvar"
 	"github.com/hashicorp/terraform-provider-google-beta/google-beta/tpgresource"
 	transport_tpg "github.com/hashicorp/terraform-provider-google-beta/google-beta/transport"
+
+	"google.golang.org/api/googleapi"
+)
+
+var (
+	_ = fmt.Sprintf
+	_ = log.Print
+	_ = strconv.Atoi
+	_ = strings.Trim
+	_ = time.Now
+	_ = resource.TestMain
+	_ = terraform.NewState
+	_ = envvar.TestEnvVar
+	_ = tpgresource.SetLabels
+	_ = transport_tpg.Config{}
+	_ = googleapi.Error{}
 )
 
 func TestAccNetworkSecurityServerTlsPolicy_networkSecurityServerTlsPolicyBasicExample(t *testing.T) {
@@ -39,7 +59,7 @@ func TestAccNetworkSecurityServerTlsPolicy_networkSecurityServerTlsPolicyBasicEx
 
 	acctest.VcrTest(t, resource.TestCase{
 		PreCheck:                 func() { acctest.AccTestPreCheck(t) },
-		ProtoV5ProviderFactories: acctest.ProtoV5ProviderBetaFactories(t),
+		ProtoV5ProviderFactories: acctest.ProtoV5ProviderFactories(t),
 		CheckDestroy:             testAccCheckNetworkSecurityServerTlsPolicyDestroyProducer(t),
 		Steps: []resource.TestStep{
 			{
@@ -49,7 +69,7 @@ func TestAccNetworkSecurityServerTlsPolicy_networkSecurityServerTlsPolicyBasicEx
 				ResourceName:            "google_network_security_server_tls_policy.default",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"name", "location"},
+				ImportStateVerifyIgnore: []string{"labels", "location", "name", "terraform_labels"},
 			},
 		},
 	})
@@ -58,7 +78,6 @@ func TestAccNetworkSecurityServerTlsPolicy_networkSecurityServerTlsPolicyBasicEx
 func testAccNetworkSecurityServerTlsPolicy_networkSecurityServerTlsPolicyBasicExample(context map[string]interface{}) string {
 	return acctest.Nprintf(`
 resource "google_network_security_server_tls_policy" "default" {
-  provider               = google-beta
   name                   = "tf-test-my-server-tls-policy%{random_suffix}"
   labels                 = {
     foo = "bar"
@@ -76,16 +95,6 @@ resource "google_network_security_server_tls_policy" "default" {
         target_uri = "unix:mypath"
       }
     }
-    client_validation_ca {
-      grpc_endpoint {
-        target_uri = "unix:abc/mypath"
-      }
-    }
-    client_validation_ca {
-      certificate_provider_instance {
-        plugin_instance = "google_cloud_private_spiffe"
-      }
-    }
   }
 }
 `, context)
@@ -100,7 +109,7 @@ func TestAccNetworkSecurityServerTlsPolicy_networkSecurityServerTlsPolicyAdvance
 
 	acctest.VcrTest(t, resource.TestCase{
 		PreCheck:                 func() { acctest.AccTestPreCheck(t) },
-		ProtoV5ProviderFactories: acctest.ProtoV5ProviderBetaFactories(t),
+		ProtoV5ProviderFactories: acctest.ProtoV5ProviderFactories(t),
 		CheckDestroy:             testAccCheckNetworkSecurityServerTlsPolicyDestroyProducer(t),
 		Steps: []resource.TestStep{
 			{
@@ -110,7 +119,7 @@ func TestAccNetworkSecurityServerTlsPolicy_networkSecurityServerTlsPolicyAdvance
 				ResourceName:            "google_network_security_server_tls_policy.default",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"name", "location"},
+				ImportStateVerifyIgnore: []string{"labels", "location", "name", "terraform_labels"},
 			},
 		},
 	})
@@ -119,7 +128,6 @@ func TestAccNetworkSecurityServerTlsPolicy_networkSecurityServerTlsPolicyAdvance
 func testAccNetworkSecurityServerTlsPolicy_networkSecurityServerTlsPolicyAdvancedExample(context map[string]interface{}) string {
 	return acctest.Nprintf(`
 resource "google_network_security_server_tls_policy" "default" {
-  provider               = google-beta
   name                   = "tf-test-my-server-tls-policy%{random_suffix}"
   labels                 = {
     foo = "bar"
@@ -143,7 +151,7 @@ func TestAccNetworkSecurityServerTlsPolicy_networkSecurityServerTlsPolicyServerC
 
 	acctest.VcrTest(t, resource.TestCase{
 		PreCheck:                 func() { acctest.AccTestPreCheck(t) },
-		ProtoV5ProviderFactories: acctest.ProtoV5ProviderBetaFactories(t),
+		ProtoV5ProviderFactories: acctest.ProtoV5ProviderFactories(t),
 		CheckDestroy:             testAccCheckNetworkSecurityServerTlsPolicyDestroyProducer(t),
 		Steps: []resource.TestStep{
 			{
@@ -153,7 +161,7 @@ func TestAccNetworkSecurityServerTlsPolicy_networkSecurityServerTlsPolicyServerC
 				ResourceName:            "google_network_security_server_tls_policy.default",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"name", "location"},
+				ImportStateVerifyIgnore: []string{"labels", "location", "name", "terraform_labels"},
 			},
 		},
 	})
@@ -162,7 +170,6 @@ func TestAccNetworkSecurityServerTlsPolicy_networkSecurityServerTlsPolicyServerC
 func testAccNetworkSecurityServerTlsPolicy_networkSecurityServerTlsPolicyServerCertExample(context map[string]interface{}) string {
 	return acctest.Nprintf(`
 resource "google_network_security_server_tls_policy" "default" {
-  provider               = google-beta
   name                   = "tf-test-my-server-tls-policy%{random_suffix}"
   labels                 = {
     foo = "bar"
@@ -174,6 +181,74 @@ resource "google_network_security_server_tls_policy" "default" {
     grpc_endpoint {
         target_uri = "unix:mypath"
       }
+  }
+}
+`, context)
+}
+
+func TestAccNetworkSecurityServerTlsPolicy_networkSecurityServerTlsPolicyMtlsExample(t *testing.T) {
+	t.Parallel()
+
+	context := map[string]interface{}{
+		"random_suffix": acctest.RandString(t, 10),
+	}
+
+	acctest.VcrTest(t, resource.TestCase{
+		PreCheck:                 func() { acctest.AccTestPreCheck(t) },
+		ProtoV5ProviderFactories: acctest.ProtoV5ProviderFactories(t),
+		CheckDestroy:             testAccCheckNetworkSecurityServerTlsPolicyDestroyProducer(t),
+		Steps: []resource.TestStep{
+			{
+				Config: testAccNetworkSecurityServerTlsPolicy_networkSecurityServerTlsPolicyMtlsExample(context),
+			},
+			{
+				ResourceName:            "google_network_security_server_tls_policy.default",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"labels", "location", "name", "terraform_labels"},
+			},
+		},
+	})
+}
+
+func testAccNetworkSecurityServerTlsPolicy_networkSecurityServerTlsPolicyMtlsExample(context map[string]interface{}) string {
+	return acctest.Nprintf(`
+data "google_project" "project" {
+}
+
+resource "google_network_security_server_tls_policy" "default" {
+  name     = "tf-test-my-server-tls-policy%{random_suffix}"
+
+  description = "my description"
+  location    = "global"
+  allow_open  = "false"
+
+  mtls_policy {
+    client_validation_mode         = "REJECT_INVALID"
+    client_validation_trust_config = "projects/${data.google_project.project.number}/locations/global/trustConfigs/${google_certificate_manager_trust_config.default.name}"
+  }
+
+  labels = {
+    foo = "bar"
+  }
+}
+
+resource "google_certificate_manager_trust_config" "default" {
+  name        = "tf-test-my-trust-config%{random_suffix}"
+  description = "sample trust config description"
+  location    = "global"
+
+  trust_stores {
+    trust_anchors {
+      pem_certificate = file("test-fixtures/ca_cert.pem")
+    }
+    intermediate_cas {
+      pem_certificate = file("test-fixtures/ca_cert.pem")
+    }
+  }
+
+  labels = {
+    foo = "bar"
   }
 }
 `, context)

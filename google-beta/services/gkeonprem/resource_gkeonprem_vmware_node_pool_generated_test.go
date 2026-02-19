@@ -19,15 +19,35 @@ package gkeonprem_test
 
 import (
 	"fmt"
+	"log"
+	"strconv"
 	"strings"
 	"testing"
+	"time"
 
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/terraform"
 
 	"github.com/hashicorp/terraform-provider-google-beta/google-beta/acctest"
+	"github.com/hashicorp/terraform-provider-google-beta/google-beta/envvar"
 	"github.com/hashicorp/terraform-provider-google-beta/google-beta/tpgresource"
 	transport_tpg "github.com/hashicorp/terraform-provider-google-beta/google-beta/transport"
+
+	"google.golang.org/api/googleapi"
+)
+
+var (
+	_ = fmt.Sprintf
+	_ = log.Print
+	_ = strconv.Atoi
+	_ = strings.Trim
+	_ = time.Now
+	_ = resource.TestMain
+	_ = terraform.NewState
+	_ = envvar.TestEnvVar
+	_ = tpgresource.SetLabels
+	_ = transport_tpg.Config{}
+	_ = googleapi.Error{}
 )
 
 func TestAccGkeonpremVmwareNodePool_gkeonpremVmwareNodePoolBasicExample(t *testing.T) {
@@ -39,7 +59,7 @@ func TestAccGkeonpremVmwareNodePool_gkeonpremVmwareNodePoolBasicExample(t *testi
 
 	acctest.VcrTest(t, resource.TestCase{
 		PreCheck:                 func() { acctest.AccTestPreCheck(t) },
-		ProtoV5ProviderFactories: acctest.ProtoV5ProviderBetaFactories(t),
+		ProtoV5ProviderFactories: acctest.ProtoV5ProviderFactories(t),
 		CheckDestroy:             testAccCheckGkeonpremVmwareNodePoolDestroyProducer(t),
 		Steps: []resource.TestStep{
 			{
@@ -49,7 +69,7 @@ func TestAccGkeonpremVmwareNodePool_gkeonpremVmwareNodePoolBasicExample(t *testi
 				ResourceName:            "google_gkeonprem_vmware_node_pool.nodepool-basic",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"name", "vmware_cluster", "location"},
+				ImportStateVerifyIgnore: []string{"annotations", "location", "name", "vmware_cluster"},
 			},
 		},
 	})
@@ -58,7 +78,6 @@ func TestAccGkeonpremVmwareNodePool_gkeonpremVmwareNodePoolBasicExample(t *testi
 func testAccGkeonpremVmwareNodePool_gkeonpremVmwareNodePoolBasicExample(context map[string]interface{}) string {
 	return acctest.Nprintf(`
 resource "google_gkeonprem_vmware_cluster" "default-basic" {
-  provider = google-beta
   name = "tf-test-my-cluster%{random_suffix}"
   location = "us-west1"
   admin_cluster_membership = "projects/870316890899/locations/global/memberships/gkeonprem-terraform-test"
@@ -97,7 +116,6 @@ resource "google_gkeonprem_vmware_cluster" "default-basic" {
 }
 
 resource "google_gkeonprem_vmware_node_pool" "nodepool-basic" {
-  provider = google-beta
   name = "tf-test-my-nodepool%{random_suffix}"
   location = "us-west1"
   vmware_cluster = google_gkeonprem_vmware_cluster.default-basic.name
@@ -119,7 +137,7 @@ func TestAccGkeonpremVmwareNodePool_gkeonpremVmwareNodePoolFullExample(t *testin
 
 	acctest.VcrTest(t, resource.TestCase{
 		PreCheck:                 func() { acctest.AccTestPreCheck(t) },
-		ProtoV5ProviderFactories: acctest.ProtoV5ProviderBetaFactories(t),
+		ProtoV5ProviderFactories: acctest.ProtoV5ProviderFactories(t),
 		CheckDestroy:             testAccCheckGkeonpremVmwareNodePoolDestroyProducer(t),
 		Steps: []resource.TestStep{
 			{
@@ -129,7 +147,7 @@ func TestAccGkeonpremVmwareNodePool_gkeonpremVmwareNodePoolFullExample(t *testin
 				ResourceName:            "google_gkeonprem_vmware_node_pool.nodepool-full",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"name", "vmware_cluster", "location"},
+				ImportStateVerifyIgnore: []string{"annotations", "location", "name", "vmware_cluster"},
 			},
 		},
 	})
@@ -138,12 +156,11 @@ func TestAccGkeonpremVmwareNodePool_gkeonpremVmwareNodePoolFullExample(t *testin
 func testAccGkeonpremVmwareNodePool_gkeonpremVmwareNodePoolFullExample(context map[string]interface{}) string {
 	return acctest.Nprintf(`
 resource "google_gkeonprem_vmware_cluster" "default-full" {
-  provider = google-beta
   name = "tf-test-my-cluster%{random_suffix}"
   location = "us-west1"
   admin_cluster_membership = "projects/870316890899/locations/global/memberships/gkeonprem-terraform-test"
   description = "test cluster"
-  on_prem_version = "1.13.1-gke.35"
+  on_prem_version = "1.33.0-gke.35"
   network_config {
     service_address_cidr_blocks = ["10.96.0.0/12"]
     pod_address_cidr_blocks = ["192.168.0.0/16"]
@@ -177,10 +194,10 @@ resource "google_gkeonprem_vmware_cluster" "default-full" {
 }
 
 resource "google_gkeonprem_vmware_node_pool" "nodepool-full" {
-  provider = google-beta
   name = "tf-test-my-nodepool%{random_suffix}"
   location = "us-west1"
   vmware_cluster = google_gkeonprem_vmware_cluster.default-full.name
+  on_prem_version = "1.33.0-gke.35"
   annotations = {}
   config {
     cpus = 4
@@ -199,6 +216,18 @@ resource "google_gkeonprem_vmware_node_pool" "nodepool-full" {
         effect = "NO_SCHEDULE"
     }
     labels = {}
+    vsphere_config {
+      datastore = "test-datastore"
+      tags {
+        category = "test-category-1"
+        tag = "tag-1"
+      }
+      tags {
+        category = "test-category-2"
+        tag = "tag-2"
+      }
+      host_groups = ["host1", "host2"]
+    }
     enable_load_balancer = true
   }
   node_pool_autoscaling {

@@ -19,16 +19,35 @@ package apigee_test
 
 import (
 	"fmt"
+	"log"
+	"strconv"
 	"strings"
 	"testing"
+	"time"
 
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/terraform"
 
 	"github.com/hashicorp/terraform-provider-google-beta/google-beta/acctest"
 	"github.com/hashicorp/terraform-provider-google-beta/google-beta/envvar"
 	"github.com/hashicorp/terraform-provider-google-beta/google-beta/tpgresource"
 	transport_tpg "github.com/hashicorp/terraform-provider-google-beta/google-beta/transport"
+
+	"google.golang.org/api/googleapi"
+)
+
+var (
+	_ = fmt.Sprintf
+	_ = log.Print
+	_ = strconv.Atoi
+	_ = strings.Trim
+	_ = time.Now
+	_ = resource.TestMain
+	_ = terraform.NewState
+	_ = envvar.TestEnvVar
+	_ = tpgresource.SetLabels
+	_ = transport_tpg.Config{}
+	_ = googleapi.Error{}
 )
 
 func TestAccApigeeInstance_apigeeInstanceBasicTestExample(t *testing.T) {
@@ -36,15 +55,18 @@ func TestAccApigeeInstance_apigeeInstanceBasicTestExample(t *testing.T) {
 	t.Parallel()
 
 	context := map[string]interface{}{
-		"org_id":          envvar.GetTestOrgFromEnv(t),
 		"billing_account": envvar.GetTestBillingAccountFromEnv(t),
+		"org_id":          envvar.GetTestOrgFromEnv(t),
 		"random_suffix":   acctest.RandString(t, 10),
 	}
 
 	acctest.VcrTest(t, resource.TestCase{
 		PreCheck:                 func() { acctest.AccTestPreCheck(t) },
 		ProtoV5ProviderFactories: acctest.ProtoV5ProviderFactories(t),
-		CheckDestroy:             testAccCheckApigeeInstanceDestroyProducer(t),
+		ExternalProviders: map[string]resource.ExternalProvider{
+			"time": {},
+		},
+		CheckDestroy: testAccCheckApigeeInstanceDestroyProducer(t),
 		Steps: []resource.TestStep{
 			{
 				Config: testAccApigeeInstance_apigeeInstanceBasicTestExample(context),
@@ -66,27 +88,41 @@ resource "google_project" "project" {
   name            = "tf-test%{random_suffix}"
   org_id          = "%{org_id}"
   billing_account = "%{billing_account}"
+  deletion_policy = "DELETE"
+}
+
+resource "time_sleep" "wait_60_seconds" {
+  create_duration = "60s"
+  depends_on = [google_project.project]
 }
 
 resource "google_project_service" "apigee" {
   project = google_project.project.project_id
   service = "apigee.googleapis.com"
+  depends_on = [time_sleep.wait_60_seconds]
 }
 
 resource "google_project_service" "compute" {
   project = google_project.project.project_id
   service = "compute.googleapis.com"
+  depends_on = [google_project_service.apigee]
 }
 
 resource "google_project_service" "servicenetworking" {
   project = google_project.project.project_id
   service = "servicenetworking.googleapis.com"
+  depends_on = [google_project_service.compute]
+}
+
+resource "time_sleep" "wait_120_seconds" {
+  create_duration = "120s"
+  depends_on = [google_project_service.servicenetworking]
 }
 
 resource "google_compute_network" "apigee_network" {
   name       = "apigee-network"
   project    = google_project.project.project_id
-  depends_on = [google_project_service.compute]
+  depends_on = [time_sleep.wait_120_seconds]
 }
 
 resource "google_compute_global_address" "apigee_range" {
@@ -128,15 +164,18 @@ func TestAccApigeeInstance_apigeeInstanceCidrRangeTestExample(t *testing.T) {
 	t.Parallel()
 
 	context := map[string]interface{}{
-		"org_id":          envvar.GetTestOrgFromEnv(t),
 		"billing_account": envvar.GetTestBillingAccountFromEnv(t),
+		"org_id":          envvar.GetTestOrgFromEnv(t),
 		"random_suffix":   acctest.RandString(t, 10),
 	}
 
 	acctest.VcrTest(t, resource.TestCase{
 		PreCheck:                 func() { acctest.AccTestPreCheck(t) },
 		ProtoV5ProviderFactories: acctest.ProtoV5ProviderFactories(t),
-		CheckDestroy:             testAccCheckApigeeInstanceDestroyProducer(t),
+		ExternalProviders: map[string]resource.ExternalProvider{
+			"time": {},
+		},
+		CheckDestroy: testAccCheckApigeeInstanceDestroyProducer(t),
 		Steps: []resource.TestStep{
 			{
 				Config: testAccApigeeInstance_apigeeInstanceCidrRangeTestExample(context),
@@ -158,27 +197,41 @@ resource "google_project" "project" {
   name            = "tf-test%{random_suffix}"
   org_id          = "%{org_id}"
   billing_account = "%{billing_account}"
+  deletion_policy = "DELETE"
+}
+
+resource "time_sleep" "wait_60_seconds" {
+  create_duration = "60s"
+  depends_on = [google_project.project]
 }
 
 resource "google_project_service" "apigee" {
   project = google_project.project.project_id
   service = "apigee.googleapis.com"
+  depends_on = [time_sleep.wait_60_seconds]
 }
 
 resource "google_project_service" "compute" {
   project = google_project.project.project_id
   service = "compute.googleapis.com"
+  depends_on = [google_project_service.apigee]
 }
 
 resource "google_project_service" "servicenetworking" {
   project = google_project.project.project_id
   service = "servicenetworking.googleapis.com"
+  depends_on = [google_project_service.compute]
+}
+
+resource "time_sleep" "wait_120_seconds" {
+  create_duration = "120s"
+  depends_on = [google_project_service.servicenetworking]
 }
 
 resource "google_compute_network" "apigee_network" {
   name       = "apigee-network"
   project    = google_project.project.project_id
-  depends_on = [google_project_service.compute]
+  depends_on = [time_sleep.wait_120_seconds]
 }
 
 resource "google_compute_global_address" "apigee_range" {
@@ -221,15 +274,18 @@ func TestAccApigeeInstance_apigeeInstanceIpRangeTestExample(t *testing.T) {
 	t.Parallel()
 
 	context := map[string]interface{}{
-		"org_id":          envvar.GetTestOrgFromEnv(t),
 		"billing_account": envvar.GetTestBillingAccountFromEnv(t),
+		"org_id":          envvar.GetTestOrgFromEnv(t),
 		"random_suffix":   acctest.RandString(t, 10),
 	}
 
 	acctest.VcrTest(t, resource.TestCase{
 		PreCheck:                 func() { acctest.AccTestPreCheck(t) },
 		ProtoV5ProviderFactories: acctest.ProtoV5ProviderFactories(t),
-		CheckDestroy:             testAccCheckApigeeInstanceDestroyProducer(t),
+		ExternalProviders: map[string]resource.ExternalProvider{
+			"time": {},
+		},
+		CheckDestroy: testAccCheckApigeeInstanceDestroyProducer(t),
 		Steps: []resource.TestStep{
 			{
 				Config: testAccApigeeInstance_apigeeInstanceIpRangeTestExample(context),
@@ -251,27 +307,41 @@ resource "google_project" "project" {
   name            = "tf-test%{random_suffix}"
   org_id          = "%{org_id}"
   billing_account = "%{billing_account}"
+  deletion_policy = "DELETE"
+}
+
+resource "time_sleep" "wait_60_seconds" {
+  create_duration = "60s"
+  depends_on = [google_project.project]
 }
 
 resource "google_project_service" "apigee" {
   project = google_project.project.project_id
   service = "apigee.googleapis.com"
+  depends_on = [time_sleep.wait_60_seconds]
 }
 
 resource "google_project_service" "compute" {
   project = google_project.project.project_id
   service = "compute.googleapis.com"
+  depends_on = [google_project_service.apigee]
 }
 
 resource "google_project_service" "servicenetworking" {
   project = google_project.project.project_id
   service = "servicenetworking.googleapis.com"
+  depends_on = [google_project_service.compute]
+}
+
+resource "time_sleep" "wait_120_seconds" {
+  create_duration = "120s"
+  depends_on = [google_project_service.servicenetworking]
 }
 
 resource "google_compute_network" "apigee_network" {
   name       = "apigee-network"
   project    = google_project.project.project_id
-  depends_on = [google_project_service.compute]
+  depends_on = [time_sleep.wait_120_seconds]
 }
 
 resource "google_compute_global_address" "apigee_range" {
@@ -314,15 +384,18 @@ func TestAccApigeeInstance_apigeeInstanceFullTestExample(t *testing.T) {
 	t.Parallel()
 
 	context := map[string]interface{}{
-		"org_id":          envvar.GetTestOrgFromEnv(t),
 		"billing_account": envvar.GetTestBillingAccountFromEnv(t),
+		"org_id":          envvar.GetTestOrgFromEnv(t),
 		"random_suffix":   acctest.RandString(t, 10),
 	}
 
 	acctest.VcrTest(t, resource.TestCase{
 		PreCheck:                 func() { acctest.AccTestPreCheck(t) },
 		ProtoV5ProviderFactories: acctest.ProtoV5ProviderBetaFactories(t),
-		CheckDestroy:             testAccCheckApigeeInstanceDestroyProducer(t),
+		ExternalProviders: map[string]resource.ExternalProvider{
+			"time": {},
+		},
+		CheckDestroy: testAccCheckApigeeInstanceDestroyProducer(t),
 		Steps: []resource.TestStep{
 			{
 				Config: testAccApigeeInstance_apigeeInstanceFullTestExample(context),
@@ -346,6 +419,12 @@ resource "google_project" "project" {
   name            = "tf-test%{random_suffix}"
   org_id          = "%{org_id}"
   billing_account = "%{billing_account}"
+  deletion_policy = "DELETE"
+}
+
+resource "time_sleep" "wait_60_seconds" {
+  create_duration = "60s"
+  depends_on = [google_project.project]
 }
 
 resource "google_project_service" "apigee" {
@@ -353,6 +432,7 @@ resource "google_project_service" "apigee" {
 
   project = google_project.project.project_id
   service = "apigee.googleapis.com"
+  depends_on = [time_sleep.wait_60_seconds]
 }
 
 resource "google_project_service" "compute" {
@@ -360,6 +440,7 @@ resource "google_project_service" "compute" {
 
   project = google_project.project.project_id
   service = "compute.googleapis.com"
+  depends_on = [google_project_service.apigee]
 }
 
 resource "google_project_service" "servicenetworking" {
@@ -367,6 +448,7 @@ resource "google_project_service" "servicenetworking" {
 
   project = google_project.project.project_id
   service = "servicenetworking.googleapis.com"
+  depends_on = [google_project_service.compute]
 }
 
 resource "google_project_service" "kms" {
@@ -374,6 +456,12 @@ resource "google_project_service" "kms" {
 
   project = google_project.project.project_id
   service = "cloudkms.googleapis.com"
+  depends_on = [google_project_service.servicenetworking]
+}
+
+resource "time_sleep" "wait_120_seconds" {
+  create_duration = "120s"
+  depends_on = [google_project_service.kms]
 }
 
 resource "google_compute_network" "apigee_network" {
@@ -381,7 +469,7 @@ resource "google_compute_network" "apigee_network" {
 
   name       = "apigee-network"
   project    = google_project.project.project_id
-  depends_on = [google_project_service.compute]
+  depends_on = [time_sleep.wait_120_seconds]
 }
 
 resource "google_compute_global_address" "apigee_range" {
@@ -427,15 +515,13 @@ resource "google_project_service_identity" "apigee_sa" {
   service = google_project_service.apigee.service
 }
 
-resource "google_kms_crypto_key_iam_binding" "apigee_sa_keyuser" {
+resource "google_kms_crypto_key_iam_member" "apigee_sa_keyuser" {
   provider = google-beta
 
   crypto_key_id = google_kms_crypto_key.apigee_key.id
   role          = "roles/cloudkms.cryptoKeyEncrypterDecrypter"
 
-  members = [
-    "serviceAccount:${google_project_service_identity.apigee_sa.email}",
-  ]
+  member = google_project_service_identity.apigee_sa.member
 }
 
 resource "google_apigee_organization" "apigee_org" {
@@ -450,7 +536,7 @@ resource "google_apigee_organization" "apigee_org" {
 
   depends_on = [
     google_service_networking_connection.apigee_vpc_connection,
-    google_kms_crypto_key_iam_binding.apigee_sa_keyuser,
+    google_kms_crypto_key_iam_member.apigee_sa_keyuser,
   ]
 }
 
@@ -463,6 +549,11 @@ resource "google_apigee_instance" "apigee_instance" {
   display_name             = "tf-test%{random_suffix}"
   org_id                   = google_apigee_organization.apigee_org.id
   disk_encryption_key_name = google_kms_crypto_key.apigee_key.id
+
+  access_logging_config {
+    enabled = true
+    filter  = "status_code >= 200 && status_code < 300"
+  }
 }
 `, context)
 }
@@ -472,15 +563,18 @@ func TestAccApigeeInstance_apigeeInstanceServiceAttachmentBasicTestExample(t *te
 	t.Parallel()
 
 	context := map[string]interface{}{
-		"org_id":          envvar.GetTestOrgFromEnv(t),
 		"billing_account": envvar.GetTestBillingAccountFromEnv(t),
+		"org_id":          envvar.GetTestOrgFromEnv(t),
 		"random_suffix":   acctest.RandString(t, 10),
 	}
 
 	acctest.VcrTest(t, resource.TestCase{
 		PreCheck:                 func() { acctest.AccTestPreCheck(t) },
 		ProtoV5ProviderFactories: acctest.ProtoV5ProviderFactories(t),
-		CheckDestroy:             testAccCheckApigeeInstanceDestroyProducer(t),
+		ExternalProviders: map[string]resource.ExternalProvider{
+			"time": {},
+		},
+		CheckDestroy: testAccCheckApigeeInstanceDestroyProducer(t),
 		Steps: []resource.TestStep{
 			{
 				Config: testAccApigeeInstance_apigeeInstanceServiceAttachmentBasicTestExample(context),
@@ -502,27 +596,41 @@ resource "google_project" "project" {
   name            = "tf-test%{random_suffix}"
   org_id          = "%{org_id}"
   billing_account = "%{billing_account}"
+  deletion_policy = "DELETE"
+}
+
+resource "time_sleep" "wait_60_seconds" {
+  create_duration = "60s"
+  depends_on = [google_project.project]
 }
 
 resource "google_project_service" "apigee" {
   project = google_project.project.project_id
   service = "apigee.googleapis.com"
+  depends_on = [time_sleep.wait_60_seconds]
 }
 
 resource "google_project_service" "compute" {
   project = google_project.project.project_id
   service = "compute.googleapis.com"
+  depends_on = [google_project_service.apigee]
 }
 
 resource "google_project_service" "servicenetworking" {
   project = google_project.project.project_id
   service = "servicenetworking.googleapis.com"
+  depends_on = [google_project_service.compute]
+}
+
+resource "time_sleep" "wait_120_seconds" {
+  create_duration = "120s"
+  depends_on = [google_project_service.servicenetworking]
 }
 
 resource "google_compute_network" "apigee_network" {
   name       = "apigee-network"
   project    = google_project.project.project_id
-  depends_on = [google_project_service.compute]
+  depends_on = [time_sleep.wait_120_seconds]
 }
 
 resource "google_compute_global_address" "apigee_range" {

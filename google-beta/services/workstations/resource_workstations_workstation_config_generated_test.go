@@ -19,22 +19,45 @@ package workstations_test
 
 import (
 	"fmt"
+	"log"
+	"strconv"
 	"strings"
 	"testing"
+	"time"
 
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/terraform"
 
 	"github.com/hashicorp/terraform-provider-google-beta/google-beta/acctest"
+	"github.com/hashicorp/terraform-provider-google-beta/google-beta/envvar"
 	"github.com/hashicorp/terraform-provider-google-beta/google-beta/tpgresource"
 	transport_tpg "github.com/hashicorp/terraform-provider-google-beta/google-beta/transport"
+
+	"google.golang.org/api/googleapi"
+)
+
+var (
+	_ = fmt.Sprintf
+	_ = log.Print
+	_ = strconv.Atoi
+	_ = strings.Trim
+	_ = time.Now
+	_ = resource.TestMain
+	_ = terraform.NewState
+	_ = envvar.TestEnvVar
+	_ = tpgresource.SetLabels
+	_ = transport_tpg.Config{}
+	_ = googleapi.Error{}
 )
 
 func TestAccWorkstationsWorkstationConfig_workstationConfigBasicExample(t *testing.T) {
 	t.Parallel()
 
 	context := map[string]interface{}{
-		"random_suffix": acctest.RandString(t, 10),
+		"key_short_name":   "tf-test-key-" + acctest.RandString(t, 10),
+		"org_id":           envvar.GetTestOrgFromEnv(t),
+		"value_short_name": "tf-test-value-" + acctest.RandString(t, 10),
+		"random_suffix":    acctest.RandString(t, 10),
 	}
 
 	acctest.VcrTest(t, resource.TestCase{
@@ -49,7 +72,7 @@ func TestAccWorkstationsWorkstationConfig_workstationConfigBasicExample(t *testi
 				ResourceName:            "google_workstations_workstation_config.default",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"workstation_config_id", "workstation_cluster_id", "location"},
+				ImportStateVerifyIgnore: []string{"annotations", "enable_audit_agent", "labels", "location", "terraform_labels", "workstation_cluster_id", "workstation_config_id"},
 			},
 		},
 	})
@@ -57,6 +80,18 @@ func TestAccWorkstationsWorkstationConfig_workstationConfigBasicExample(t *testi
 
 func testAccWorkstationsWorkstationConfig_workstationConfigBasicExample(context map[string]interface{}) string {
 	return acctest.Nprintf(`
+resource "google_tags_tag_key" "tag_key1" {
+  provider   = google-beta
+  parent     = "organizations/%{org_id}"
+  short_name = "%{key_short_name}"
+}
+
+resource "google_tags_tag_value" "tag_value1" {
+  provider   = google-beta
+  parent     = google_tags_tag_key.tag_key1.id
+  short_name = "%{value_short_name}"
+}
+
 resource "google_compute_network" "default" {
   provider                = google-beta
   name                    = "tf-test-workstation-cluster%{random_suffix}"
@@ -96,11 +131,26 @@ resource "google_workstations_workstation_config" "default" {
   idle_timeout = "600s"
   running_timeout = "21600s"
 
+  replica_zones = ["us-central1-a", "us-central1-b"]
+  annotations = {
+    label-one = "value-one"
+  }
+
+  labels = {
+    "label" = "key"
+  }
+
+  max_usable_workstations = 1 
+  
   host {
     gce_instance {
       machine_type                = "e2-standard-4"
       boot_disk_size_gb           = 35
       disable_public_ip_addresses = true
+      disable_ssh                 = false
+      vm_tags = {
+        (google_tags_tag_key.tag_key1.id) = google_tags_tag_value.tag_value1.id
+      }
     }
   }
 }
@@ -126,7 +176,7 @@ func TestAccWorkstationsWorkstationConfig_workstationConfigContainerExample(t *t
 				ResourceName:            "google_workstations_workstation_config.default",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"workstation_config_id", "workstation_cluster_id", "location"},
+				ImportStateVerifyIgnore: []string{"annotations", "enable_audit_agent", "labels", "location", "terraform_labels", "workstation_cluster_id", "workstation_config_id"},
 			},
 		},
 	})
@@ -209,7 +259,7 @@ func TestAccWorkstationsWorkstationConfig_workstationConfigPersistentDirectories
 				ResourceName:            "google_workstations_workstation_config.default",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"workstation_config_id", "workstation_cluster_id", "location"},
+				ImportStateVerifyIgnore: []string{"annotations", "enable_audit_agent", "labels", "location", "terraform_labels", "workstation_cluster_id", "workstation_config_id"},
 			},
 		},
 	})
@@ -297,7 +347,7 @@ func TestAccWorkstationsWorkstationConfig_workstationConfigSourceSnapshotExample
 				ResourceName:            "google_workstations_workstation_config.default",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"workstation_config_id", "workstation_cluster_id", "location"},
+				ImportStateVerifyIgnore: []string{"annotations", "enable_audit_agent", "labels", "location", "terraform_labels", "workstation_cluster_id", "workstation_config_id"},
 			},
 		},
 	})
@@ -379,7 +429,7 @@ func TestAccWorkstationsWorkstationConfig_workstationConfigShieldedInstanceConfi
 				ResourceName:            "google_workstations_workstation_config.default",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"workstation_config_id", "workstation_cluster_id", "location"},
+				ImportStateVerifyIgnore: []string{"annotations", "enable_audit_agent", "labels", "location", "terraform_labels", "workstation_cluster_id", "workstation_config_id"},
 			},
 		},
 	})
@@ -457,7 +507,7 @@ func TestAccWorkstationsWorkstationConfig_workstationConfigAcceleratorsExample(t
 				ResourceName:            "google_workstations_workstation_config.default",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"workstation_config_id", "workstation_cluster_id", "location"},
+				ImportStateVerifyIgnore: []string{"annotations", "enable_audit_agent", "labels", "location", "terraform_labels", "workstation_cluster_id", "workstation_config_id"},
 			},
 		},
 	})
@@ -507,8 +557,97 @@ resource "google_workstations_workstation_config" "default" {
       boot_disk_size_gb           = 35
       disable_public_ip_addresses = true
       accelerators {
-        type  = "nvidia-tesla-p100"
+        type  = "nvidia-tesla-t4"
         count = "1"
+      }
+    }
+  }
+}
+`, context)
+}
+
+func TestAccWorkstationsWorkstationConfig_workstationConfigBoostExample(t *testing.T) {
+	t.Parallel()
+
+	context := map[string]interface{}{
+		"random_suffix": acctest.RandString(t, 10),
+	}
+
+	acctest.VcrTest(t, resource.TestCase{
+		PreCheck:                 func() { acctest.AccTestPreCheck(t) },
+		ProtoV5ProviderFactories: acctest.ProtoV5ProviderBetaFactories(t),
+		CheckDestroy:             testAccCheckWorkstationsWorkstationConfigDestroyProducer(t),
+		Steps: []resource.TestStep{
+			{
+				Config: testAccWorkstationsWorkstationConfig_workstationConfigBoostExample(context),
+			},
+			{
+				ResourceName:            "google_workstations_workstation_config.default",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"annotations", "enable_audit_agent", "labels", "location", "terraform_labels", "workstation_cluster_id", "workstation_config_id"},
+			},
+		},
+	})
+}
+
+func testAccWorkstationsWorkstationConfig_workstationConfigBoostExample(context map[string]interface{}) string {
+	return acctest.Nprintf(`
+resource "google_compute_network" "default" {
+  provider                = google-beta
+  name                    = "tf-test-workstation-cluster%{random_suffix}"
+  auto_create_subnetworks = false
+}
+
+resource "google_compute_subnetwork" "default" {
+  provider      = google-beta
+  name          = "tf-test-workstation-cluster%{random_suffix}"
+  ip_cidr_range = "10.0.0.0/24"
+  region        = "us-central1"
+  network       = google_compute_network.default.name
+}
+
+resource "google_workstations_workstation_cluster" "default" {
+  provider               = google-beta
+  workstation_cluster_id = "tf-test-workstation-cluster%{random_suffix}"
+  network                = google_compute_network.default.id
+  subnetwork             = google_compute_subnetwork.default.id
+  location               = "us-central1"
+  
+  labels = {
+    "label" = "key"
+  }
+
+  annotations = {
+    label-one = "value-one"
+  }
+}
+
+resource "google_workstations_workstation_config" "default" {
+  provider               = google-beta
+  workstation_config_id  = "tf-test-workstation-config%{random_suffix}"
+  workstation_cluster_id = google_workstations_workstation_cluster.default.workstation_cluster_id
+  location               = "us-central1"
+
+  host {
+    gce_instance {
+      machine_type                = "e2-standard-4"
+      boot_disk_size_gb           = 35
+      disable_public_ip_addresses = true
+      boost_configs {
+        id           = "boost-1"
+        machine_type = "n1-standard-2"
+        accelerators {
+          type  = "nvidia-tesla-t4"
+          count = "1"
+        }
+      }
+      boost_configs {
+        id                           = "boost-2"
+        machine_type                 = "n1-standard-2"
+        pool_size                    = 2
+        boot_disk_size_gb            = 30
+        enable_nested_virtualization = true
       }
     }
   }
@@ -535,7 +674,7 @@ func TestAccWorkstationsWorkstationConfig_workstationConfigEncryptionKeyExample(
 				ResourceName:            "google_workstations_workstation_config.default",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"workstation_config_id", "workstation_cluster_id", "location"},
+				ImportStateVerifyIgnore: []string{"annotations", "enable_audit_agent", "labels", "location", "terraform_labels", "workstation_cluster_id", "workstation_config_id"},
 			},
 		},
 	})
@@ -619,6 +758,98 @@ resource "google_workstations_workstation_config" "default" {
   encryption_key {
     kms_key                 = google_kms_crypto_key.default.id
     kms_key_service_account = google_service_account.default.email
+  }
+}
+`, context)
+}
+
+func TestAccWorkstationsWorkstationConfig_workstationConfigAllowedPortsExample(t *testing.T) {
+	t.Parallel()
+
+	context := map[string]interface{}{
+		"random_suffix": acctest.RandString(t, 10),
+	}
+
+	acctest.VcrTest(t, resource.TestCase{
+		PreCheck:                 func() { acctest.AccTestPreCheck(t) },
+		ProtoV5ProviderFactories: acctest.ProtoV5ProviderBetaFactories(t),
+		CheckDestroy:             testAccCheckWorkstationsWorkstationConfigDestroyProducer(t),
+		Steps: []resource.TestStep{
+			{
+				Config: testAccWorkstationsWorkstationConfig_workstationConfigAllowedPortsExample(context),
+			},
+			{
+				ResourceName:            "google_workstations_workstation_config.default",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"annotations", "enable_audit_agent", "labels", "location", "terraform_labels", "workstation_cluster_id", "workstation_config_id"},
+			},
+		},
+	})
+}
+
+func testAccWorkstationsWorkstationConfig_workstationConfigAllowedPortsExample(context map[string]interface{}) string {
+	return acctest.Nprintf(`
+resource "google_compute_network" "default" {
+  provider                = google-beta
+  name                    = "tf-test-workstation-cluster%{random_suffix}"
+  auto_create_subnetworks = false
+}
+
+resource "google_compute_subnetwork" "default" {
+  provider      = google-beta
+  name          = "tf-test-workstation-cluster%{random_suffix}"
+  ip_cidr_range = "10.0.0.0/24"
+  region        = "us-central1"
+  network       = google_compute_network.default.name
+}
+
+resource "google_workstations_workstation_cluster" "default" {
+  provider               = google-beta
+  workstation_cluster_id = "tf-test-workstation-cluster%{random_suffix}"
+  network                = google_compute_network.default.id
+  subnetwork             = google_compute_subnetwork.default.id
+  location               = "us-central1"
+  
+  labels = {
+    "label" = "key"
+  }
+
+  annotations = {
+    label-one = "value-one"
+  }
+}
+
+resource "google_workstations_workstation_config" "default" {
+  provider               = google-beta
+  workstation_config_id  = "tf-test-workstation-config%{random_suffix}"
+  workstation_cluster_id = google_workstations_workstation_cluster.default.workstation_cluster_id
+  location               = "us-central1"
+
+  host {
+    gce_instance {
+      machine_type                = "e2-standard-4"
+      boot_disk_size_gb           = 35
+      disable_public_ip_addresses = true
+    }
+  }
+
+  # Allow only port 80 (HTTP)
+  allowed_ports {
+    first = 80
+    last  = 80
+  }
+
+  # Allow only port 22 (SSH)
+  allowed_ports {
+    first = 22
+    last  = 22
+  }
+
+  # Allow port range 1024-65535
+  allowed_ports {
+    first = 1024
+    last  = 65535
   }
 }
 `, context)

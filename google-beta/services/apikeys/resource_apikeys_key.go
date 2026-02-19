@@ -24,6 +24,7 @@ import (
 	"log"
 	"time"
 
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/customdiff"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 
 	dcl "github.com/GoogleCloudPlatform/declarative-resource-client-library/dcl"
@@ -50,6 +51,9 @@ func ResourceApikeysKey() *schema.Resource {
 			Update: schema.DefaultTimeout(20 * time.Minute),
 			Delete: schema.DefaultTimeout(20 * time.Minute),
 		},
+		CustomizeDiff: customdiff.All(
+			tpgresource.DefaultProviderProject,
+		),
 
 		Schema: map[string]*schema.Schema{
 			"name": {
@@ -80,6 +84,14 @@ func ResourceApikeysKey() *schema.Resource {
 				Description: "Key restrictions.",
 				MaxItems:    1,
 				Elem:        ApikeysKeyRestrictionsSchema(),
+			},
+
+			"service_account_email": {
+				Type:             schema.TypeString,
+				Optional:         true,
+				ForceNew:         true,
+				DiffSuppressFunc: tpgresource.CompareSelfLinkOrResourceName,
+				Description:      "The email of the service account the key is bound to. If this field is specified, the key is a service account bound key and auth enabled. See [Documentation](https://cloud.devsite.corp.google.com/docs/authentication/api-keys?#api-keys-bound-sa) for more details.",
 			},
 
 			"key_string": {
@@ -240,10 +252,11 @@ func resourceApikeysKeyCreate(d *schema.ResourceData, meta interface{}) error {
 	}
 
 	obj := &apikeys.Key{
-		Name:         dcl.String(d.Get("name").(string)),
-		DisplayName:  dcl.String(d.Get("display_name").(string)),
-		Project:      dcl.String(project),
-		Restrictions: expandApikeysKeyRestrictions(d.Get("restrictions")),
+		Name:                dcl.String(d.Get("name").(string)),
+		DisplayName:         dcl.String(d.Get("display_name").(string)),
+		Project:             dcl.String(project),
+		Restrictions:        expandApikeysKeyRestrictions(d.Get("restrictions")),
+		ServiceAccountEmail: dcl.String(d.Get("service_account_email").(string)),
 	}
 
 	id, err := obj.ID()
@@ -291,10 +304,11 @@ func resourceApikeysKeyRead(d *schema.ResourceData, meta interface{}) error {
 	}
 
 	obj := &apikeys.Key{
-		Name:         dcl.String(d.Get("name").(string)),
-		DisplayName:  dcl.String(d.Get("display_name").(string)),
-		Project:      dcl.String(project),
-		Restrictions: expandApikeysKeyRestrictions(d.Get("restrictions")),
+		Name:                dcl.String(d.Get("name").(string)),
+		DisplayName:         dcl.String(d.Get("display_name").(string)),
+		Project:             dcl.String(project),
+		Restrictions:        expandApikeysKeyRestrictions(d.Get("restrictions")),
+		ServiceAccountEmail: dcl.String(d.Get("service_account_email").(string)),
 	}
 
 	userAgent, err := tpgresource.GenerateUserAgentString(d, config.UserAgent)
@@ -331,6 +345,9 @@ func resourceApikeysKeyRead(d *schema.ResourceData, meta interface{}) error {
 	if err = d.Set("restrictions", flattenApikeysKeyRestrictions(res.Restrictions)); err != nil {
 		return fmt.Errorf("error setting restrictions in state: %s", err)
 	}
+	if err = d.Set("service_account_email", res.ServiceAccountEmail); err != nil {
+		return fmt.Errorf("error setting service_account_email in state: %s", err)
+	}
 	if err = d.Set("key_string", res.KeyString); err != nil {
 		return fmt.Errorf("error setting key_string in state: %s", err)
 	}
@@ -348,10 +365,11 @@ func resourceApikeysKeyUpdate(d *schema.ResourceData, meta interface{}) error {
 	}
 
 	obj := &apikeys.Key{
-		Name:         dcl.String(d.Get("name").(string)),
-		DisplayName:  dcl.String(d.Get("display_name").(string)),
-		Project:      dcl.String(project),
-		Restrictions: expandApikeysKeyRestrictions(d.Get("restrictions")),
+		Name:                dcl.String(d.Get("name").(string)),
+		DisplayName:         dcl.String(d.Get("display_name").(string)),
+		Project:             dcl.String(project),
+		Restrictions:        expandApikeysKeyRestrictions(d.Get("restrictions")),
+		ServiceAccountEmail: dcl.String(d.Get("service_account_email").(string)),
 	}
 	directive := tpgdclresource.UpdateDirective
 	userAgent, err := tpgresource.GenerateUserAgentString(d, config.UserAgent)
@@ -394,10 +412,11 @@ func resourceApikeysKeyDelete(d *schema.ResourceData, meta interface{}) error {
 	}
 
 	obj := &apikeys.Key{
-		Name:         dcl.String(d.Get("name").(string)),
-		DisplayName:  dcl.String(d.Get("display_name").(string)),
-		Project:      dcl.String(project),
-		Restrictions: expandApikeysKeyRestrictions(d.Get("restrictions")),
+		Name:                dcl.String(d.Get("name").(string)),
+		DisplayName:         dcl.String(d.Get("display_name").(string)),
+		Project:             dcl.String(project),
+		Restrictions:        expandApikeysKeyRestrictions(d.Get("restrictions")),
+		ServiceAccountEmail: dcl.String(d.Get("service_account_email").(string)),
 	}
 
 	log.Printf("[DEBUG] Deleting Key %q", d.Id())

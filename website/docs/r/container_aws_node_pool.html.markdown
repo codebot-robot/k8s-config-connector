@@ -23,7 +23,7 @@ description: |-
 An Anthos node pool running on AWS.
 
 For more information, see:
-* [Multicloud overview](https://cloud.google.com/anthos/clusters/docs/multi-cloud)
+* [Multicloud overview](https://cloud.google.com/kubernetes-engine/multi-cloud/docs)
 ## Example Usage - basic_aws_cluster
 A basic example of a containeraws node pool
 ```hcl
@@ -179,9 +179,15 @@ resource "google_container_aws_node_pool" "primary" {
     auto_repair = true
   }
 
+  kubelet_config {
+    cpu_manager_policy    = "none"
+    cpu_cfs_quota         = true
+    cpu_cfs_quota_period  = "100ms"
+    pod_pids_limit        = 1024
+  }
+
   project = "my-project-name"
 }
-
 
 ```
 ## Example Usage - basic_enum_aws_cluster
@@ -612,12 +618,6 @@ The `config` block supports:
   (Optional)
   Optional. The initial taints assigned to nodes of this node pool.
     
-The `config_encryption` block supports:
-    
-* `kms_key_arn` -
-  (Required)
-  The ARN of the AWS KMS key used to encrypt node pool configuration.
-    
 The `max_pods_constraint` block supports:
     
 * `max_pods_per_node` -
@@ -629,6 +629,13 @@ The `max_pods_constraint` block supports:
 * `annotations` -
   (Optional)
   Optional. Annotations on the node pool. This field has the same restrictions as Kubernetes annotations. The total size of all keys and values combined is limited to 256k. Key can have 2 segments: prefix (optional) and name (required), separated by a slash (/). Prefix must be a DNS subdomain. Name must be 63 characters or less, begin and end with alphanumerics, with dashes (-), underscores (_), dots (.), and alphanumerics between.
+
+**Note**: This field is non-authoritative, and will only manage the annotations present in your configuration.
+Please refer to the field `effective_annotations` for all of the annotations present on the resource.
+  
+* `kubelet_config` -
+  (Optional)
+  The kubelet configuration for the node pool.
   
 * `management` -
   (Optional)
@@ -637,6 +644,10 @@ The `max_pods_constraint` block supports:
 * `project` -
   (Optional)
   The project for the resource
+  
+* `update_settings` -
+  (Optional)
+  Optional. Update settings control the speed and disruption of the node pool update.
   
 
 
@@ -649,6 +660,12 @@ The `autoscaling_metrics_collection` block supports:
 * `metrics` -
   (Optional)
   The metrics to enable. For a list of valid metrics, see https://docs.aws.amazon.com/autoscaling/ec2/APIReference/API_EnableMetricsCollection.html. If you specify granularity and don't specify any metrics, all metrics are enabled.
+    
+The `config_encryption` block supports:
+    
+* `kms_key_arn` -
+  (Required)
+  The ARN of the AWS KMS key used to encrypt node pool configuration.
     
 The `instance_placement` block supports:
     
@@ -682,7 +699,7 @@ The `root_volume` block supports:
     
 * `throughput` -
   (Optional)
-  Optional. The throughput to provision for the volume, in MiB/s. Only valid if the volume type is GP3.
+  Optional. The throughput to provision for the volume, in MiB/s. Only valid if the volume type is GP3. If volume type is gp3 and throughput is not specified, the throughput will defaults to 125.
     
 * `volume_type` -
   (Optional)
@@ -714,11 +731,45 @@ The `taints` block supports:
   (Required)
   Value for the taint.
     
+The `kubelet_config` block supports:
+    
+* `cpu_cfs_quota` -
+  (Optional)
+  Whether or not to enable CPU CFS quota. Defaults to true.
+    
+* `cpu_cfs_quota_period` -
+  (Optional)
+  Optional. The CPU CFS quota period to use for the node. Defaults to "100ms".
+    
+* `cpu_manager_policy` -
+  (Optional)
+  The CpuManagerPolicy to use for the node. Defaults to "none".
+    
+* `pod_pids_limit` -
+  (Optional)
+  Optional. The maximum number of PIDs in each pod running on the node. The limit scales automatically based on underlying machine size if left unset.
+    
 The `management` block supports:
     
 * `auto_repair` -
   (Optional)
   Optional. Whether or not the nodes will be automatically repaired.
+    
+The `update_settings` block supports:
+    
+* `surge_settings` -
+  (Optional)
+  Optional. Settings for surge update.
+    
+The `surge_settings` block supports:
+    
+* `max_surge` -
+  (Optional)
+  Optional. The maximum number of nodes that can be created beyond the current size of the node pool during the update process.
+    
+* `max_unavailable` -
+  (Optional)
+  Optional. The maximum number of nodes that can be simultaneously unavailable during the update process. A node is considered unavailable if its status is not Ready.
     
 ## Attributes Reference
 
@@ -728,6 +779,9 @@ In addition to the arguments listed above, the following computed attributes are
 
 * `create_time` -
   Output only. The time at which this node pool was created.
+  
+* `effective_annotations` -
+  All of annotations (key/value pairs) present on the resource in GCP, including the annotations configured through Terraform, other clients and services.
   
 * `etag` -
   Allows clients to perform consistent read-modify-writes through optimistic concurrency control. May be sent on update and delete requests to ensure the client has an up-to-date value before proceeding.
@@ -756,6 +810,21 @@ This resource provides the following
 ## Import
 
 NodePool can be imported using any of these accepted formats:
+* `projects/{{project}}/locations/{{location}}/awsClusters/{{cluster}}/awsNodePools/{{name}}`
+* `{{project}}/{{location}}/{{cluster}}/{{name}}`
+* `{{location}}/{{cluster}}/{{name}}`
+
+In Terraform v1.5.0 and later, use an [`import` block](https://developer.hashicorp.com/terraform/language/import) to import NodePool using one of the formats above. For example:
+
+
+```tf
+import {
+  id = "projects/{{project}}/locations/{{location}}/awsClusters/{{cluster}}/awsNodePools/{{name}}"
+  to = google_container_aws_node_pool.default
+}
+```
+
+When using the [`terraform import` command](https://developer.hashicorp.com/terraform/cli/commands/import), NodePool can be imported using one of the formats above. For example:
 
 ```
 $ terraform import google_container_aws_node_pool.default projects/{{project}}/locations/{{location}}/awsClusters/{{cluster}}/awsNodePools/{{name}}

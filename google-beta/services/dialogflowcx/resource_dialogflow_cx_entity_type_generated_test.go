@@ -19,15 +19,35 @@ package dialogflowcx_test
 
 import (
 	"fmt"
+	"log"
+	"strconv"
 	"strings"
 	"testing"
+	"time"
 
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/terraform"
 
 	"github.com/hashicorp/terraform-provider-google-beta/google-beta/acctest"
+	"github.com/hashicorp/terraform-provider-google-beta/google-beta/envvar"
 	"github.com/hashicorp/terraform-provider-google-beta/google-beta/tpgresource"
 	transport_tpg "github.com/hashicorp/terraform-provider-google-beta/google-beta/transport"
+
+	"google.golang.org/api/googleapi"
+)
+
+var (
+	_ = fmt.Sprintf
+	_ = log.Print
+	_ = strconv.Atoi
+	_ = strings.Trim
+	_ = time.Now
+	_ = resource.TestMain
+	_ = terraform.NewState
+	_ = envvar.TestEnvVar
+	_ = tpgresource.SetLabels
+	_ = transport_tpg.Config{}
+	_ = googleapi.Error{}
 )
 
 func TestAccDialogflowCXEntityType_dialogflowcxEntityTypeFullExample(t *testing.T) {
@@ -49,7 +69,7 @@ func TestAccDialogflowCXEntityType_dialogflowcxEntityTypeFullExample(t *testing.
 				ResourceName:            "google_dialogflow_cx_entity_type.basic_entity_type",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"parent", "language_code"},
+				ImportStateVerifyIgnore: []string{"language_code", "parent"},
 			},
 		},
 	})
@@ -67,9 +87,9 @@ resource "google_dialogflow_cx_agent" "agent" {
   avatar_uri = "https://cloud.google.com/_static/images/cloud/icons/favicons/onecloud/super_cloud.png"
   enable_stackdriver_logging = true
   enable_spell_correction    = true
-	speech_to_text_settings {
-		enable_speech_adaptation = true
-	}
+  speech_to_text_settings {
+    enable_speech_adaptation = true
+  }
 }
 
 

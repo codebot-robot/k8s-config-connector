@@ -19,15 +19,35 @@ package filestore_test
 
 import (
 	"fmt"
+	"log"
+	"strconv"
 	"strings"
 	"testing"
+	"time"
 
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/terraform"
 
 	"github.com/hashicorp/terraform-provider-google-beta/google-beta/acctest"
+	"github.com/hashicorp/terraform-provider-google-beta/google-beta/envvar"
 	"github.com/hashicorp/terraform-provider-google-beta/google-beta/tpgresource"
 	transport_tpg "github.com/hashicorp/terraform-provider-google-beta/google-beta/transport"
+
+	"google.golang.org/api/googleapi"
+)
+
+var (
+	_ = fmt.Sprintf
+	_ = log.Print
+	_ = strconv.Atoi
+	_ = strings.Trim
+	_ = time.Now
+	_ = resource.TestMain
+	_ = terraform.NewState
+	_ = envvar.TestEnvVar
+	_ = tpgresource.SetLabels
+	_ = transport_tpg.Config{}
+	_ = googleapi.Error{}
 )
 
 func TestAccFilestoreInstance_filestoreInstanceBasicExample(t *testing.T) {
@@ -49,7 +69,7 @@ func TestAccFilestoreInstance_filestoreInstanceBasicExample(t *testing.T) {
 				ResourceName:            "google_filestore_instance.instance",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"name", "zone", "location"},
+				ImportStateVerifyIgnore: []string{"initial_replication", "labels", "location", "name", "tags", "terraform_labels", "zone"},
 			},
 		},
 	})
@@ -94,7 +114,7 @@ func TestAccFilestoreInstance_filestoreInstanceFullExample(t *testing.T) {
 				ResourceName:            "google_filestore_instance.instance",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"name", "zone", "location"},
+				ImportStateVerifyIgnore: []string{"initial_replication", "labels", "location", "name", "tags", "terraform_labels", "zone"},
 			},
 		},
 	})
@@ -131,6 +151,53 @@ resource "google_filestore_instance" "instance" {
     modes        = ["MODE_IPV4"]
     connect_mode = "DIRECT_PEERING"
   }
+}
+`, context)
+}
+
+func TestAccFilestoreInstance_filestoreInstanceProtocolExample(t *testing.T) {
+	t.Parallel()
+
+	context := map[string]interface{}{
+		"random_suffix": acctest.RandString(t, 10),
+	}
+
+	acctest.VcrTest(t, resource.TestCase{
+		PreCheck:                 func() { acctest.AccTestPreCheck(t) },
+		ProtoV5ProviderFactories: acctest.ProtoV5ProviderFactories(t),
+		CheckDestroy:             testAccCheckFilestoreInstanceDestroyProducer(t),
+		Steps: []resource.TestStep{
+			{
+				Config: testAccFilestoreInstance_filestoreInstanceProtocolExample(context),
+			},
+			{
+				ResourceName:            "google_filestore_instance.instance",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"initial_replication", "labels", "location", "name", "tags", "terraform_labels", "zone"},
+			},
+		},
+	})
+}
+
+func testAccFilestoreInstance_filestoreInstanceProtocolExample(context map[string]interface{}) string {
+	return acctest.Nprintf(`
+resource "google_filestore_instance" "instance" {
+  name     = "tf-test-test-instance%{random_suffix}"
+  location = "us-central1"
+  tier     = "ENTERPRISE"
+  protocol = "NFS_V4_1"
+
+  file_shares {
+    capacity_gb = 1024
+    name        = "share1"
+  }
+
+  networks {
+    network = "default"
+    modes   = ["MODE_IPV4"]
+  }
+
 }
 `, context)
 }

@@ -19,15 +19,35 @@ package compute_test
 
 import (
 	"fmt"
+	"log"
+	"strconv"
 	"strings"
 	"testing"
+	"time"
 
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/terraform"
 
 	"github.com/hashicorp/terraform-provider-google-beta/google-beta/acctest"
+	"github.com/hashicorp/terraform-provider-google-beta/google-beta/envvar"
 	"github.com/hashicorp/terraform-provider-google-beta/google-beta/tpgresource"
 	transport_tpg "github.com/hashicorp/terraform-provider-google-beta/google-beta/transport"
+
+	"google.golang.org/api/googleapi"
+)
+
+var (
+	_ = fmt.Sprintf
+	_ = log.Print
+	_ = strconv.Atoi
+	_ = strings.Trim
+	_ = time.Now
+	_ = resource.TestMain
+	_ = terraform.NewState
+	_ = envvar.TestEnvVar
+	_ = tpgresource.SetLabels
+	_ = transport_tpg.Config{}
+	_ = googleapi.Error{}
 )
 
 func TestAccComputeAddress_addressBasicExample(t *testing.T) {
@@ -49,7 +69,7 @@ func TestAccComputeAddress_addressBasicExample(t *testing.T) {
 				ResourceName:            "google_compute_address.ip_address",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"subnetwork", "network", "region"},
+				ImportStateVerifyIgnore: []string{"labels", "network", "region", "subnetwork", "terraform_labels"},
 			},
 		},
 	})
@@ -82,7 +102,7 @@ func TestAccComputeAddress_addressWithSubnetworkExample(t *testing.T) {
 				ResourceName:            "google_compute_address.internal_with_subnet_and_address",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"subnetwork", "network", "region"},
+				ImportStateVerifyIgnore: []string{"labels", "network", "region", "subnetwork", "terraform_labels"},
 			},
 		},
 	})
@@ -130,7 +150,7 @@ func TestAccComputeAddress_addressWithGceEndpointExample(t *testing.T) {
 				ResourceName:            "google_compute_address.internal_with_gce_endpoint",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"subnetwork", "network", "region"},
+				ImportStateVerifyIgnore: []string{"labels", "network", "region", "subnetwork", "terraform_labels"},
 			},
 		},
 	})
@@ -165,7 +185,7 @@ func TestAccComputeAddress_addressWithSharedLoadbalancerVipExample(t *testing.T)
 				ResourceName:            "google_compute_address.internal_with_shared_loadbalancer_vip",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"subnetwork", "network", "region"},
+				ImportStateVerifyIgnore: []string{"labels", "network", "region", "subnetwork", "terraform_labels"},
 			},
 		},
 	})
@@ -200,7 +220,7 @@ func TestAccComputeAddress_instanceWithIpExample(t *testing.T) {
 				ResourceName:            "google_compute_address.static",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"subnetwork", "network", "region"},
+				ImportStateVerifyIgnore: []string{"labels", "network", "region", "subnetwork", "terraform_labels"},
 			},
 		},
 	})
@@ -257,7 +277,7 @@ func TestAccComputeAddress_computeAddressIpsecInterconnectExample(t *testing.T) 
 				ResourceName:            "google_compute_address.ipsec-interconnect-address",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"subnetwork", "network", "region"},
+				ImportStateVerifyIgnore: []string{"labels", "network", "region", "subnetwork", "terraform_labels"},
 			},
 		},
 	})
@@ -277,6 +297,50 @@ resource "google_compute_address" "ipsec-interconnect-address" {
 resource "google_compute_network" "network" {
   name                    = "tf-test-test-network%{random_suffix}"
   auto_create_subnetworks = false
+}
+`, context)
+}
+
+func TestAccComputeAddress_computeAddressEnhancedByoipExample(t *testing.T) {
+	t.Parallel()
+
+	context := map[string]interface{}{
+		"root_pdp_url":    "projects/tf-static-byoip/regions/us-central1/publicDelegatedPrefixes/tf-enhanced-pdp-136-124-3-120-29",
+		"sub_pdp_ip_cidr": fmt.Sprintf("136.124.3.%d/32", 120+acctest.RandIntRange(t, 0, 7)),
+		"random_suffix":   acctest.RandString(t, 10),
+	}
+
+	acctest.VcrTest(t, resource.TestCase{
+		PreCheck:                 func() { acctest.AccTestPreCheck(t) },
+		ProtoV5ProviderFactories: acctest.ProtoV5ProviderFactories(t),
+		CheckDestroy:             testAccCheckComputeAddressDestroyProducer(t),
+		Steps: []resource.TestStep{
+			{
+				Config: testAccComputeAddress_computeAddressEnhancedByoipExample(context),
+			},
+			{
+				ResourceName:            "google_compute_address.default",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"labels", "network", "region", "subnetwork", "terraform_labels"},
+			},
+		},
+	})
+}
+
+func testAccComputeAddress_computeAddressEnhancedByoipExample(context map[string]interface{}) string {
+	return acctest.Nprintf(`
+resource "google_compute_address" "default" {
+  name             = "tf-test-test-address%{random_suffix}"
+  region           = "us-central1"
+  ip_collection    = google_compute_public_delegated_prefix.sub_pdp.self_link
+}
+
+resource "google_compute_public_delegated_prefix" "sub_pdp" {
+  name             = "tf-test-test-sub-pdp%{random_suffix}"
+  region           = "us-central1"
+  ip_cidr_range    = "%{sub_pdp_ip_cidr}"
+  parent_prefix    = "%{root_pdp_url}"
 }
 `, context)
 }

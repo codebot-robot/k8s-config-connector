@@ -19,24 +19,46 @@ package gkehub2_test
 
 import (
 	"fmt"
+	"log"
+	"strconv"
 	"strings"
 	"testing"
+	"time"
 
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/terraform"
 
 	"github.com/hashicorp/terraform-provider-google-beta/google-beta/acctest"
 	"github.com/hashicorp/terraform-provider-google-beta/google-beta/envvar"
 	"github.com/hashicorp/terraform-provider-google-beta/google-beta/tpgresource"
 	transport_tpg "github.com/hashicorp/terraform-provider-google-beta/google-beta/transport"
+
+	"google.golang.org/api/googleapi"
+)
+
+var (
+	_ = fmt.Sprintf
+	_ = log.Print
+	_ = strconv.Atoi
+	_ = strings.Trim
+	_ = time.Now
+	_ = resource.TestMain
+	_ = terraform.NewState
+	_ = envvar.TestEnvVar
+	_ = tpgresource.SetLabels
+	_ = transport_tpg.Config{}
+	_ = googleapi.Error{}
 )
 
 func TestAccGKEHub2MembershipRBACRoleBinding_gkehubMembershipRbacRoleBindingBasicExample(t *testing.T) {
 	t.Parallel()
 
 	context := map[string]interface{}{
-		"project":       envvar.GetTestProjectFromEnv(),
-		"random_suffix": acctest.RandString(t, 10),
+		"project":             envvar.GetTestProjectFromEnv(),
+		"deletion_protection": false,
+		"network_name":        acctest.BootstrapSharedTestNetwork(t, "gke-cluster"),
+		"subnetwork_name":     acctest.BootstrapSubnet(t, "gke-cluster", acctest.BootstrapSharedTestNetwork(t, "gke-cluster")),
+		"random_suffix":       acctest.RandString(t, 10),
 	}
 
 	acctest.VcrTest(t, resource.TestCase{
@@ -48,10 +70,10 @@ func TestAccGKEHub2MembershipRBACRoleBinding_gkehubMembershipRbacRoleBindingBasi
 				Config: testAccGKEHub2MembershipRBACRoleBinding_gkehubMembershipRbacRoleBindingBasicExample(context),
 			},
 			{
-				ResourceName:            "google_gke_hub_membership_rbac_role_binding.membershiprbacrolebinding",
+				ResourceName:            "google_gke_hub_membership_rbac_role_binding.membership_rbac_role_binding",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"membership_rbac_role_binding_id", "membership_id", "location"},
+				ImportStateVerifyIgnore: []string{"location", "membership_id", "membership_rbac_role_binding_id"},
 			},
 		},
 	})
@@ -61,12 +83,15 @@ func testAccGKEHub2MembershipRBACRoleBinding_gkehubMembershipRbacRoleBindingBasi
 	return acctest.Nprintf(`
 resource "google_container_cluster" "primary" {
   provider = google-beta
-  name               = "basiccluster%{random_suffix}"
+  name               = "tf-test-basic-cluster%{random_suffix}"
   location           = "us-central1-a"
   initial_node_count = 1
+  deletion_protection  = %{deletion_protection}
+  network       = "%{network_name}"
+  subnetwork    = "%{subnetwork_name}"
 }
 
-resource "google_gke_hub_membership" "membershiprbacrolebinding" {
+resource "google_gke_hub_membership" "membership" {
   provider = google-beta
   membership_id = "tf-test-membership%{random_suffix}"
   endpoint {
@@ -78,16 +103,16 @@ resource "google_gke_hub_membership" "membershiprbacrolebinding" {
   depends_on = [google_container_cluster.primary]
 }
 
-resource "google_gke_hub_membership_rbac_role_binding" "membershiprbacrolebinding" {
+resource "google_gke_hub_membership_rbac_role_binding" "membership_rbac_role_binding" {
   provider = google-beta
   membership_rbac_role_binding_id = "tf-test-membership-rbac-role-binding%{random_suffix}"
-  membership_id = "tf-test-membership%{random_suffix}"
+  membership_id = google_gke_hub_membership.membership.membership_id
   user = "service-${data.google_project.project.number}@gcp-sa-anthossupport.iam.gserviceaccount.com"
   role {
     predefined_role = "ANTHOS_SUPPORT"
   }
   location = "global"
-  depends_on = [google_gke_hub_membership.membershiprbacrolebinding]
+  depends_on = [google_gke_hub_membership.membership]
 }
 
 data "google_project" "project" {

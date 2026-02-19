@@ -19,16 +19,35 @@ package dataplex_test
 
 import (
 	"fmt"
+	"log"
+	"strconv"
 	"strings"
 	"testing"
+	"time"
 
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/terraform"
 
 	"github.com/hashicorp/terraform-provider-google-beta/google-beta/acctest"
 	"github.com/hashicorp/terraform-provider-google-beta/google-beta/envvar"
 	"github.com/hashicorp/terraform-provider-google-beta/google-beta/tpgresource"
 	transport_tpg "github.com/hashicorp/terraform-provider-google-beta/google-beta/transport"
+
+	"google.golang.org/api/googleapi"
+)
+
+var (
+	_ = fmt.Sprintf
+	_ = log.Print
+	_ = strconv.Atoi
+	_ = strings.Trim
+	_ = time.Now
+	_ = resource.TestMain
+	_ = terraform.NewState
+	_ = envvar.TestEnvVar
+	_ = tpgresource.SetLabels
+	_ = transport_tpg.Config{}
+	_ = googleapi.Error{}
 )
 
 func TestAccDataplexTask_dataplexTaskBasicExample(t *testing.T) {
@@ -51,7 +70,7 @@ func TestAccDataplexTask_dataplexTaskBasicExample(t *testing.T) {
 				ResourceName:            "google_dataplex_task.example",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"location", "lake", "task_id"},
+				ImportStateVerifyIgnore: []string{"labels", "lake", "location", "task_id", "terraform_labels"},
 			},
 		},
 	})
@@ -128,7 +147,7 @@ func TestAccDataplexTask_dataplexTaskSparkExample(t *testing.T) {
 				ResourceName:            "google_dataplex_task.example_spark",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"location", "lake", "task_id"},
+				ImportStateVerifyIgnore: []string{"labels", "lake", "location", "task_id", "terraform_labels"},
 			},
 		},
 	})
@@ -220,7 +239,7 @@ func TestAccDataplexTask_dataplexTaskNotebookExample(t *testing.T) {
 				ResourceName:            "google_dataplex_task.example_notebook",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"location", "lake", "task_id"},
+				ImportStateVerifyIgnore: []string{"labels", "lake", "location", "task_id", "terraform_labels"},
 			},
 		},
 	})

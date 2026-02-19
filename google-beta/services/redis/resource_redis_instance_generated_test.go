@@ -19,22 +19,43 @@ package redis_test
 
 import (
 	"fmt"
+	"log"
+	"strconv"
 	"strings"
 	"testing"
+	"time"
 
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/terraform"
 
 	"github.com/hashicorp/terraform-provider-google-beta/google-beta/acctest"
+	"github.com/hashicorp/terraform-provider-google-beta/google-beta/envvar"
 	"github.com/hashicorp/terraform-provider-google-beta/google-beta/tpgresource"
 	transport_tpg "github.com/hashicorp/terraform-provider-google-beta/google-beta/transport"
+
+	"google.golang.org/api/googleapi"
+)
+
+var (
+	_ = fmt.Sprintf
+	_ = log.Print
+	_ = strconv.Atoi
+	_ = strings.Trim
+	_ = time.Now
+	_ = resource.TestMain
+	_ = terraform.NewState
+	_ = envvar.TestEnvVar
+	_ = tpgresource.SetLabels
+	_ = transport_tpg.Config{}
+	_ = googleapi.Error{}
 )
 
 func TestAccRedisInstance_redisInstanceBasicExample(t *testing.T) {
 	t.Parallel()
 
 	context := map[string]interface{}{
-		"random_suffix": acctest.RandString(t, 10),
+		"prevent_destroy": false,
+		"random_suffix":   acctest.RandString(t, 10),
 	}
 
 	acctest.VcrTest(t, resource.TestCase{
@@ -49,7 +70,7 @@ func TestAccRedisInstance_redisInstanceBasicExample(t *testing.T) {
 				ResourceName:            "google_redis_instance.cache",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"reserved_ip_range", "region"},
+				ImportStateVerifyIgnore: []string{"deletion_protection", "labels", "region", "reserved_ip_range", "terraform_labels"},
 			},
 		},
 	})
@@ -60,6 +81,11 @@ func testAccRedisInstance_redisInstanceBasicExample(context map[string]interface
 resource "google_redis_instance" "cache" {
   name           = "tf-test-memory-cache%{random_suffix}"
   memory_size_gb = 1
+  deletion_protection = false
+
+  lifecycle {
+    prevent_destroy = %{prevent_destroy}
+  }
 }
 `, context)
 }
@@ -68,8 +94,9 @@ func TestAccRedisInstance_redisInstanceFullExample(t *testing.T) {
 	t.Parallel()
 
 	context := map[string]interface{}{
-		"network_name":  acctest.BootstrapSharedTestNetwork(t, "redis-full"),
-		"random_suffix": acctest.RandString(t, 10),
+		"network_name":    acctest.BootstrapSharedTestNetwork(t, "redis-full"),
+		"prevent_destroy": false,
+		"random_suffix":   acctest.RandString(t, 10),
 	}
 
 	acctest.VcrTest(t, resource.TestCase{
@@ -84,7 +111,7 @@ func TestAccRedisInstance_redisInstanceFullExample(t *testing.T) {
 				ResourceName:            "google_redis_instance.cache",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"reserved_ip_range", "region"},
+				ImportStateVerifyIgnore: []string{"labels", "region", "reserved_ip_range", "terraform_labels"},
 			},
 		},
 	})
@@ -102,7 +129,7 @@ resource "google_redis_instance" "cache" {
 
   authorized_network = data.google_compute_network.redis-network.id
 
-  redis_version     = "REDIS_4_0"
+  redis_version     = "REDIS_7_2"
   display_name      = "Terraform Test Instance"
   reserved_ip_range = "192.168.0.0/29"
 
@@ -121,6 +148,10 @@ resource "google_redis_instance" "cache" {
         nanos = 0
       }
     }
+  }
+
+  lifecycle {
+    prevent_destroy = %{prevent_destroy}
   }
 }
 
@@ -142,8 +173,9 @@ func TestAccRedisInstance_redisInstanceFullWithPersistenceConfigExample(t *testi
 	t.Parallel()
 
 	context := map[string]interface{}{
-		"network_name":  acctest.BootstrapSharedTestNetwork(t, "redis-full-persis"),
-		"random_suffix": acctest.RandString(t, 10),
+		"network_name":    acctest.BootstrapSharedTestNetwork(t, "redis-full-persis"),
+		"prevent_destroy": false,
+		"random_suffix":   acctest.RandString(t, 10),
 	}
 
 	acctest.VcrTest(t, resource.TestCase{
@@ -158,7 +190,7 @@ func TestAccRedisInstance_redisInstanceFullWithPersistenceConfigExample(t *testi
 				ResourceName:            "google_redis_instance.cache-persis",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"reserved_ip_range", "region"},
+				ImportStateVerifyIgnore: []string{"labels", "region", "reserved_ip_range", "terraform_labels"},
 			},
 		},
 	})
@@ -177,16 +209,21 @@ resource "google_redis_instance" "cache-persis" {
     persistence_mode = "RDB"
     rdb_snapshot_period = "TWELVE_HOURS"
   }
+
+  lifecycle {
+    prevent_destroy = %{prevent_destroy}
+  }
 }
 `, context)
 }
 
-func TestAccRedisInstance_redisInstancePrivateServiceExample(t *testing.T) {
+func TestAccRedisInstance_redisInstancePrivateServiceTestExample(t *testing.T) {
 	t.Parallel()
 
 	context := map[string]interface{}{
-		"network_name":  acctest.BootstrapSharedTestNetwork(t, "redis-private-service"),
-		"random_suffix": acctest.RandString(t, 10),
+		"network_name":    acctest.BootstrapSharedServiceNetworkingConnection(t, "vpc-network-1"),
+		"prevent_destroy": false,
+		"random_suffix":   acctest.RandString(t, 10),
 	}
 
 	acctest.VcrTest(t, resource.TestCase{
@@ -195,19 +232,19 @@ func TestAccRedisInstance_redisInstancePrivateServiceExample(t *testing.T) {
 		CheckDestroy:             testAccCheckRedisInstanceDestroyProducer(t),
 		Steps: []resource.TestStep{
 			{
-				Config: testAccRedisInstance_redisInstancePrivateServiceExample(context),
+				Config: testAccRedisInstance_redisInstancePrivateServiceTestExample(context),
 			},
 			{
 				ResourceName:            "google_redis_instance.cache",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"reserved_ip_range", "region"},
+				ImportStateVerifyIgnore: []string{"labels", "region", "reserved_ip_range", "terraform_labels"},
 			},
 		},
 	})
 }
 
-func testAccRedisInstance_redisInstancePrivateServiceExample(context map[string]interface{}) string {
+func testAccRedisInstance_redisInstancePrivateServiceTestExample(context map[string]interface{}) string {
 	return acctest.Nprintf(`
 // This example assumes this network already exists.
 // The API creates a tenant network per network authorized for a
@@ -221,20 +258,6 @@ data "google_compute_network" "redis-network" {
   name = "%{network_name}"
 }
 
-resource "google_compute_global_address" "service_range" {
-  name          = "address%{random_suffix}"
-  purpose       = "VPC_PEERING"
-  address_type  = "INTERNAL"
-  prefix_length = 16
-  network       = data.google_compute_network.redis-network.id
-}
-
-resource "google_service_networking_connection" "private_service_connection" {
-  network                 = data.google_compute_network.redis-network.id
-  service                 = "servicenetworking.googleapis.com"
-  reserved_peering_ranges = [google_compute_global_address.service_range.name]
-}
-
 resource "google_redis_instance" "cache" {
   name           = "tf-test-private-cache%{random_suffix}"
   tier           = "STANDARD_HA"
@@ -246,11 +269,12 @@ resource "google_redis_instance" "cache" {
   authorized_network = data.google_compute_network.redis-network.id
   connect_mode       = "PRIVATE_SERVICE_ACCESS"
 
-  redis_version     = "REDIS_4_0"
+  redis_version     = "REDIS_7_2"
   display_name      = "Terraform Test Instance"
 
-  depends_on = [google_service_networking_connection.private_service_connection]
-
+  lifecycle {
+    prevent_destroy = %{prevent_destroy}
+  }
 }
 `, context)
 }
@@ -259,8 +283,9 @@ func TestAccRedisInstance_redisInstanceMrrExample(t *testing.T) {
 	t.Parallel()
 
 	context := map[string]interface{}{
-		"network_name":  acctest.BootstrapSharedTestNetwork(t, "redis-mrr"),
-		"random_suffix": acctest.RandString(t, 10),
+		"network_name":    acctest.BootstrapSharedTestNetwork(t, "redis-mrr"),
+		"prevent_destroy": false,
+		"random_suffix":   acctest.RandString(t, 10),
 	}
 
 	acctest.VcrTest(t, resource.TestCase{
@@ -275,7 +300,7 @@ func TestAccRedisInstance_redisInstanceMrrExample(t *testing.T) {
 				ResourceName:            "google_redis_instance.cache",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"reserved_ip_range", "region"},
+				ImportStateVerifyIgnore: []string{"labels", "region", "reserved_ip_range", "terraform_labels"},
 			},
 		},
 	})
@@ -293,15 +318,18 @@ resource "google_redis_instance" "cache" {
 
   authorized_network = data.google_compute_network.redis-network.id
 
-  redis_version     = "REDIS_6_X"
+  redis_version     = "REDIS_7_2"
   display_name      = "Terraform Test Instance"
-  reserved_ip_range = "192.168.0.0/28"
   replica_count     = 5
   read_replicas_mode = "READ_REPLICAS_ENABLED"
 
   labels = {
     my_key    = "my_val"
     other_key = "other_val"
+  }
+
+  lifecycle {
+    prevent_destroy = %{prevent_destroy}
   }
 }
 

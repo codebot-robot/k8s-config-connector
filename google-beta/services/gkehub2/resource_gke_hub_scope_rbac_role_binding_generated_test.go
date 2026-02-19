@@ -19,16 +19,35 @@ package gkehub2_test
 
 import (
 	"fmt"
+	"log"
+	"strconv"
 	"strings"
 	"testing"
+	"time"
 
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/terraform"
 
 	"github.com/hashicorp/terraform-provider-google-beta/google-beta/acctest"
 	"github.com/hashicorp/terraform-provider-google-beta/google-beta/envvar"
 	"github.com/hashicorp/terraform-provider-google-beta/google-beta/tpgresource"
 	transport_tpg "github.com/hashicorp/terraform-provider-google-beta/google-beta/transport"
+
+	"google.golang.org/api/googleapi"
+)
+
+var (
+	_ = fmt.Sprintf
+	_ = log.Print
+	_ = strconv.Atoi
+	_ = strings.Trim
+	_ = time.Now
+	_ = resource.TestMain
+	_ = terraform.NewState
+	_ = envvar.TestEnvVar
+	_ = tpgresource.SetLabels
+	_ = transport_tpg.Config{}
+	_ = googleapi.Error{}
 )
 
 func TestAccGKEHub2ScopeRBACRoleBinding_gkehubScopeRbacRoleBindingBasicExample(t *testing.T) {
@@ -48,10 +67,10 @@ func TestAccGKEHub2ScopeRBACRoleBinding_gkehubScopeRbacRoleBindingBasicExample(t
 				Config: testAccGKEHub2ScopeRBACRoleBinding_gkehubScopeRbacRoleBindingBasicExample(context),
 			},
 			{
-				ResourceName:            "google_gke_hub_scope_rbac_role_binding.scoperbacrolebinding",
+				ResourceName:            "google_gke_hub_scope_rbac_role_binding.scope_rbac_role_binding",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"scope_rbac_role_binding_id", "scope_id"},
+				ImportStateVerifyIgnore: []string{"labels", "scope_id", "scope_rbac_role_binding_id", "terraform_labels"},
 			},
 		},
 	})
@@ -59,13 +78,13 @@ func TestAccGKEHub2ScopeRBACRoleBinding_gkehubScopeRbacRoleBindingBasicExample(t
 
 func testAccGKEHub2ScopeRBACRoleBinding_gkehubScopeRbacRoleBindingBasicExample(context map[string]interface{}) string {
 	return acctest.Nprintf(`
-resource "google_gke_hub_scope" "scoperbacrolebinding" {
+resource "google_gke_hub_scope" "scope" {
   scope_id = "tf-test-scope%{random_suffix}"
 }
 
-resource "google_gke_hub_scope_rbac_role_binding" "scoperbacrolebinding" {
+resource "google_gke_hub_scope_rbac_role_binding" "scope_rbac_role_binding" {
   scope_rbac_role_binding_id = "tf-test-scope-rbac-role-binding%{random_suffix}"
-  scope_id = "tf-test-scope%{random_suffix}"
+  scope_id = google_gke_hub_scope.scope.scope_id
   user = "test-email@gmail.com"
   role {
     predefined_role = "ADMIN"
@@ -73,7 +92,6 @@ resource "google_gke_hub_scope_rbac_role_binding" "scoperbacrolebinding" {
   labels = {
       key = "value" 
   }
-  depends_on = [google_gke_hub_scope.scoperbacrolebinding]
 }
 `, context)
 }

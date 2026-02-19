@@ -24,6 +24,7 @@ import (
 	"log"
 	"time"
 
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/customdiff"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 
 	dcl "github.com/GoogleCloudPlatform/declarative-resource-client-library/dcl"
@@ -50,6 +51,10 @@ func ResourceContainerAwsCluster() *schema.Resource {
 			Update: schema.DefaultTimeout(20 * time.Minute),
 			Delete: schema.DefaultTimeout(20 * time.Minute),
 		},
+		CustomizeDiff: customdiff.All(
+			tpgresource.DefaultProviderProject,
+			tpgresource.SetAnnotationsDiff,
+		),
 
 		Schema: map[string]*schema.Schema{
 			"authorization": {
@@ -106,17 +111,25 @@ func ResourceContainerAwsCluster() *schema.Resource {
 				Elem:        ContainerAwsClusterNetworkingSchema(),
 			},
 
-			"annotations": {
-				Type:        schema.TypeMap,
+			"binary_authorization": {
+				Type:        schema.TypeList,
+				Computed:    true,
 				Optional:    true,
-				Description: "Optional. Annotations on the cluster. This field has the same restrictions as Kubernetes annotations. The total size of all keys and values combined is limited to 256k. Key can have 2 segments: prefix (optional) and name (required), separated by a slash (/). Prefix must be a DNS subdomain. Name must be 63 characters or less, begin and end with alphanumerics, with dashes (-), underscores (_), dots (.), and alphanumerics between.",
-				Elem:        &schema.Schema{Type: schema.TypeString},
+				Description: "Configuration options for the Binary Authorization feature.",
+				MaxItems:    1,
+				Elem:        ContainerAwsClusterBinaryAuthorizationSchema(),
 			},
 
 			"description": {
 				Type:        schema.TypeString,
 				Optional:    true,
 				Description: "Optional. A human readable description of this cluster. Cannot be longer than 255 UTF-8 encoded bytes.",
+			},
+
+			"effective_annotations": {
+				Type:        schema.TypeMap,
+				Computed:    true,
+				Description: "All of annotations (key/value pairs) present on the resource in GCP, including the annotations configured through Terraform, other clients and services.",
 			},
 
 			"logging_config": {
@@ -135,6 +148,13 @@ func ResourceContainerAwsCluster() *schema.Resource {
 				ForceNew:         true,
 				DiffSuppressFunc: tpgresource.CompareSelfLinkOrResourceName,
 				Description:      "The project for the resource",
+			},
+
+			"annotations": {
+				Type:        schema.TypeMap,
+				Optional:    true,
+				Description: "Optional. Annotations on the cluster. This field has the same restrictions as Kubernetes annotations. The total size of all keys and values combined is limited to 256k. Key can have 2 segments: prefix (optional) and name (required), separated by a slash (/). Prefix must be a DNS subdomain. Name must be 63 characters or less, begin and end with alphanumerics, with dashes (-), underscores (_), dots (.), and alphanumerics between.\n\n**Note**: This field is non-authoritative, and will only manage the annotations present in your configuration.\nPlease refer to the field `effective_annotations` for all of the annotations present on the resource.",
+				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
 
 			"create_time": {
@@ -198,6 +218,13 @@ func ContainerAwsClusterAuthorizationSchema() *schema.Resource {
 				Description: "Users to perform operations as a cluster admin. A managed ClusterRoleBinding will be created to grant the `cluster-admin` ClusterRole to the users. Up to ten admin users can be provided. For more info on RBAC, see https://kubernetes.io/docs/reference/access-authn-authz/rbac/#user-facing-roles",
 				Elem:        ContainerAwsClusterAuthorizationAdminUsersSchema(),
 			},
+
+			"admin_groups": {
+				Type:        schema.TypeList,
+				Optional:    true,
+				Description: "Groups of users that can perform operations as a cluster admin. A managed ClusterRoleBinding will be created to grant the `cluster-admin` ClusterRole to the groups. Up to ten admin groups can be provided. For more info on RBAC, see https://kubernetes.io/docs/reference/access-authn-authz/rbac/#user-facing-roles",
+				Elem:        ContainerAwsClusterAuthorizationAdminGroupsSchema(),
+			},
 		},
 	}
 }
@@ -209,6 +236,18 @@ func ContainerAwsClusterAuthorizationAdminUsersSchema() *schema.Resource {
 				Type:        schema.TypeString,
 				Required:    true,
 				Description: "The name of the user, e.g. `my-gcp-id@gmail.com`.",
+			},
+		},
+	}
+}
+
+func ContainerAwsClusterAuthorizationAdminGroupsSchema() *schema.Resource {
+	return &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			"group": {
+				Type:        schema.TypeString,
+				Required:    true,
+				Description: "The name of the group, e.g. `my-group@domain.com`.",
 			},
 		},
 	}
@@ -383,7 +422,7 @@ func ContainerAwsClusterControlPlaneInstancePlacementSchema() *schema.Resource {
 				Computed:         true,
 				Optional:         true,
 				ForceNew:         true,
-				DiffSuppressFunc: tpgresource.CompareCaseInsensitive,
+				DiffSuppressFunc: tpgresource.CaseDiffSuppress,
 				Description:      "The tenancy for the instance. Possible values: TENANCY_UNSPECIFIED, DEFAULT, DEDICATED, HOST",
 			},
 		},
@@ -421,7 +460,7 @@ func ContainerAwsClusterControlPlaneMainVolumeSchema() *schema.Resource {
 				Computed:    true,
 				Optional:    true,
 				ForceNew:    true,
-				Description: "Optional. The throughput to provision for the volume, in MiB/s. Only valid if the volume type is GP3.",
+				Description: "Optional. The throughput to provision for the volume, in MiB/s. Only valid if the volume type is GP3. If volume type is gp3 and throughput is not specified, the throughput will defaults to 125.",
 			},
 
 			"volume_type": {
@@ -429,7 +468,7 @@ func ContainerAwsClusterControlPlaneMainVolumeSchema() *schema.Resource {
 				Computed:         true,
 				Optional:         true,
 				ForceNew:         true,
-				DiffSuppressFunc: tpgresource.CompareCaseInsensitive,
+				DiffSuppressFunc: tpgresource.CaseDiffSuppress,
 				Description:      "Optional. Type of the EBS volume. When unspecified, it defaults to GP2 volume. Possible values: VOLUME_TYPE_UNSPECIFIED, GP2, GP3",
 			},
 		},
@@ -481,14 +520,14 @@ func ContainerAwsClusterControlPlaneRootVolumeSchema() *schema.Resource {
 				Type:        schema.TypeInt,
 				Computed:    true,
 				Optional:    true,
-				Description: "Optional. The throughput to provision for the volume, in MiB/s. Only valid if the volume type is GP3.",
+				Description: "Optional. The throughput to provision for the volume, in MiB/s. Only valid if the volume type is GP3. If volume type is gp3 and throughput is not specified, the throughput will defaults to 125.",
 			},
 
 			"volume_type": {
 				Type:             schema.TypeString,
 				Computed:         true,
 				Optional:         true,
-				DiffSuppressFunc: tpgresource.CompareCaseInsensitive,
+				DiffSuppressFunc: tpgresource.CaseDiffSuppress,
 				Description:      "Optional. Type of the EBS volume. When unspecified, it defaults to GP2 volume. Possible values: VOLUME_TYPE_UNSPECIFIED, GP2, GP3",
 			},
 		},
@@ -563,6 +602,19 @@ func ContainerAwsClusterNetworkingSchema() *schema.Resource {
 	}
 }
 
+func ContainerAwsClusterBinaryAuthorizationSchema() *schema.Resource {
+	return &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			"evaluation_mode": {
+				Type:        schema.TypeString,
+				Computed:    true,
+				Optional:    true,
+				Description: "Mode of operation for Binary Authorization policy evaluation. Possible values: DISABLED, PROJECT_SINGLETON_POLICY_ENFORCE",
+			},
+		},
+	}
+}
+
 func ContainerAwsClusterLoggingConfigSchema() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{
@@ -585,7 +637,7 @@ func ContainerAwsClusterLoggingConfigComponentConfigSchema() *schema.Resource {
 				Type:             schema.TypeList,
 				Computed:         true,
 				Optional:         true,
-				DiffSuppressFunc: tpgresource.CompareCaseInsensitive,
+				DiffSuppressFunc: tpgresource.CaseDiffSuppress,
 				Description:      "Components of the logging configuration to be enabled.",
 				Elem:             &schema.Schema{Type: schema.TypeString},
 			},
@@ -625,17 +677,18 @@ func resourceContainerAwsClusterCreate(d *schema.ResourceData, meta interface{})
 	}
 
 	obj := &containeraws.Cluster{
-		Authorization: expandContainerAwsClusterAuthorization(d.Get("authorization")),
-		AwsRegion:     dcl.String(d.Get("aws_region").(string)),
-		ControlPlane:  expandContainerAwsClusterControlPlane(d.Get("control_plane")),
-		Fleet:         expandContainerAwsClusterFleet(d.Get("fleet")),
-		Location:      dcl.String(d.Get("location").(string)),
-		Name:          dcl.String(d.Get("name").(string)),
-		Networking:    expandContainerAwsClusterNetworking(d.Get("networking")),
-		Annotations:   tpgresource.CheckStringMap(d.Get("annotations")),
-		Description:   dcl.String(d.Get("description").(string)),
-		LoggingConfig: expandContainerAwsClusterLoggingConfig(d.Get("logging_config")),
-		Project:       dcl.String(project),
+		Authorization:       expandContainerAwsClusterAuthorization(d.Get("authorization")),
+		AwsRegion:           dcl.String(d.Get("aws_region").(string)),
+		ControlPlane:        expandContainerAwsClusterControlPlane(d.Get("control_plane")),
+		Fleet:               expandContainerAwsClusterFleet(d.Get("fleet")),
+		Location:            dcl.String(d.Get("location").(string)),
+		Name:                dcl.String(d.Get("name").(string)),
+		Networking:          expandContainerAwsClusterNetworking(d.Get("networking")),
+		BinaryAuthorization: expandContainerAwsClusterBinaryAuthorization(d.Get("binary_authorization")),
+		Description:         dcl.String(d.Get("description").(string)),
+		Annotations:         tpgresource.CheckStringMap(d.Get("effective_annotations")),
+		LoggingConfig:       expandContainerAwsClusterLoggingConfig(d.Get("logging_config")),
+		Project:             dcl.String(project),
 	}
 
 	id, err := obj.ID()
@@ -683,17 +736,18 @@ func resourceContainerAwsClusterRead(d *schema.ResourceData, meta interface{}) e
 	}
 
 	obj := &containeraws.Cluster{
-		Authorization: expandContainerAwsClusterAuthorization(d.Get("authorization")),
-		AwsRegion:     dcl.String(d.Get("aws_region").(string)),
-		ControlPlane:  expandContainerAwsClusterControlPlane(d.Get("control_plane")),
-		Fleet:         expandContainerAwsClusterFleet(d.Get("fleet")),
-		Location:      dcl.String(d.Get("location").(string)),
-		Name:          dcl.String(d.Get("name").(string)),
-		Networking:    expandContainerAwsClusterNetworking(d.Get("networking")),
-		Annotations:   tpgresource.CheckStringMap(d.Get("annotations")),
-		Description:   dcl.String(d.Get("description").(string)),
-		LoggingConfig: expandContainerAwsClusterLoggingConfig(d.Get("logging_config")),
-		Project:       dcl.String(project),
+		Authorization:       expandContainerAwsClusterAuthorization(d.Get("authorization")),
+		AwsRegion:           dcl.String(d.Get("aws_region").(string)),
+		ControlPlane:        expandContainerAwsClusterControlPlane(d.Get("control_plane")),
+		Fleet:               expandContainerAwsClusterFleet(d.Get("fleet")),
+		Location:            dcl.String(d.Get("location").(string)),
+		Name:                dcl.String(d.Get("name").(string)),
+		Networking:          expandContainerAwsClusterNetworking(d.Get("networking")),
+		BinaryAuthorization: expandContainerAwsClusterBinaryAuthorization(d.Get("binary_authorization")),
+		Description:         dcl.String(d.Get("description").(string)),
+		Annotations:         tpgresource.CheckStringMap(d.Get("effective_annotations")),
+		LoggingConfig:       expandContainerAwsClusterLoggingConfig(d.Get("logging_config")),
+		Project:             dcl.String(project),
 	}
 
 	userAgent, err := tpgresource.GenerateUserAgentString(d, config.UserAgent)
@@ -739,17 +793,23 @@ func resourceContainerAwsClusterRead(d *schema.ResourceData, meta interface{}) e
 	if err = d.Set("networking", flattenContainerAwsClusterNetworking(res.Networking)); err != nil {
 		return fmt.Errorf("error setting networking in state: %s", err)
 	}
-	if err = d.Set("annotations", res.Annotations); err != nil {
-		return fmt.Errorf("error setting annotations in state: %s", err)
+	if err = d.Set("binary_authorization", flattenContainerAwsClusterBinaryAuthorization(res.BinaryAuthorization)); err != nil {
+		return fmt.Errorf("error setting binary_authorization in state: %s", err)
 	}
 	if err = d.Set("description", res.Description); err != nil {
 		return fmt.Errorf("error setting description in state: %s", err)
+	}
+	if err = d.Set("effective_annotations", res.Annotations); err != nil {
+		return fmt.Errorf("error setting effective_annotations in state: %s", err)
 	}
 	if err = d.Set("logging_config", flattenContainerAwsClusterLoggingConfig(res.LoggingConfig)); err != nil {
 		return fmt.Errorf("error setting logging_config in state: %s", err)
 	}
 	if err = d.Set("project", res.Project); err != nil {
 		return fmt.Errorf("error setting project in state: %s", err)
+	}
+	if err = d.Set("annotations", flattenContainerAwsClusterAnnotations(res.Annotations, d)); err != nil {
+		return fmt.Errorf("error setting annotations in state: %s", err)
 	}
 	if err = d.Set("create_time", res.CreateTime); err != nil {
 		return fmt.Errorf("error setting create_time in state: %s", err)
@@ -786,17 +846,18 @@ func resourceContainerAwsClusterUpdate(d *schema.ResourceData, meta interface{})
 	}
 
 	obj := &containeraws.Cluster{
-		Authorization: expandContainerAwsClusterAuthorization(d.Get("authorization")),
-		AwsRegion:     dcl.String(d.Get("aws_region").(string)),
-		ControlPlane:  expandContainerAwsClusterControlPlane(d.Get("control_plane")),
-		Fleet:         expandContainerAwsClusterFleet(d.Get("fleet")),
-		Location:      dcl.String(d.Get("location").(string)),
-		Name:          dcl.String(d.Get("name").(string)),
-		Networking:    expandContainerAwsClusterNetworking(d.Get("networking")),
-		Annotations:   tpgresource.CheckStringMap(d.Get("annotations")),
-		Description:   dcl.String(d.Get("description").(string)),
-		LoggingConfig: expandContainerAwsClusterLoggingConfig(d.Get("logging_config")),
-		Project:       dcl.String(project),
+		Authorization:       expandContainerAwsClusterAuthorization(d.Get("authorization")),
+		AwsRegion:           dcl.String(d.Get("aws_region").(string)),
+		ControlPlane:        expandContainerAwsClusterControlPlane(d.Get("control_plane")),
+		Fleet:               expandContainerAwsClusterFleet(d.Get("fleet")),
+		Location:            dcl.String(d.Get("location").(string)),
+		Name:                dcl.String(d.Get("name").(string)),
+		Networking:          expandContainerAwsClusterNetworking(d.Get("networking")),
+		BinaryAuthorization: expandContainerAwsClusterBinaryAuthorization(d.Get("binary_authorization")),
+		Description:         dcl.String(d.Get("description").(string)),
+		Annotations:         tpgresource.CheckStringMap(d.Get("effective_annotations")),
+		LoggingConfig:       expandContainerAwsClusterLoggingConfig(d.Get("logging_config")),
+		Project:             dcl.String(project),
 	}
 	directive := tpgdclresource.UpdateDirective
 	userAgent, err := tpgresource.GenerateUserAgentString(d, config.UserAgent)
@@ -839,17 +900,18 @@ func resourceContainerAwsClusterDelete(d *schema.ResourceData, meta interface{})
 	}
 
 	obj := &containeraws.Cluster{
-		Authorization: expandContainerAwsClusterAuthorization(d.Get("authorization")),
-		AwsRegion:     dcl.String(d.Get("aws_region").(string)),
-		ControlPlane:  expandContainerAwsClusterControlPlane(d.Get("control_plane")),
-		Fleet:         expandContainerAwsClusterFleet(d.Get("fleet")),
-		Location:      dcl.String(d.Get("location").(string)),
-		Name:          dcl.String(d.Get("name").(string)),
-		Networking:    expandContainerAwsClusterNetworking(d.Get("networking")),
-		Annotations:   tpgresource.CheckStringMap(d.Get("annotations")),
-		Description:   dcl.String(d.Get("description").(string)),
-		LoggingConfig: expandContainerAwsClusterLoggingConfig(d.Get("logging_config")),
-		Project:       dcl.String(project),
+		Authorization:       expandContainerAwsClusterAuthorization(d.Get("authorization")),
+		AwsRegion:           dcl.String(d.Get("aws_region").(string)),
+		ControlPlane:        expandContainerAwsClusterControlPlane(d.Get("control_plane")),
+		Fleet:               expandContainerAwsClusterFleet(d.Get("fleet")),
+		Location:            dcl.String(d.Get("location").(string)),
+		Name:                dcl.String(d.Get("name").(string)),
+		Networking:          expandContainerAwsClusterNetworking(d.Get("networking")),
+		BinaryAuthorization: expandContainerAwsClusterBinaryAuthorization(d.Get("binary_authorization")),
+		Description:         dcl.String(d.Get("description").(string)),
+		Annotations:         tpgresource.CheckStringMap(d.Get("effective_annotations")),
+		LoggingConfig:       expandContainerAwsClusterLoggingConfig(d.Get("logging_config")),
+		Project:             dcl.String(project),
 	}
 
 	log.Printf("[DEBUG] Deleting Cluster %q", d.Id())
@@ -908,7 +970,8 @@ func expandContainerAwsClusterAuthorization(o interface{}) *containeraws.Cluster
 	}
 	obj := objArr[0].(map[string]interface{})
 	return &containeraws.ClusterAuthorization{
-		AdminUsers: expandContainerAwsClusterAuthorizationAdminUsersArray(obj["admin_users"]),
+		AdminUsers:  expandContainerAwsClusterAuthorizationAdminUsersArray(obj["admin_users"]),
+		AdminGroups: expandContainerAwsClusterAuthorizationAdminGroupsArray(obj["admin_groups"]),
 	}
 }
 
@@ -917,7 +980,8 @@ func flattenContainerAwsClusterAuthorization(obj *containeraws.ClusterAuthorizat
 		return nil
 	}
 	transformed := map[string]interface{}{
-		"admin_users": flattenContainerAwsClusterAuthorizationAdminUsersArray(obj.AdminUsers),
+		"admin_users":  flattenContainerAwsClusterAuthorizationAdminUsersArray(obj.AdminUsers),
+		"admin_groups": flattenContainerAwsClusterAuthorizationAdminGroupsArray(obj.AdminGroups),
 	}
 
 	return []interface{}{transformed}
@@ -973,6 +1037,61 @@ func flattenContainerAwsClusterAuthorizationAdminUsers(obj *containeraws.Cluster
 	}
 	transformed := map[string]interface{}{
 		"username": obj.Username,
+	}
+
+	return transformed
+
+}
+func expandContainerAwsClusterAuthorizationAdminGroupsArray(o interface{}) []containeraws.ClusterAuthorizationAdminGroups {
+	if o == nil {
+		return make([]containeraws.ClusterAuthorizationAdminGroups, 0)
+	}
+
+	objs := o.([]interface{})
+	if len(objs) == 0 || objs[0] == nil {
+		return make([]containeraws.ClusterAuthorizationAdminGroups, 0)
+	}
+
+	items := make([]containeraws.ClusterAuthorizationAdminGroups, 0, len(objs))
+	for _, item := range objs {
+		i := expandContainerAwsClusterAuthorizationAdminGroups(item)
+		items = append(items, *i)
+	}
+
+	return items
+}
+
+func expandContainerAwsClusterAuthorizationAdminGroups(o interface{}) *containeraws.ClusterAuthorizationAdminGroups {
+	if o == nil {
+		return containeraws.EmptyClusterAuthorizationAdminGroups
+	}
+
+	obj := o.(map[string]interface{})
+	return &containeraws.ClusterAuthorizationAdminGroups{
+		Group: dcl.String(obj["group"].(string)),
+	}
+}
+
+func flattenContainerAwsClusterAuthorizationAdminGroupsArray(objs []containeraws.ClusterAuthorizationAdminGroups) []interface{} {
+	if objs == nil {
+		return nil
+	}
+
+	items := []interface{}{}
+	for _, item := range objs {
+		i := flattenContainerAwsClusterAuthorizationAdminGroups(&item)
+		items = append(items, i)
+	}
+
+	return items
+}
+
+func flattenContainerAwsClusterAuthorizationAdminGroups(obj *containeraws.ClusterAuthorizationAdminGroups) interface{} {
+	if obj == nil || obj.Empty() {
+		return nil
+	}
+	transformed := map[string]interface{}{
+		"group": obj.Group,
 	}
 
 	return transformed
@@ -1318,6 +1437,32 @@ func flattenContainerAwsClusterNetworking(obj *containeraws.ClusterNetworking) i
 
 }
 
+func expandContainerAwsClusterBinaryAuthorization(o interface{}) *containeraws.ClusterBinaryAuthorization {
+	if o == nil {
+		return nil
+	}
+	objArr := o.([]interface{})
+	if len(objArr) == 0 || objArr[0] == nil {
+		return nil
+	}
+	obj := objArr[0].(map[string]interface{})
+	return &containeraws.ClusterBinaryAuthorization{
+		EvaluationMode: containeraws.ClusterBinaryAuthorizationEvaluationModeEnumRef(obj["evaluation_mode"].(string)),
+	}
+}
+
+func flattenContainerAwsClusterBinaryAuthorization(obj *containeraws.ClusterBinaryAuthorization) interface{} {
+	if obj == nil || obj.Empty() {
+		return nil
+	}
+	transformed := map[string]interface{}{
+		"evaluation_mode": obj.EvaluationMode,
+	}
+
+	return []interface{}{transformed}
+
+}
+
 func expandContainerAwsClusterLoggingConfig(o interface{}) *containeraws.ClusterLoggingConfig {
 	if o == nil {
 		return nil
@@ -1383,6 +1528,22 @@ func flattenContainerAwsClusterWorkloadIdentityConfig(obj *containeraws.ClusterW
 	return []interface{}{transformed}
 
 }
+
+func flattenContainerAwsClusterAnnotations(v map[string]string, d *schema.ResourceData) interface{} {
+	if v == nil {
+		return nil
+	}
+
+	transformed := make(map[string]interface{})
+	if l, ok := d.Get("annotations").(map[string]interface{}); ok {
+		for k := range l {
+			transformed[k] = v[k]
+		}
+	}
+
+	return transformed
+}
+
 func flattenContainerAwsClusterLoggingConfigComponentConfigEnableComponentsArray(obj []containeraws.ClusterLoggingConfigComponentConfigEnableComponentsEnum) interface{} {
 	if obj == nil {
 		return nil

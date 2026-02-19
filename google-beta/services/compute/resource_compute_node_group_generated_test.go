@@ -19,16 +19,35 @@ package compute_test
 
 import (
 	"fmt"
+	"log"
+	"strconv"
 	"strings"
 	"testing"
+	"time"
 
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/terraform"
 
 	"github.com/hashicorp/terraform-provider-google-beta/google-beta/acctest"
 	"github.com/hashicorp/terraform-provider-google-beta/google-beta/envvar"
 	"github.com/hashicorp/terraform-provider-google-beta/google-beta/tpgresource"
 	transport_tpg "github.com/hashicorp/terraform-provider-google-beta/google-beta/transport"
+
+	"google.golang.org/api/googleapi"
+)
+
+var (
+	_ = fmt.Sprintf
+	_ = log.Print
+	_ = strconv.Atoi
+	_ = strings.Trim
+	_ = time.Now
+	_ = resource.TestMain
+	_ = terraform.NewState
+	_ = envvar.TestEnvVar
+	_ = tpgresource.SetLabels
+	_ = transport_tpg.Config{}
+	_ = googleapi.Error{}
 )
 
 func TestAccComputeNodeGroup_nodeGroupBasicExample(t *testing.T) {
@@ -50,7 +69,7 @@ func TestAccComputeNodeGroup_nodeGroupBasicExample(t *testing.T) {
 				ResourceName:            "google_compute_node_group.nodes",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"node_template", "initial_size", "zone"},
+				ImportStateVerifyIgnore: []string{"initial_size", "node_template", "zone"},
 			},
 		},
 	})
@@ -69,8 +88,56 @@ resource "google_compute_node_group" "nodes" {
   zone        = "us-central1-f"
   description = "example google_compute_node_group for Terraform Google Provider"
 
-  size          = 1
+  initial_size          = 1
   node_template = google_compute_node_template.soletenant-tmpl.id
+}
+`, context)
+}
+
+func TestAccComputeNodeGroup_nodeGroupMaintenanceIntervalExample(t *testing.T) {
+	t.Parallel()
+
+	context := map[string]interface{}{
+		"random_suffix": acctest.RandString(t, 10),
+	}
+
+	acctest.VcrTest(t, resource.TestCase{
+		PreCheck:                 func() { acctest.AccTestPreCheck(t) },
+		ProtoV5ProviderFactories: acctest.ProtoV5ProviderBetaFactories(t),
+		CheckDestroy:             testAccCheckComputeNodeGroupDestroyProducer(t),
+		Steps: []resource.TestStep{
+			{
+				Config: testAccComputeNodeGroup_nodeGroupMaintenanceIntervalExample(context),
+			},
+			{
+				ResourceName:            "google_compute_node_group.nodes",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"initial_size", "node_template", "zone"},
+			},
+		},
+	})
+}
+
+func testAccComputeNodeGroup_nodeGroupMaintenanceIntervalExample(context map[string]interface{}) string {
+	return acctest.Nprintf(`
+resource "google_compute_node_template" "soletenant-tmpl" {
+  provider  = google-beta
+  name      = "tf-test-soletenant-tmpl%{random_suffix}"
+  region    = "us-central1"
+  node_type = "c2-node-60-240"
+}
+
+resource "google_compute_node_group" "nodes" {
+  provider    = google-beta
+  name        = "tf-test-soletenant-group%{random_suffix}"
+  zone        = "us-central1-a"
+  description = "example google_compute_node_group for Terraform Google Provider"
+
+  initial_size          = 1
+  node_template = google_compute_node_template.soletenant-tmpl.id
+
+  maintenance_interval  = "RECURRENT"
 }
 `, context)
 }
@@ -94,7 +161,7 @@ func TestAccComputeNodeGroup_nodeGroupAutoscalingPolicyExample(t *testing.T) {
 				ResourceName:            "google_compute_node_group.nodes",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"node_template", "initial_size", "zone"},
+				ImportStateVerifyIgnore: []string{"initial_size", "node_template", "zone"},
 			},
 		},
 	})
@@ -147,7 +214,7 @@ func TestAccComputeNodeGroup_nodeGroupShareSettingsExample(t *testing.T) {
 				ResourceName:            "google_compute_node_group.nodes",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"node_template", "initial_size", "zone"},
+				ImportStateVerifyIgnore: []string{"initial_size", "node_template", "zone"},
 			},
 		},
 	})
@@ -159,6 +226,7 @@ resource "google_project" "guest_project" {
   project_id      = "tf-test-project-id%{random_suffix}"
   name            = "tf-test-project-name%{random_suffix}"
   org_id          = "%{org_id}"
+  deletion_policy = "DELETE"
 }
 
 resource "google_compute_node_template" "soletenant-tmpl" {
@@ -172,7 +240,7 @@ resource "google_compute_node_group" "nodes" {
   zone        = "us-central1-f"
   description = "example google_compute_node_group for Terraform Google Provider"
 
-  size          = 1
+  initial_size          = 1
   node_template = google_compute_node_template.soletenant-tmpl.id
 
   share_settings {

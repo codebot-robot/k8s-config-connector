@@ -25,29 +25,44 @@ description: |-
 For more information, see:
 * [Get started with Firebase Security Rules](https://firebase.google.com/docs/rules/get-started)
 ## Example Usage - firestore_release
-Creates a Firebase Rules Release to Cloud Firestore
+Creates a Firebase Rules Release to the default Cloud Firestore instance
 ```hcl
 resource "google_firebaserules_release" "primary" {
   name         = "cloud.firestore"
-  ruleset_name = "projects/my-project-name/rulesets/${google_firebaserules_ruleset.firestore.name}"
   project      = "my-project-name"
-
-  lifecycle {
-    replace_triggered_by = [
-      google_firebaserules_ruleset.firestore
-    ]
-  }
+  ruleset_name = "projects/my-project-name/rulesets/${google_firebaserules_ruleset.firestore.name}"
 }
 
 resource "google_firebaserules_ruleset" "firestore" {
+  project = "my-project-name"
+
   source {
     files {
       content = "service cloud.firestore {match /databases/{database}/documents { match /{document=**} { allow read, write: if false; } } }"
       name    = "firestore.rules"
     }
   }
+}
 
+```
+## Example Usage - firestore_release_additional
+Creates a Firebase Rules Release to an additional Cloud Firestore instance
+```hcl
+resource "google_firebaserules_release" "primary" {
+  name         = "cloud.firestore/database"
+  project      = "my-project-name"
+  ruleset_name = "projects/my-project-name/rulesets/${google_firebaserules_ruleset.firestore.name}"
+}
+
+resource "google_firebaserules_ruleset" "firestore" {
   project = "my-project-name"
+
+  source {
+    files {
+      content = "service cloud.firestore {match /databases/{database}/documents { match /{document=**} { allow read, write: if false; } } }"
+      name    = "firestore.rules"
+    }
+  }
 }
 
 ```
@@ -143,12 +158,24 @@ This resource provides the following
 [Timeouts](https://developer.hashicorp.com/terraform/plugin/sdkv2/resources/retries-and-customizable-timeouts) configuration options:
 
 - `create` - Default is 20 minutes.
-- `update` - Default is 20 minutes.
 - `delete` - Default is 20 minutes.
 
 ## Import
 
 Release can be imported using any of these accepted formats:
+* `projects/{{project}}/releases/{{name}}`
+
+In Terraform v1.5.0 and later, use an [`import` block](https://developer.hashicorp.com/terraform/language/import) to import Release using one of the formats above. For example:
+
+
+```tf
+import {
+  id = "projects/{{project}}/releases/{{name}}"
+  to = google_firebaserules_release.default
+}
+```
+
+When using the [`terraform import` command](https://developer.hashicorp.com/terraform/cli/commands/import), Release can be imported using one of the formats above. For example:
 
 ```
 $ terraform import google_firebaserules_release.default projects/{{project}}/releases/{{name}}

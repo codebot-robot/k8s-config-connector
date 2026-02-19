@@ -19,16 +19,35 @@ package privateca_test
 
 import (
 	"fmt"
+	"log"
+	"strconv"
 	"strings"
 	"testing"
+	"time"
 
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/terraform"
 
 	"github.com/hashicorp/terraform-provider-google-beta/google-beta/acctest"
 	"github.com/hashicorp/terraform-provider-google-beta/google-beta/envvar"
 	"github.com/hashicorp/terraform-provider-google-beta/google-beta/tpgresource"
 	transport_tpg "github.com/hashicorp/terraform-provider-google-beta/google-beta/transport"
+
+	"google.golang.org/api/googleapi"
+)
+
+var (
+	_ = fmt.Sprintf
+	_ = log.Print
+	_ = strconv.Atoi
+	_ = strings.Trim
+	_ = time.Now
+	_ = resource.TestMain
+	_ = terraform.NewState
+	_ = envvar.TestEnvVar
+	_ = tpgresource.SetLabels
+	_ = transport_tpg.Config{}
+	_ = googleapi.Error{}
 )
 
 func TestAccPrivatecaCertificate_privatecaCertificateConfigExample(t *testing.T) {
@@ -51,7 +70,7 @@ func TestAccPrivatecaCertificate_privatecaCertificateConfigExample(t *testing.T)
 				ResourceName:            "google_privateca_certificate.default",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"pool", "name", "location", "certificate_authority"},
+				ImportStateVerifyIgnore: []string{"certificate_authority", "labels", "location", "name", "pool", "terraform_labels"},
 			},
 		},
 	})
@@ -182,7 +201,7 @@ func TestAccPrivatecaCertificate_privatecaCertificateWithTemplateExample(t *test
 				ResourceName:            "google_privateca_certificate.default",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"pool", "name", "location", "certificate_authority"},
+				ImportStateVerifyIgnore: []string{"certificate_authority", "labels", "location", "name", "pool", "terraform_labels"},
 			},
 		},
 	})
@@ -345,7 +364,7 @@ func TestAccPrivatecaCertificate_privatecaCertificateCsrExample(t *testing.T) {
 				ResourceName:            "google_privateca_certificate.default",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"pool", "name", "location", "certificate_authority"},
+				ImportStateVerifyIgnore: []string{"certificate_authority", "labels", "location", "name", "pool", "terraform_labels"},
 			},
 		},
 	})
@@ -432,7 +451,7 @@ func TestAccPrivatecaCertificate_privatecaCertificateNoAuthorityExample(t *testi
 				ResourceName:            "google_privateca_certificate.default",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"pool", "name", "location", "certificate_authority"},
+				ImportStateVerifyIgnore: []string{"certificate_authority", "labels", "location", "name", "pool", "terraform_labels"},
 			},
 		},
 	})
@@ -505,6 +524,128 @@ resource "google_privateca_certificate" "default" {
         street_address = "1600 amphitheatre parkway"
         postal_code = "94109"
       }
+    }
+    x509_config {
+      ca_options {
+        is_ca = false
+      }
+      key_usage {
+        base_key_usage {
+          crl_sign = true
+        }
+        extended_key_usage {
+          server_auth = true
+        }
+      }
+    }
+    public_key {
+      format = "PEM"
+      key = filebase64("test-fixtures/rsa_public.pem")
+    }
+  }
+  // Certificates require an authority to exist in the pool, though they don't
+  // need to be explicitly connected to it
+  depends_on = [google_privateca_certificate_authority.default]
+}
+`, context)
+}
+
+func TestAccPrivatecaCertificate_privatecaCertificateCustomSkiExample(t *testing.T) {
+	t.Parallel()
+
+	context := map[string]interface{}{
+		"project":       envvar.GetTestProjectFromEnv(),
+		"random_suffix": acctest.RandString(t, 10),
+	}
+
+	acctest.VcrTest(t, resource.TestCase{
+		PreCheck:                 func() { acctest.AccTestPreCheck(t) },
+		ProtoV5ProviderFactories: acctest.ProtoV5ProviderFactories(t),
+		CheckDestroy:             testAccCheckPrivatecaCertificateDestroyProducer(t),
+		Steps: []resource.TestStep{
+			{
+				Config: testAccPrivatecaCertificate_privatecaCertificateCustomSkiExample(context),
+			},
+			{
+				ResourceName:            "google_privateca_certificate.default",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"certificate_authority", "labels", "location", "name", "pool", "terraform_labels"},
+			},
+		},
+	})
+}
+
+func testAccPrivatecaCertificate_privatecaCertificateCustomSkiExample(context map[string]interface{}) string {
+	return acctest.Nprintf(`
+resource "google_privateca_ca_pool" "default" {
+  location = "us-central1"
+  name = "tf-test-my-pool%{random_suffix}"
+  tier = "ENTERPRISE"
+}
+
+resource "google_privateca_certificate_authority" "default" {
+  location = "us-central1"
+  pool = google_privateca_ca_pool.default.name
+  certificate_authority_id = "my-authority"
+  config {
+    subject_config {
+      subject {
+        organization = "HashiCorp"
+        common_name = "my-certificate-authority"
+      }
+      subject_alt_name {
+        dns_names = ["hashicorp.com"]
+      }
+    }
+    x509_config {
+      ca_options {
+        is_ca = true
+      }
+      key_usage {
+        base_key_usage {
+          digital_signature = true
+          cert_sign = true
+          crl_sign = true
+        }
+        extended_key_usage {
+          server_auth = true
+        }
+      }
+    }
+  }
+  lifetime = "86400s"
+  key_spec {
+    algorithm = "RSA_PKCS1_4096_SHA256"
+  }
+
+  // Disable CA deletion related safe checks for easier cleanup.
+  deletion_protection                    = false
+  skip_grace_period                      = true
+  ignore_active_certificates_on_deletion = true
+}
+
+
+resource "google_privateca_certificate" "default" {
+  location = "us-central1"
+  pool = google_privateca_ca_pool.default.name
+  name = "tf-test-my-certificate%{random_suffix}"
+  lifetime = "860s"
+  config {
+    subject_config  {
+      subject {
+        common_name = "san1.example.com"
+        country_code = "us"
+        organization = "google"
+        organizational_unit = "enterprise"
+        locality = "mountain view"
+        province = "california"
+        street_address = "1600 amphitheatre parkway"
+        postal_code = "94109"
+      }
+    }
+    subject_key_id {
+      key_id = "4cf3372289b1d411b999dbb9ebcd44744b6b2fca"
     }
     x509_config {
       ca_options {
