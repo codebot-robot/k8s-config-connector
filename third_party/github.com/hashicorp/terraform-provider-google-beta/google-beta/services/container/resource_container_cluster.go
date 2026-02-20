@@ -1510,15 +1510,15 @@ func ResourceContainerCluster() *schema.Resource {
 						"client_certificate_config": {
 							Type:        schema.TypeList,
 							MaxItems:    1,
-							Required:    true,
-							ForceNew:    true,
+							Optional:    true,
+							Computed:    true,
 							Description: `Whether client certificate authorization is enabled for this cluster.`,
 							Elem: &schema.Resource{
 								Schema: map[string]*schema.Schema{
 									"issue_client_certificate": {
 										Type:        schema.TypeBool,
-										Required:    true,
-										ForceNew:    true,
+										Optional:    true,
+										Computed:    true,
 										Description: `Whether client certificate authorization is enabled for this cluster.`,
 									},
 								},
@@ -7679,15 +7679,12 @@ func flattenMasterAuth(ma *container.MasterAuth) []map[string]interface{} {
 		},
 	}
 
-	// No version of the GKE API returns the client_certificate_config value.
-	// Instead, we need to infer whether or not it was set based on the
-	// client cert being returned from the API or not.
-	// Previous versions of the provider didn't record anything in state when
-	// a client cert was enabled, only setting the block when it was false.
-	masterAuth[0]["client_certificate_config"] = []map[string]interface{}{
-		{
-			"issue_client_certificate": len(ma.ClientCertificate) != 0,
-		},
+	if ma.ClientCertificateConfig != nil {
+		masterAuth[0]["client_certificate_config"] = []map[string]interface{}{
+			{
+				"issue_client_certificate": ma.ClientCertificateConfig.IssueClientCertificate,
+			},
+		}
 	}
 
 	return masterAuth
