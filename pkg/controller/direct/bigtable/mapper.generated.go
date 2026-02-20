@@ -757,7 +757,7 @@ func ProtoSchema_v1alpha1_FromProto(mapCtx *direct.MapContext, in *pb.ProtoSchem
 		return nil
 	}
 	out := &krmbigtablev1alpha1.ProtoSchema{}
-	out.ProtoDescriptors = []krmbigtablev1alpha1.byte{direct.LazyPtr(in.GetProtoDescriptors())}
+	out.ProtoDescriptors = in.GetProtoDescriptors()
 	return out
 }
 func ProtoSchema_v1alpha1_ToProto(mapCtx *direct.MapContext, in *krmbigtablev1alpha1.ProtoSchema) *pb.ProtoSchema {
@@ -765,9 +765,7 @@ func ProtoSchema_v1alpha1_ToProto(mapCtx *direct.MapContext, in *krmbigtablev1al
 		return nil
 	}
 	out := &pb.ProtoSchema{}
-	if len(in.ProtoDescriptors) > 0 && in.ProtoDescriptors[0] != nil {
-		out.ProtoDescriptors = direct.ValueOf(in.ProtoDescriptors[0])
-	}
+	out.ProtoDescriptors = in.ProtoDescriptors
 	return out
 }
 func RestoreInfo_v1beta1_FromProto(mapCtx *direct.MapContext, in *pb.RestoreInfo) *krm.RestoreInfo {
