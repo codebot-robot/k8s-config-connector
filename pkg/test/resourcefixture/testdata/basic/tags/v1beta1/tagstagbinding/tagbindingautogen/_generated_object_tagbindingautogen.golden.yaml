@@ -14,7 +14,7 @@ metadata:
 spec:
   parentRef:
     external: //cloudresourcemanager.googleapis.com/projects/${projectNumber}
-  resourceID: '%2F%2Fcloudresourcemanager.googleapis.com%2Fprojects%2F${projectNumber}/tagValues/${tagValueID}'
+  resourceID: '%2F%2Fcloudresourcemanager.googleapis.com%2Fprojects%2F${projectNumber}/tagValues/1771709298434426246'
   tagValueRef:
     name: tagstagvalue-${uniqueId}
 status:
@@ -24,6 +24,6 @@ status:
     reason: UpToDate
     status: "True"
     type: Ready
-  externalRef: tagBindings/%2F%2Fcloudresourcemanager.googleapis.com%2Fprojects%2F${projectNumber}/tagValues/${tagValueID}
-  name: '%2F%2Fcloudresourcemanager.googleapis.com%2Fprojects%2F${projectNumber}/tagValues/${tagValueID}'
+  externalRef: tagBindings/%2F%2Fcloudresourcemanager.googleapis.com%2Fprojects%2F${projectNumber}/tagValues/1771709298434426246
+  name: '%2F%2Fcloudresourcemanager.googleapis.com%2Fprojects%2F${projectNumber}/tagValues/1771709298434426246'
   observedGeneration: 2
