@@ -30,36 +30,32 @@ func (s *MockService) ConfigureVisitor(url string, replacements mockgcpregistry.
 func (s *MockService) Previsit(event mockgcpregistry.Event, replacements mockgcpregistry.NormalizingVisitor) {
 	if !isCloudResourceManagerAPI(event) {
 		return
-
 	}
-	name := ""
 	event.VisitResponseStringValues(func(path string, value string) {
-		switch path {
-		case ".name":
-			name = value
-		case ".projectNumber":
+		if path == ".projectNumber" {
 			replacements.ReplaceStringValue(value, "${projectNumber}")
+			return
+		}
+
+		tokens := strings.Split(value, "/")
+		if len(tokens) == 2 && tokens[0] == "tagKeys" {
+			if tokens[1] == "namespaced" {
+				// This is actually a search operation: https://cloud.google.com/resource-manager/reference/rest/v3/tagKeys/getNamespaced
+			} else {
+				replacements.ReplaceStringValue(tokens[1], "${tagKeyID}")
+			}
+		}
+		if len(tokens) == 2 && tokens[0] == "tagValues" {
+			if tokens[1] == "namespaced" {
+				// This is actually a search operation: https://cloud.google.com/resource-manager/reference/rest/v3/tagValues/getNamespaced
+			} else {
+				replacements.ReplaceStringValue(tokens[1], "${tagValueID}")
+			}
+		}
+		if len(tokens) == 2 && tokens[0] == "tagBindings" {
+			replacements.ReplaceStringValue(tokens[1], "${tagBindingID}")
 		}
 	})
-
-	tokens := strings.Split(name, "/")
-	if len(tokens) == 2 && tokens[0] == "tagKeys" {
-		if name == "namespaced" {
-			// This is actually a search operation: https://cloud.google.com/resource-manager/reference/rest/v3/tagKeys/getNamespaced
-		} else {
-			replacements.ReplaceStringValue(tokens[1], "${tagKeyID}")
-		}
-	}
-	if len(tokens) == 2 && tokens[0] == "tagValues" {
-		if name == "namespaced" {
-			// This is actually a search operation: https://cloud.google.com/resource-manager/reference/rest/v3/tagValues/getNamespaced
-		} else {
-			replacements.ReplaceStringValue(tokens[1], "${tagValueID}")
-		}
-	}
-	if len(tokens) == 2 && tokens[0] == "tagBindings" {
-		replacements.ReplaceStringValue(tokens[1], "${tagBindingID}")
-	}
 }
 
 // isCloudResourceManagerAPI returns true if this is a cloud resource manager URL

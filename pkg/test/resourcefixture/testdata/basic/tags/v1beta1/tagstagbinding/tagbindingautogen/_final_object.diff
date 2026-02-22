@@ -1,4 +1,11 @@
 6d5
 <     cnrm.cloud.google.com/state-into-spec: absent
-27a27
->   externalRef: tagBindings/%2F%2Fcloudresourcemanager.googleapis.com%2Fprojects%2F${projectNumber}/tagValues/${tagValueID}
+18c17
+<   resourceID: '%2F%2Fcloudresourcemanager.googleapis.com%2Fprojects%2F${projectNumber}/tagValues/1771784048783141447'
+---
+>   resourceID: '%2F%2Fcloudresourcemanager.googleapis.com%2Fprojects%2F${projectNumber}/tagValues/1771784033584321968'
+28c27,28
+<   name: '%2F%2Fcloudresourcemanager.googleapis.com%2Fprojects%2F${projectNumber}/tagValues/1771784048783141447'
+---
+>   externalRef: tagBindings/%2F%2Fcloudresourcemanager.googleapis.com%2Fprojects%2F${projectNumber}/tagValues/1771784033584321968
+>   name: '%2F%2Fcloudresourcemanager.googleapis.com%2Fprojects%2F${projectNumber}/tagValues/1771784033584321968'

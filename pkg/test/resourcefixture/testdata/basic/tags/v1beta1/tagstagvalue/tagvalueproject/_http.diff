@@ -1,28 +1,28 @@
-92c92
+91c91
 < POST https://cloudresourcemanager.googleapis.com/v3/tagValues?alt=json
 ---
 > POST https://cloudresourcemanager.googleapis.com/v3/tagValues?%24alt=json%3Benum-encoding%3Dint
-121c121
+120c120
 < GET https://cloudresourcemanager.googleapis.com/v3/operations/${operationID}?alt=json
 ---
 > GET https://cloudresourcemanager.googleapis.com/v3/operations/${operationID}
-123a124
+122a123
 > X-Goog-Request-Params: name=operations%2F${operationID}
-156c157
+155c156
 < GET https://cloudresourcemanager.googleapis.com/v3/tagValues/${tagValueID}?alt=json
 ---
 > GET https://cloudresourcemanager.googleapis.com/v3/tagValues/${tagValueID}?%24alt=json%3Benum-encoding%3Dint
-158a160
+157a159
 > X-Goog-Request-Params: name=tagValues%2F${tagValueID}
-183c185
+182c184
 < DELETE https://cloudresourcemanager.googleapis.com/v3/tagValues/${tagValueID}?alt=json
 ---
 > DELETE https://cloudresourcemanager.googleapis.com/v3/tagValues/${tagValueID}?%24alt=json%3Benum-encoding%3Dint
-185a188
+184a187
 > X-Goog-Request-Params: name=tagValues%2F${tagValueID}
-206c209
+205c208
 < GET https://cloudresourcemanager.googleapis.com/v3/operations/${operationID}?alt=json
 ---
 > GET https://cloudresourcemanager.googleapis.com/v3/operations/${operationID}
-208a212
+207a211
 > X-Goog-Request-Params: name=operations%2F${operationID}
