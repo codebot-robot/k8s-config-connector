@@ -62,41 +62,6 @@ spec:
           spec:
             description: BigtableSchemaBundleSpec defines the desired state of BigtableSchemaBundle
             properties:
-              location:
-                description: The location of this resource.
-                type: string
-              projectRef:
-                description: The project that this resource belongs to.
-                oneOf:
-                - not:
-                    required:
-                    - external
-                  required:
-                  - name
-                - not:
-                    anyOf:
-                    - required:
-                      - name
-                    - required:
-                      - namespace
-                  required:
-                  - external
-                properties:
-                  external:
-                    description: The `projectID` field of a project, when not managed
-                      by Config Connector.
-                    type: string
-                  kind:
-                    description: The kind of the Project resource; optional but must
-                      be `Project` if provided.
-                    type: string
-                  name:
-                    description: The `name` field of a `Project` resource.
-                    type: string
-                  namespace:
-                    description: The `namespace` field of a `Project` resource.
-                    type: string
-                type: object
               protoSchema:
                 properties:
                   protoDescriptors:
@@ -114,9 +79,37 @@ spec:
                 description: The BigtableSchemaBundle name. If not given, the metadata.name
                   will be used.
                 type: string
+              tableRef:
+                description: TableRef defines the resource reference to BigtableTable,
+                  which "External" field holds the GCP identifier for the KRM object.
+                oneOf:
+                - not:
+                    required:
+                    - external
+                  required:
+                  - name
+                - not:
+                    anyOf:
+                    - required:
+                      - name
+                    - required:
+                      - namespace
+                  required:
+                  - external
+                properties:
+                  external:
+                    description: A reference to an externally managed BigtableTable
+                      resource.
+                    type: string
+                  name:
+                    description: The name of a BigtableInstance resource.
+                    type: string
+                  namespace:
+                    description: The namespace of a BigtableInstance resource.
+                    type: string
+                type: object
             required:
-            - location
-            - projectRef
+            - tableRef
             type: object
           status:
             description: BigtableSchemaBundleStatus defines the config connector machine

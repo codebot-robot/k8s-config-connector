@@ -15,25 +15,25 @@
 package v1alpha1
 
 import (
-	refsv1beta1 "github.com/GoogleCloudPlatform/k8s-config-connector/apis/refs/v1beta1"
+	bigtablev1beta1 "github.com/GoogleCloudPlatform/k8s-config-connector/apis/bigtable/v1beta1"
 	"github.com/GoogleCloudPlatform/k8s-config-connector/pkg/apis/k8s/v1alpha1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 var BigtableSchemaBundleGVK = GroupVersion.WithKind("BigtableSchemaBundle")
 
+type BigtableSchemaBundleParent struct {
+	// +required
+	TableRef bigtablev1beta1.TableRef `json:"tableRef"`
+}
+
 // BigtableSchemaBundleSpec defines the desired state of BigtableSchemaBundle
 // +kcc:spec:proto=google.bigtable.admin.v2.SchemaBundle
 type BigtableSchemaBundleSpec struct {
-	// The project that this resource belongs to.
-	ProjectRef *refsv1beta1.ProjectRef `json:"projectRef"`
-
-	// The location of this resource.
-	Location string `json:"location"`
+	BigtableSchemaBundleParent `json:",inline"`
 
 	// The BigtableSchemaBundle name. If not given, the metadata.name will be used.
 	ResourceID *string `json:"resourceID,omitempty"`
-
 	// +kcc:proto:field=google.bigtable.admin.v2.SchemaBundle.proto_schema
 	ProtoSchema *ProtoSchema `json:"protoSchema,omitempty"`
 }
