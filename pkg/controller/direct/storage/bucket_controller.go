@@ -98,8 +98,10 @@ func resolveReferences(ctx context.Context, reader client.Reader, obj *krm.Stora
 		}
 	}
 	if obj.Spec.Encryption != nil {
-		if err := (&obj.Spec.Encryption.KmsKeyRef).Normalize(ctx, reader, obj.GetNamespace()); err != nil {
+		if resolved, err := refs.ResolveKMSCryptoKeyRef(ctx, reader, obj, &obj.Spec.Encryption.KmsKeyRef); err != nil {
 			return err
+		} else if resolved != nil {
+			obj.Spec.Encryption.KmsKeyRef = *resolved
 		}
 	}
 	return nil
