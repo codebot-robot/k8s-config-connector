@@ -349,6 +349,7 @@
 | networkmanagement.cnrm.cloud.google.com       | NetworkManagementConnectivityTest               | True         | False       | False  | Direct     |
 | networksecurity.cnrm.cloud.google.com         | NetworkSecurityAuthorizationPolicy              | False        | True        | False  | DCL        |
 | networksecurity.cnrm.cloud.google.com         | NetworkSecurityClientTLSPolicy                  | False        | True        | False  | DCL        |
+| networksecurity.cnrm.cloud.google.com         | NetworkSecurityFirewallEndpoint                 | False        | True        | False  | Direct     |
 | networksecurity.cnrm.cloud.google.com         | NetworkSecurityServerTLSPolicy                  | False        | True        | False  | DCL        |
 | networkservices.cnrm.cloud.google.com         | NetworkServicesEdgeCacheKeyset                  | True         | False       | False  | Terraform  |
 | networkservices.cnrm.cloud.google.com         | NetworkServicesEdgeCacheOrigin                  | True         | False       | False  | Terraform  |
