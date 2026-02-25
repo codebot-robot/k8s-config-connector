@@ -703,3 +703,7 @@ type Condition struct {
 	// A reason for the execution condition.
 	ExecutionReason *string `json:"executionReason,omitempty"`
 }
+
+// +kcc:proto=google.cloud.run.v2.Container
+type ContainerObservedState struct {}
+
