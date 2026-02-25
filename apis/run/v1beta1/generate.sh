@@ -25,7 +25,8 @@ cd ${REPO_ROOT}/dev/tools/controllerbuilder
 go run . generate-types \
   --service google.cloud.run.v2 \
   --api-version run.cnrm.cloud.google.com/v1beta1 \
-  --resource RunJob:Job
+  --resource RunJob:Job \
+  --resource RunService:Service
 
 go run . generate-mapper \
   --service google.cloud.run.v2 \
