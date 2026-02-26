@@ -390,7 +390,7 @@
 | resourcemanager.cnrm.cloud.google.com         | ResourceManagerLien                             | False        | True        | False  | Terraform  |
 | resourcemanager.cnrm.cloud.google.com         | ResourceManagerPolicy                           | False        | True        | False  | Terraform  |
 | run.cnrm.cloud.google.com                     | RunJob                                          | False        | True        | False  | Terraform  |
-| run.cnrm.cloud.google.com                     | RunService                                      | False        | True        | False  | Terraform  |
+| run.cnrm.cloud.google.com                     | RunService                                      | False        | True        | False  | Direct     |
 | secretmanager.cnrm.cloud.google.com           | SecretManagerSecret                             | False        | True        | False  | Terraform  |
 | secretmanager.cnrm.cloud.google.com           | SecretManagerSecretVersion                      | False        | True        | False  | Terraform  |
 | securesourcemanager.cnrm.cloud.google.com     | SecureSourceManagerInstance                     | True         | True        | False  | Direct     |
