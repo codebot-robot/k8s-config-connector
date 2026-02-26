@@ -38,9 +38,3 @@ spec:
             defaultTtl: 3600s
             maxTtl: 86400s
             clientTtl: 3600s
-            compressionMode: AUTOMATIC
-        routeMethods:
-          allowedMethods:
-          - GET
-          - HEAD
-          - POST

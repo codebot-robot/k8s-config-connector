@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strings"
 	"time"
 
 	krm "github.com/GoogleCloudPlatform/k8s-config-connector/apis/networkservices/v1alpha1"
@@ -198,7 +199,9 @@ func (a *EdgeCacheServiceAdapter) Update(ctx context.Context, updateOp *directba
 	}
 	resource.Labels["managed-by-cnrm"] = "true"
 
-	url := fmt.Sprintf("https://networkservices.googleapis.com/v1/%s", a.id.String())
+	paths := []string{"description", "labels", "disableQuic", "disableHttp2", "requireTls", "edgeSslCertificates", "routing", "logConfig", "edgeSecurityPolicy", "sslPolicy"}
+	updateMask := strings.Join(paths, ",")
+	url := fmt.Sprintf("https://networkservices.googleapis.com/v1/%s?updateMask=%s", a.id.String(), updateMask)
 	body, err := json.Marshal(resource)
 	if err != nil {
 		return fmt.Errorf("marshalling resource: %w", err)

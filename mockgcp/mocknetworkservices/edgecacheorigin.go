@@ -18,6 +18,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strings"
 	"time"
 
 	"google.golang.org/grpc/codes"
@@ -27,6 +28,7 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	networkservicespb "cloud.google.com/go/networkservices/apiv1/networkservicespb"
+	"github.com/GoogleCloudPlatform/k8s-config-connector/mockgcp/common/fields"
 	pb "github.com/GoogleCloudPlatform/k8s-config-connector/mockgcp/generated/google/cloud/networkservices/v1"
 )
 
@@ -130,7 +132,16 @@ func (s *NetworkServicesServer) PatchEdgeCacheOrigin(w http.ResponseWriter, r *h
 		return
 	}
 
-	proto.Merge(existing, patchObj)
+	updateMask := r.URL.Query().Get("updateMask")
+	if updateMask == "" {
+		proto.Merge(existing, patchObj)
+	} else {
+		paths := strings.Split(updateMask, ",")
+		if err := fields.UpdateByFieldMask(existing, patchObj, paths); err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+	}
 
 	now := time.Now()
 	existing.UpdateTime = timestamppb.New(now)

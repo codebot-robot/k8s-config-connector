@@ -175,12 +175,6 @@ func EdgeCacheRoutingRouteRule_ToProto(mapCtx *direct.MapContext, in *krm.Edgeca
 
 	out.UrlRedirect = EdgeCacheRoutingUrlRedirect_ToProto(mapCtx, in.UrlRedirect)
 
-	if in.RouteMethods != nil {
-		out.RouteMethods = &EdgeCacheRoutingRouteMethods{
-			AllowedMethods: in.RouteMethods.AllowedMethods,
-		}
-	}
-
 	return out
 
 }
@@ -405,8 +399,6 @@ func EdgeCacheRoutingCdnPolicy_ToProto(mapCtx *direct.MapContext, in *krm.Edgeca
 		}
 
 	}
-
-	out.CompressionMode = direct.ValueOf(in.CompressionMode)
 
 	return out
 

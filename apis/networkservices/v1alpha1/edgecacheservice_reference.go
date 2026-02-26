@@ -51,7 +51,8 @@ func (r *EdgeCacheServiceRef) NormalizedExternal(ctx context.Context, reader cli
 	}
 	// From given External
 	if r.External != "" {
-		if _, _, err := ParseEdgeCacheServiceExternal(r.External); err != nil {
+		id := &EdgeCacheServiceIdentity{}
+		if err := id.FromExternal(r.External); err != nil {
 			return "", err
 		}
 		return r.External, nil

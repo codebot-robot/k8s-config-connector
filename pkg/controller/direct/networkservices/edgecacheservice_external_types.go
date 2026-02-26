@@ -65,11 +65,6 @@ type EdgeCacheRoutingRouteRule struct {
 	UrlRedirect  *EdgeCacheRoutingUrlRedirect  `json:"urlRedirect,omitempty"`
 	RouteAction  *EdgeCacheRoutingRouteAction  `json:"routeAction,omitempty"`
 	HeaderAction *EdgeCacheRoutingHeaderAction `json:"headerAction,omitempty"`
-	RouteMethods *EdgeCacheRoutingRouteMethods `json:"routeMethods,omitempty"`
-}
-
-type EdgeCacheRoutingRouteMethods struct {
-	AllowedMethods []string `json:"allowedMethods,omitempty"`
 }
 
 type EdgeCacheRoutingRouteMatch struct {
@@ -115,7 +110,6 @@ type EdgeCacheRoutingCdnPolicy struct {
 	SignedRequestMaximumExpirationTtl string                              `json:"signedRequestMaximumExpirationTtl,omitempty"`
 	AddSignatures                     *EdgeCacheRoutingAddSignatures      `json:"addSignatures,omitempty"`
 	SignedTokenOptions                *EdgeCacheRoutingSignedTokenOptions `json:"signedTokenOptions,omitempty"`
-	CompressionMode                   string                              `json:"compressionMode,omitempty"`
 }
 
 type EdgeCacheRoutingCacheKeyPolicy struct {
