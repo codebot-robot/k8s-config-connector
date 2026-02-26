@@ -40,7 +40,7 @@ var edgeCacheServiceURL = gcpurls.Template[EdgeCacheServiceIdentity](
 // EdgeCacheServiceIdentity represents the identity of a EdgeCacheService.
 // +k8s:deepcopy-gen=false
 type EdgeCacheServiceIdentity struct {
-	Project           string
+	Project            string
 	EdgeCacheServiceID string
 }
 
@@ -78,8 +78,9 @@ func (p *EdgeCacheServiceParent) String() string {
 	return fmt.Sprintf("projects/%s/locations/global", p.ProjectID)
 }
 
-// NewEdgeCacheServiceIdentity builds a EdgeCacheServiceIdentity from the Config Connector EdgeCacheService object.
-func NewEdgeCacheServiceIdentity(ctx context.Context, reader client.Reader, obj *NetworkServicesEdgeCacheService) (*EdgeCacheServiceIdentity, error) {
+var _ identity.Resource = &NetworkServicesEdgeCacheService{}
+
+func (obj *NetworkServicesEdgeCacheService) GetIdentity(ctx context.Context, reader client.Reader) (identity.Identity, error) {
 
 	// Get Parent
 	projectRef, err := refsv1beta1.ResolveProject(ctx, reader, obj.GetNamespace(), obj.Spec.ProjectRef)
@@ -101,7 +102,7 @@ func NewEdgeCacheServiceIdentity(ctx context.Context, reader client.Reader, obj 
 	}
 
 	specIdentity := &EdgeCacheServiceIdentity{
-		Project:           projectID,
+		Project:            projectID,
 		EdgeCacheServiceID: resourceID,
 	}
 
@@ -120,4 +121,13 @@ func NewEdgeCacheServiceIdentity(ctx context.Context, reader client.Reader, obj 
 	}
 
 	return specIdentity, nil
+}
+
+// NewEdgeCacheServiceIdentity builds a EdgeCacheServiceIdentity from the Config Connector EdgeCacheService object.
+func NewEdgeCacheServiceIdentity(ctx context.Context, reader client.Reader, obj *NetworkServicesEdgeCacheService) (*EdgeCacheServiceIdentity, error) {
+	id, err := obj.GetIdentity(ctx, reader)
+	if err != nil {
+		return nil, err
+	}
+	return id.(*EdgeCacheServiceIdentity), nil
 }
