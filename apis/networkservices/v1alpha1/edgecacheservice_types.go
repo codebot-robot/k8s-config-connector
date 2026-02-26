@@ -15,12 +15,22 @@
 package v1alpha1
 
 import (
-	refs "github.com/GoogleCloudPlatform/k8s-config-connector/apis/refs/v1beta1"
 	"github.com/GoogleCloudPlatform/k8s-config-connector/pkg/apis/k8s/v1alpha1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 var NetworkServicesEdgeCacheServiceGVK = GroupVersion.WithKind("NetworkServicesEdgeCacheService")
+
+type ProjectRef struct {
+	/* The `projectID` field of a project, when not managed by Config Connector. */
+	External string `json:"external,omitempty"`
+
+	/* The `name` field of a `Project` resource. */
+	Name string `json:"name,omitempty"`
+
+	/* The `namespace` field of a `Project` resource. */
+	Namespace string `json:"namespace,omitempty"`
+}
 
 type EdgecacheserviceAddSignatures struct {
 	/* The actions to take to add signatures to responses. Possible values: ["GENERATE_COOKIE", "GENERATE_TOKEN_HLS_COOKIELESS", "PROPAGATE_TOKEN_HLS_COOKIELESS"]. */
@@ -60,7 +70,7 @@ type EdgecacheserviceAddSignatures struct {
 	This must be specified when the GENERATE_COOKIE or GENERATE_TOKEN_HLS_COOKIELESS actions are specified.  This field may not be specified otherwise. */
 	// +optional
 	// +kcc:proto:field=google.cloud.networkservices.v1.EdgeCacheRouteAction.CDNPolicy.AddSignatures.keyset
-	Keyset *string `json:"keyset,omitempty"`
+	Keyset *EdgeCacheKeysetRef `json:"keyset,omitempty"`
 
 	/* The query parameter in which to put the generated token.
 
@@ -248,7 +258,7 @@ type EdgecacheserviceCdnPolicy struct {
 	/* The EdgeCacheKeyset containing the set of public keys used to validate signed requests at the edge. */
 	// +optional
 	// +kcc:proto:field=google.cloud.networkservices.v1.EdgeCacheRouteAction.CDNPolicy.signed_request_keyset
-	SignedRequestKeyset *string `json:"signedRequestKeyset,omitempty"`
+	SignedRequestKeyset *EdgeCacheKeysetRef `json:"signedRequestKeyset,omitempty"`
 
 	/* Limit how far into the future the expiration time of a signed request may be.
 
@@ -580,7 +590,7 @@ type EdgecacheserviceRouteRule struct {
 	Only one of origin or urlRedirect can be set. */
 	// +optional
 	// +kcc:proto:field=google.cloud.networkservices.v1.EdgeCacheRule.RouteRule.origin
-	Origin *string `json:"origin,omitempty"`
+	Origin *EdgeCacheOriginRef `json:"origin,omitempty"`
 
 	/* The priority of this route rule, where 1 is the highest priority.
 
@@ -733,14 +743,14 @@ type NetworkServicesEdgeCacheServiceSpec struct {
 	/* Resource URL that points at the Cloud Armor edge security policy that is applied on each request against the EdgeCacheService. */
 	// +optional
 	// +kcc:proto:field=google.cloud.networkservices.v1.EdgeCacheService.edge_security_policy
-	EdgeSecurityPolicy *string `json:"edgeSecurityPolicy,omitempty"`
+	EdgeSecurityPolicy *EdgeSecurityPolicyRef `json:"edgeSecurityPolicy,omitempty"`
 
 	/* URLs to sslCertificate resources that are used to authenticate connections between users and the EdgeCacheService.
 
 	Note that only "global" certificates with a "scope" of "EDGE_CACHE" can be attached to an EdgeCacheService. */
 	// +optional
 	// +kcc:proto:field=google.cloud.networkservices.v1.EdgeCacheService.edge_ssl_certificates
-	EdgeSslCertificates []string `json:"edgeSslCertificates,omitempty"`
+	EdgeSslCertificates []EdgeSslCertificateRef `json:"edgeSslCertificates,omitempty"`
 
 	/* Specifies the logging options for the traffic served by this service. If logging is enabled, logs will be exported to Cloud Logging. */
 	// +optional
@@ -748,7 +758,7 @@ type NetworkServicesEdgeCacheServiceSpec struct {
 	LogConfig *EdgecacheserviceLogConfig `json:"logConfig,omitempty"`
 
 	/* The project that this resource belongs to. */
-	ProjectRef *refs.ProjectRef `json:"projectRef"`
+	ProjectRef *ProjectRef `json:"projectRef"`
 
 	/* Require TLS (HTTPS) for all clients connecting to this service.
 
@@ -771,7 +781,7 @@ type NetworkServicesEdgeCacheServiceSpec struct {
 	If not set, the EdgeCacheService has no SSL policy configured, and will default to the "COMPATIBLE" policy. */
 	// +optional
 	// +kcc:proto:field=google.cloud.networkservices.v1.EdgeCacheService.ssl_policy
-	SslPolicy *string `json:"sslPolicy,omitempty"`
+	SslPolicy *SslPolicyRef `json:"sslPolicy,omitempty"`
 }
 
 type NetworkServicesEdgeCacheServiceStatus struct {
@@ -816,6 +826,8 @@ type NetworkServicesEdgeCacheServiceObservedState struct {
 // +kubebuilder:subresource:status
 // +kubebuilder:metadata:labels="cnrm.cloud.google.com/managed-by-kcc=true"
 // +kubebuilder:metadata:labels="cnrm.cloud.google.com/system=true"
+// +kubebuilder:metadata:labels="cnrm.cloud.google.com/stability-level=alpha"
+// +kubebuilder:metadata:labels="cnrm.cloud.google.com/tf2crd=true"
 // +kubebuilder:printcolumn:name="Age",JSONPath=".metadata.creationTimestamp",type="date"
 // +kubebuilder:printcolumn:name="Ready",JSONPath=".status.conditions[?(@.type=='Ready')].status",type="string",description="When 'True', the most recent reconcile of the resource succeeded"
 // +kubebuilder:printcolumn:name="Status",JSONPath=".status.conditions[?(@.type=='Ready')].reason",type="string",description="The reason for the value in 'Ready'"

@@ -83,11 +83,19 @@ var _ identity.Resource = &NetworkServicesEdgeCacheService{}
 func (obj *NetworkServicesEdgeCacheService) GetIdentity(ctx context.Context, reader client.Reader) (identity.Identity, error) {
 
 	// Get Parent
-	projectRef, err := refsv1beta1.ResolveProject(ctx, reader, obj.GetNamespace(), obj.Spec.ProjectRef)
+	if obj.Spec.ProjectRef == nil {
+		return nil, fmt.Errorf("projectRef must be set")
+	}
+	projectRef := &refsv1beta1.ProjectRef{
+		External:  obj.Spec.ProjectRef.External,
+		Name:      obj.Spec.ProjectRef.Name,
+		Namespace: obj.Spec.ProjectRef.Namespace,
+	}
+	resolvedProject, err := refsv1beta1.ResolveProject(ctx, reader, obj.GetNamespace(), projectRef)
 	if err != nil {
 		return nil, err
 	}
-	projectID := projectRef.ProjectID
+	projectID := resolvedProject.ProjectID
 	if projectID == "" {
 		return nil, fmt.Errorf("cannot resolve project")
 	}

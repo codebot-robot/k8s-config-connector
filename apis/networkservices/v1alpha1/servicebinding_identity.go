@@ -104,6 +104,7 @@ func NewServiceBindingIdentity(ctx context.Context, reader client.Reader, obj *N
 }
 
 func ParseServiceBindingExternal(external string) (parent *ServiceBindingParent, resourceID string, err error) {
+	external = strings.TrimPrefix(external, "/")
 	tokens := strings.Split(external, "/")
 	if len(tokens) != 6 || tokens[0] != "projects" || tokens[2] != "locations" || tokens[4] != "serviceBindings" {
 		return nil, "", fmt.Errorf("format of NetworkServicesServiceBinding external=%q was not known (use projects/{{projectID}}/locations/{{location}}/servicebindings/{{servicebindingID}})", external)

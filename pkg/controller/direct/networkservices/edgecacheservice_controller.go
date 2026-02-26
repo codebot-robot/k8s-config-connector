@@ -29,6 +29,7 @@ import (
 	"github.com/GoogleCloudPlatform/k8s-config-connector/pkg/controller/direct"
 	"github.com/GoogleCloudPlatform/k8s-config-connector/pkg/controller/direct/directbase"
 	"github.com/GoogleCloudPlatform/k8s-config-connector/pkg/controller/direct/registry"
+	"github.com/GoogleCloudPlatform/k8s-config-connector/pkg/label"
 
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -60,6 +61,46 @@ func (m *modelEdgeCacheService) AdapterForObject(ctx context.Context, op *direct
 	id, err := krm.NewEdgeCacheServiceIdentity(ctx, reader, obj)
 	if err != nil {
 		return nil, err
+	}
+
+	// Resolve references
+	if obj.Spec.EdgeSecurityPolicy != nil {
+		if _, err := obj.Spec.EdgeSecurityPolicy.NormalizedExternal(ctx, reader, obj.GetNamespace()); err != nil {
+			return nil, err
+		}
+	}
+	for i := range obj.Spec.EdgeSslCertificates {
+		if _, err := obj.Spec.EdgeSslCertificates[i].NormalizedExternal(ctx, reader, obj.GetNamespace()); err != nil {
+			return nil, err
+		}
+	}
+	if obj.Spec.SslPolicy != nil {
+		if _, err := obj.Spec.SslPolicy.NormalizedExternal(ctx, reader, obj.GetNamespace()); err != nil {
+			return nil, err
+		}
+	}
+	for i := range obj.Spec.Routing.PathMatcher {
+		pm := &obj.Spec.Routing.PathMatcher[i]
+		for j := range pm.RouteRule {
+			rr := &pm.RouteRule[j]
+			if rr.Origin != nil {
+				if _, err := rr.Origin.NormalizedExternal(ctx, reader, obj.GetNamespace()); err != nil {
+					return nil, err
+				}
+			}
+			if rr.RouteAction != nil && rr.RouteAction.CdnPolicy != nil {
+				if rr.RouteAction.CdnPolicy.AddSignatures != nil && rr.RouteAction.CdnPolicy.AddSignatures.Keyset != nil {
+					if _, err := rr.RouteAction.CdnPolicy.AddSignatures.Keyset.NormalizedExternal(ctx, reader, obj.GetNamespace()); err != nil {
+						return nil, err
+					}
+				}
+				if rr.RouteAction.CdnPolicy.SignedRequestKeyset != nil {
+					if _, err := rr.RouteAction.CdnPolicy.SignedRequestKeyset.NormalizedExternal(ctx, reader, obj.GetNamespace()); err != nil {
+						return nil, err
+					}
+				}
+			}
+		}
 	}
 
 	httpClient, err := m.config.NewAuthenticatedHTTPClient(ctx)
@@ -131,13 +172,8 @@ func (a *EdgeCacheServiceAdapter) Create(ctx context.Context, createOp *directba
 		return mapCtx.Err()
 	}
 
-	if resource.Labels == nil {
-		resource.Labels = make(map[string]string)
-	}
-	for k, v := range a.desired.GetObjectMeta().GetLabels() {
-		resource.Labels[k] = v
-	}
-	resource.Labels["managed-by-cnrm"] = "true"
+	resource.Name = a.id.String()
+	resource.Labels = label.NewGCPLabelsFromK8sLabels(a.desired.GetLabels())
 
 	url := fmt.Sprintf("https://networkservices.googleapis.com/v1/%s/edgeCacheServices?edgeCacheServiceId=%s", a.id.Parent().String(), a.id.ID())
 	body, err := json.Marshal(resource)
@@ -191,13 +227,8 @@ func (a *EdgeCacheServiceAdapter) Update(ctx context.Context, updateOp *directba
 		return mapCtx.Err()
 	}
 
-	if resource.Labels == nil {
-		resource.Labels = make(map[string]string)
-	}
-	for k, v := range a.desired.GetObjectMeta().GetLabels() {
-		resource.Labels[k] = v
-	}
-	resource.Labels["managed-by-cnrm"] = "true"
+	resource.Name = a.id.String()
+	resource.Labels = label.NewGCPLabelsFromK8sLabels(a.desired.GetLabels())
 
 	paths := []string{"description", "labels", "disableQuic", "disableHttp2", "requireTls", "edgeSslCertificates", "routing", "logConfig", "edgeSecurityPolicy", "sslPolicy"}
 	updateMask := strings.Join(paths, ",")

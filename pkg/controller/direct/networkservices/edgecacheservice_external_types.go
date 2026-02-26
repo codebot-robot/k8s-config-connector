@@ -23,9 +23,9 @@ type EdgeCacheService struct {
 	UpdateTime          string              `json:"updateTime,omitempty"`
 	Description         string              `json:"description,omitempty"`
 	Labels              map[string]string   `json:"labels,omitempty"`
-	DisableQuic         bool                `json:"disableQuic,omitempty"`
-	DisableHttp2        bool                `json:"disableHttp2,omitempty"`
-	RequireTls          bool                `json:"requireTls,omitempty"`
+	DisableQuic         *bool               `json:"disableQuic,omitempty"`
+	DisableHttp2        *bool               `json:"disableHttp2,omitempty"`
+	RequireTls          *bool               `json:"requireTls,omitempty"`
 	EdgeSslCertificates []string            `json:"edgeSslCertificates,omitempty"`
 	Ipv4Addresses       []string            `json:"ipv4Addresses,omitempty"`
 	Ipv6Addresses       []string            `json:"ipv6Addresses,omitempty"`
@@ -36,8 +36,8 @@ type EdgeCacheService struct {
 }
 
 type EdgeCacheLogConfig struct {
-	Enable     bool    `json:"enable,omitempty"`
-	SampleRate float64 `json:"sampleRate,omitempty"`
+	Enable     *bool    `json:"enable,omitempty"`
+	SampleRate *float64 `json:"sampleRate,omitempty"`
 }
 
 type EdgeCacheRouting struct {
@@ -71,7 +71,7 @@ type EdgeCacheRoutingRouteMatch struct {
 	FullPathMatch         string                                 `json:"fullPathMatch,omitempty"`
 	PrefixMatch           string                                 `json:"prefixMatch,omitempty"`
 	PathTemplateMatch     string                                 `json:"pathTemplateMatch,omitempty"`
-	IgnoreCase            bool                                   `json:"ignoreCase,omitempty"`
+	IgnoreCase            *bool                                  `json:"ignoreCase,omitempty"`
 	HeaderMatches         []*EdgeCacheRoutingHeaderMatch         `json:"headerMatches,omitempty"`
 	QueryParameterMatches []*EdgeCacheRoutingQueryParameterMatch `json:"queryParameterMatches,omitempty"`
 }
@@ -81,14 +81,14 @@ type EdgeCacheRoutingHeaderMatch struct {
 	ExactMatch   string `json:"exactMatch,omitempty"`
 	PrefixMatch  string `json:"prefixMatch,omitempty"`
 	SuffixMatch  string `json:"suffixMatch,omitempty"`
-	PresentMatch bool   `json:"presentMatch,omitempty"`
-	InvertMatch  bool   `json:"invertMatch,omitempty"`
+	PresentMatch *bool  `json:"presentMatch,omitempty"`
+	InvertMatch  *bool  `json:"invertMatch,omitempty"`
 }
 
 type EdgeCacheRoutingQueryParameterMatch struct {
 	Name         string `json:"name,omitempty"`
 	ExactMatch   string `json:"exactMatch,omitempty"`
-	PresentMatch bool   `json:"presentMatch,omitempty"`
+	PresentMatch *bool  `json:"presentMatch,omitempty"`
 }
 
 type EdgeCacheRoutingRouteAction struct {
@@ -103,7 +103,7 @@ type EdgeCacheRoutingCdnPolicy struct {
 	DefaultTtl                        string                              `json:"defaultTtl,omitempty"`
 	MaxTtl                            string                              `json:"maxTtl,omitempty"`
 	CacheKeyPolicy                    *EdgeCacheRoutingCacheKeyPolicy     `json:"cacheKeyPolicy,omitempty"`
-	NegativeCaching                   bool                                `json:"negativeCaching,omitempty"`
+	NegativeCaching                   *bool                               `json:"negativeCaching,omitempty"`
 	NegativeCachingPolicy             map[string]string                   `json:"negativeCachingPolicy,omitempty"`
 	SignedRequestMode                 string                              `json:"signedRequestMode,omitempty"`
 	SignedRequestKeyset               string                              `json:"signedRequestKeyset,omitempty"`
@@ -113,9 +113,9 @@ type EdgeCacheRoutingCdnPolicy struct {
 }
 
 type EdgeCacheRoutingCacheKeyPolicy struct {
-	IncludeProtocol         bool     `json:"includeProtocol,omitempty"`
-	ExcludeHost             bool     `json:"excludeHost,omitempty"`
-	ExcludeQueryString      bool     `json:"excludeQueryString,omitempty"`
+	IncludeProtocol         *bool    `json:"includeProtocol,omitempty"`
+	ExcludeHost             *bool    `json:"excludeHost,omitempty"`
+	ExcludeQueryString      *bool    `json:"excludeQueryString,omitempty"`
 	IncludedQueryParameters []string `json:"includedQueryParameters,omitempty"`
 	ExcludedQueryParameters []string `json:"excludedQueryParameters,omitempty"`
 	IncludedHeaderNames     []string `json:"includedHeaderNames,omitempty"`
@@ -141,8 +141,8 @@ type EdgeCacheRoutingCorsPolicy struct {
 	AllowHeaders     []string `json:"allowHeaders,omitempty"`
 	ExposeHeaders    []string `json:"exposeHeaders,omitempty"`
 	MaxAge           string   `json:"maxAge,omitempty"`
-	AllowCredentials bool     `json:"allowCredentials,omitempty"`
-	Disabled         bool     `json:"disabled,omitempty"`
+	AllowCredentials *bool    `json:"allowCredentials,omitempty"`
+	Disabled         *bool    `json:"disabled,omitempty"`
 }
 
 type EdgeCacheRoutingUrlRewrite struct {
@@ -156,8 +156,8 @@ type EdgeCacheRoutingUrlRedirect struct {
 	PathRedirect         string `json:"pathRedirect,omitempty"`
 	PrefixRedirect       string `json:"prefixRedirect,omitempty"`
 	RedirectResponseCode string `json:"redirectResponseCode,omitempty"`
-	HttpsRedirect        bool   `json:"httpsRedirect,omitempty"`
-	StripQuery           bool   `json:"stripQuery,omitempty"`
+	HttpsRedirect        *bool  `json:"httpsRedirect,omitempty"`
+	StripQuery           *bool  `json:"stripQuery,omitempty"`
 }
 
 type EdgeCacheRoutingHeaderAction struct {
@@ -170,7 +170,7 @@ type EdgeCacheRoutingHeaderAction struct {
 type EdgeCacheRoutingHeaderAdd struct {
 	HeaderName  string `json:"headerName,omitempty"`
 	HeaderValue string `json:"headerValue,omitempty"`
-	Replace     bool   `json:"replace,omitempty"`
+	Replace     *bool  `json:"replace,omitempty"`
 }
 
 type EdgeCacheRoutingHeaderRemove struct {
