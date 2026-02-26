@@ -705,5 +705,4 @@ type Condition struct {
 }
 
 // +kcc:proto=google.cloud.run.v2.Container
-type ContainerObservedState struct {}
-
+type ContainerObservedState struct{}

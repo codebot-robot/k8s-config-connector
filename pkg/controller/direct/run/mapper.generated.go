@@ -284,6 +284,48 @@ func Container_ToProto(mapCtx *direct.MapContext, in *krm.Container) *pb.Contain
 	// MISSING: BuildInfo
 	return out
 }
+func ContainerObservedState_FromProto(mapCtx *direct.MapContext, in *pb.Container) *krm.ContainerObservedState {
+	if in == nil {
+		return nil
+	}
+	out := &krm.ContainerObservedState{}
+	// MISSING: Name
+	// MISSING: Image
+	// MISSING: Command
+	// MISSING: Args
+	// MISSING: Env
+	// MISSING: Resources
+	// MISSING: Ports
+	// MISSING: VolumeMounts
+	// MISSING: WorkingDir
+	// MISSING: LivenessProbe
+	// MISSING: StartupProbe
+	// MISSING: DependsOn
+	// MISSING: BaseImageURI
+	// MISSING: BuildInfo
+	return out
+}
+func ContainerObservedState_ToProto(mapCtx *direct.MapContext, in *krm.ContainerObservedState) *pb.Container {
+	if in == nil {
+		return nil
+	}
+	out := &pb.Container{}
+	// MISSING: Name
+	// MISSING: Image
+	// MISSING: Command
+	// MISSING: Args
+	// MISSING: Env
+	// MISSING: Resources
+	// MISSING: Ports
+	// MISSING: VolumeMounts
+	// MISSING: WorkingDir
+	// MISSING: LivenessProbe
+	// MISSING: StartupProbe
+	// MISSING: DependsOn
+	// MISSING: BaseImageURI
+	// MISSING: BuildInfo
+	return out
+}
 func ContainerPort_FromProto(mapCtx *direct.MapContext, in *pb.ContainerPort) *krm.ContainerPort {
 	if in == nil {
 		return nil
@@ -816,62 +858,6 @@ func RunServiceObservedState_FromProto(mapCtx *direct.MapContext, in *pb.Service
 	}
 	out := &krm.RunServiceObservedState{}
 	// MISSING: Name
-	// MISSING: Uid
-	// MISSING: Generation
-	// MISSING: Labels
-	// MISSING: CreateTime
-	// MISSING: UpdateTime
-	// MISSING: DeleteTime
-	// MISSING: ExpireTime
-	// MISSING: Creator
-	// MISSING: LastModifier
-	// MISSING: Urls
-	// MISSING: ObservedGeneration
-	// MISSING: TerminalCondition
-	// MISSING: Conditions
-	// MISSING: LatestReadyRevision
-	// MISSING: LatestCreatedRevision
-	// MISSING: TrafficStatuses
-	// MISSING: URI
-	// MISSING: SatisfiesPzs
-	// MISSING: Reconciling
-	// MISSING: Etag
-	return out
-}
-func RunServiceObservedState_ToProto(mapCtx *direct.MapContext, in *krm.RunServiceObservedState) *pb.Service {
-	if in == nil {
-		return nil
-	}
-	out := &pb.Service{}
-	// MISSING: Name
-	// MISSING: Uid
-	// MISSING: Generation
-	// MISSING: Labels
-	// MISSING: CreateTime
-	// MISSING: UpdateTime
-	// MISSING: DeleteTime
-	// MISSING: ExpireTime
-	// MISSING: Creator
-	// MISSING: LastModifier
-	// MISSING: Urls
-	// MISSING: ObservedGeneration
-	// MISSING: TerminalCondition
-	// MISSING: Conditions
-	// MISSING: LatestReadyRevision
-	// MISSING: LatestCreatedRevision
-	// MISSING: TrafficStatuses
-	// MISSING: URI
-	// MISSING: SatisfiesPzs
-	// MISSING: Reconciling
-	// MISSING: Etag
-	return out
-}
-func RunServiceObservedState_FromProto(mapCtx *direct.MapContext, in *pb.Service) *krm.RunServiceObservedState {
-	if in == nil {
-		return nil
-	}
-	out := &krm.RunServiceObservedState{}
-	// MISSING: Name
 	out.Uid = direct.LazyPtr(in.GetUid())
 	// MISSING: Generation
 	// MISSING: Labels
@@ -935,16 +921,9 @@ func RunServiceSpec_FromProto(mapCtx *direct.MapContext, in *pb.Service) *krm.Ru
 	out := &krm.RunServiceSpec{}
 	// MISSING: Name
 	out.Description = direct.LazyPtr(in.GetDescription())
-	// MISSING: Uid
 	// MISSING: Generation
 	// MISSING: Labels
 	out.Annotations = in.Annotations
-	// MISSING: CreateTime
-	// MISSING: UpdateTime
-	// MISSING: DeleteTime
-	// MISSING: ExpireTime
-	// MISSING: Creator
-	// MISSING: LastModifier
 	out.Client = direct.LazyPtr(in.GetClient())
 	out.ClientVersion = direct.LazyPtr(in.GetClientVersion())
 	out.Ingress = direct.Enum_FromProto(mapCtx, in.GetIngress())
@@ -955,19 +934,12 @@ func RunServiceSpec_FromProto(mapCtx *direct.MapContext, in *pb.Service) *krm.Ru
 	out.Scaling = ServiceScaling_FromProto(mapCtx, in.GetScaling())
 	out.InvokerIAMDisabled = direct.LazyPtr(in.GetInvokerIamDisabled())
 	out.DefaultURIDisabled = direct.LazyPtr(in.GetDefaultUriDisabled())
-	// MISSING: Urls
 	out.CustomAudiences = in.CustomAudiences
 	// MISSING: ObservedGeneration
-	// MISSING: TerminalCondition
 	// MISSING: Conditions
-	// MISSING: LatestReadyRevision
-	// MISSING: LatestCreatedRevision
-	// MISSING: TrafficStatuses
 	// MISSING: URI
 	// MISSING: SatisfiesPzs
 	out.BuildConfig = BuildConfig_FromProto(mapCtx, in.GetBuildConfig())
-	// MISSING: Reconciling
-	// MISSING: Etag
 	return out
 }
 func RunServiceSpec_ToProto(mapCtx *direct.MapContext, in *krm.RunServiceSpec) *pb.Service {
@@ -977,16 +949,9 @@ func RunServiceSpec_ToProto(mapCtx *direct.MapContext, in *krm.RunServiceSpec) *
 	out := &pb.Service{}
 	// MISSING: Name
 	out.Description = direct.ValueOf(in.Description)
-	// MISSING: Uid
 	// MISSING: Generation
 	// MISSING: Labels
 	out.Annotations = in.Annotations
-	// MISSING: CreateTime
-	// MISSING: UpdateTime
-	// MISSING: DeleteTime
-	// MISSING: ExpireTime
-	// MISSING: Creator
-	// MISSING: LastModifier
 	out.Client = direct.ValueOf(in.Client)
 	out.ClientVersion = direct.ValueOf(in.ClientVersion)
 	out.Ingress = direct.Enum_ToProto[pb.IngressTraffic](mapCtx, in.Ingress)
@@ -997,103 +962,12 @@ func RunServiceSpec_ToProto(mapCtx *direct.MapContext, in *krm.RunServiceSpec) *
 	out.Scaling = ServiceScaling_ToProto(mapCtx, in.Scaling)
 	out.InvokerIamDisabled = direct.ValueOf(in.InvokerIAMDisabled)
 	out.DefaultUriDisabled = direct.ValueOf(in.DefaultURIDisabled)
-	// MISSING: Urls
 	out.CustomAudiences = in.CustomAudiences
 	// MISSING: ObservedGeneration
-	// MISSING: TerminalCondition
 	// MISSING: Conditions
-	// MISSING: LatestReadyRevision
-	// MISSING: LatestCreatedRevision
-	// MISSING: TrafficStatuses
 	// MISSING: URI
 	// MISSING: SatisfiesPzs
 	out.BuildConfig = BuildConfig_ToProto(mapCtx, in.BuildConfig)
-	// MISSING: Reconciling
-	// MISSING: Etag
-	return out
-}
-func RunServiceSpec_FromProto(mapCtx *direct.MapContext, in *pb.Service) *krm.RunServiceSpec {
-	if in == nil {
-		return nil
-	}
-	out := &krm.RunServiceSpec{}
-	// MISSING: Name
-	// MISSING: Description
-	// MISSING: Uid
-	// MISSING: Generation
-	// MISSING: Labels
-	// MISSING: Annotations
-	// MISSING: CreateTime
-	// MISSING: UpdateTime
-	// MISSING: DeleteTime
-	// MISSING: ExpireTime
-	// MISSING: Creator
-	// MISSING: LastModifier
-	// MISSING: Client
-	// MISSING: ClientVersion
-	// MISSING: Ingress
-	// MISSING: LaunchStage
-	// MISSING: BinaryAuthorization
-	// MISSING: Template
-	// MISSING: Traffic
-	// MISSING: Scaling
-	// MISSING: InvokerIAMDisabled
-	// MISSING: DefaultURIDisabled
-	// MISSING: Urls
-	// MISSING: CustomAudiences
-	// MISSING: ObservedGeneration
-	// MISSING: TerminalCondition
-	// MISSING: Conditions
-	// MISSING: LatestReadyRevision
-	// MISSING: LatestCreatedRevision
-	// MISSING: TrafficStatuses
-	// MISSING: URI
-	// MISSING: SatisfiesPzs
-	// MISSING: BuildConfig
-	// MISSING: Reconciling
-	// MISSING: Etag
-	return out
-}
-func RunServiceSpec_ToProto(mapCtx *direct.MapContext, in *krm.RunServiceSpec) *pb.Service {
-	if in == nil {
-		return nil
-	}
-	out := &pb.Service{}
-	// MISSING: Name
-	// MISSING: Description
-	// MISSING: Uid
-	// MISSING: Generation
-	// MISSING: Labels
-	// MISSING: Annotations
-	// MISSING: CreateTime
-	// MISSING: UpdateTime
-	// MISSING: DeleteTime
-	// MISSING: ExpireTime
-	// MISSING: Creator
-	// MISSING: LastModifier
-	// MISSING: Client
-	// MISSING: ClientVersion
-	// MISSING: Ingress
-	// MISSING: LaunchStage
-	// MISSING: BinaryAuthorization
-	// MISSING: Template
-	// MISSING: Traffic
-	// MISSING: Scaling
-	// MISSING: InvokerIAMDisabled
-	// MISSING: DefaultURIDisabled
-	// MISSING: Urls
-	// MISSING: CustomAudiences
-	// MISSING: ObservedGeneration
-	// MISSING: TerminalCondition
-	// MISSING: Conditions
-	// MISSING: LatestReadyRevision
-	// MISSING: LatestCreatedRevision
-	// MISSING: TrafficStatuses
-	// MISSING: URI
-	// MISSING: SatisfiesPzs
-	// MISSING: BuildConfig
-	// MISSING: Reconciling
-	// MISSING: Etag
 	return out
 }
 func SecretKeySelector_FromProto(mapCtx *direct.MapContext, in *pb.SecretKeySelector) *krm.SecretKeySelector {
