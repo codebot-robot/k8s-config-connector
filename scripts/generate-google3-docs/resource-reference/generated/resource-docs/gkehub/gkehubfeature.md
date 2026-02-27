@@ -454,7 +454,7 @@ updateTime: string
 
 ### Anthos Config Management Feature
 ```yaml
-# Copyright 2021 Google LLC
+# Copyright 2026 Google LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -522,7 +522,7 @@ spec:
 
 ### Anthos Service Mesh Feature
 ```yaml
-# Copyright 2021 Google LLC
+# Copyright 2026 Google LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -574,7 +574,7 @@ spec:
 
 ### Multi Cluster Ingress Feature
 ```yaml
-# Copyright 2021 Google LLC
+# Copyright 2026 Google LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -696,7 +696,7 @@ spec:
 
 ### Multi Cluster Service Discovery Feature
 ```yaml
-# Copyright 2021 Google LLC
+# Copyright 2026 Google LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.

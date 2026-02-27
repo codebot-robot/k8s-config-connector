@@ -1,4 +1,4 @@
-// Copyright 2024 Google LLC
+// Copyright 2026 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -29,16 +29,16 @@ var (
 	}
 )
 
-// +kcc:proto=google.cloud.compute.v1.MetadataFilterLabelMatch
+// +kcc:proto=google.cloud.compute.v1beta.MetadataFilterLabelMatch
 type MetadataFilterLabelMatch struct {
 	/* Immutable. Name of the metadata label. The length must be between
 	1 and 1024 characters, inclusive. */
-	// +kcc:proto:field=google.cloud.compute.v1.MetadataFilterLabelMatch.name
+	// +kcc:proto:field=google.cloud.compute.v1beta.MetadataFilterLabelMatch.name
 	Name *string `json:"name"`
 
 	/* Immutable. The value that the label must match. The value has a maximum
 	length of 1024 characters. */
-	// +kcc:proto:field=google.cloud.compute.v1.MetadataFilterLabelMatch.value
+	// +kcc:proto:field=google.cloud.compute.v1beta.MetadataFilterLabelMatch.value
 	Value *string `json:"value"`
 }
 
@@ -50,13 +50,13 @@ type IpAddress struct {
 	Ip *string `json:"ip,omitempty"`
 }
 
-// +kcc:proto=google.cloud.compute.v1.MetadataFilter
+// +kcc:proto=google.cloud.compute.v1beta.MetadataFilter
 type MetadataFilter struct {
 	/* Immutable. The list of label value pairs that must match labels in the
 	provided metadata based on filterMatchCriteria
 
 	This list must not be empty and can have at the most 64 entries. */
-	// +kcc:proto:field=google.cloud.compute.v1.MetadataFilter.filter_labels
+	// +kcc:proto:field=google.cloud.compute.v1beta.MetadataFilter.filter_labels
 	FilterLabels []MetadataFilterLabelMatch `json:"filterLabels"`
 
 	/* Immutable. Specifies how individual filterLabel matches within the list of
@@ -66,11 +66,11 @@ type MetadataFilter struct {
 	label in the provided metadata.
 	MATCH_ALL - All filterLabels must have matching labels in the
 	provided metadata. Possible values: ["MATCH_ANY", "MATCH_ALL"]. */
-	// +kcc:proto:field=google.cloud.compute.v1.MetadataFilter.filter_match_criteria
+	// +kcc:proto:field=google.cloud.compute.v1beta.MetadataFilter.filter_match_criteria
 	FilterMatchCriteria *string `json:"filterMatchCriteria"`
 }
 
-// +kcc:proto=google.cloud.compute.v1.ForwardingRuleServiceDirectoryRegistration
+// +kcc:proto=google.cloud.compute.v1beta.ForwardingRuleServiceDirectoryRegistration
 type ForwardingruleServiceDirectoryRegistrations struct {
 	/* Immutable. Service Directory namespace to register the forwarding rule under. */
 	// +optional
@@ -107,7 +107,7 @@ type Target struct {
 	TargetVPNGatewayRef *refs.ComputeTargetVPNGatewayRef `json:"targetVPNGatewayRef,omitempty"`
 }
 
-// +kcc:spec:proto=google.cloud.compute.v1.ForwardingRule
+// +kcc:spec:proto=google.cloud.compute.v1beta.ForwardingRule
 type ComputeForwardingRuleSpec struct {
 	/* Immutable. This field can only be used:
 	* If 'IPProtocol' is one of TCP, UDP, or SCTP.
@@ -124,7 +124,7 @@ type ComputeForwardingRuleSpec struct {
 
 	The 'ports', 'port_range', and
 	'allPorts' fields are mutually exclusive. */
-	// +kcc:proto:field=google.cloud.compute.v1.ForwardingRule.all_ports
+	// +kcc:proto:field=google.cloud.compute.v1beta.ForwardingRule.all_ports
 	AllPorts *bool `json:"allPorts,omitempty"`
 
 	/* This field is used along with the 'backend_service' field for
@@ -136,21 +136,21 @@ type ComputeForwardingRuleSpec struct {
 
 	Otherwise only allows access from clients in the same region as the
 	internal load balancer. */
-	// +kcc:proto:field=google.cloud.compute.v1.ForwardingRule.allow_global_access
+	// +kcc:proto:field=google.cloud.compute.v1beta.ForwardingRule.allow_global_access
 	AllowGlobalAccess *bool `json:"allowGlobalAccess,omitempty"`
 
 	/* This is used in PSC consumer ForwardingRule to control whether the PSC endpoint can be accessed from another region. */
-	// +kcc:proto:field=google.cloud.compute.v1.ForwardingRule.allow_psc_global_access
+	// +kcc:proto:field=google.cloud.compute.v1beta.ForwardingRule.allow_psc_global_access
 	AllowPscGlobalAccess *bool `json:"allowPscGlobalAccess,omitempty"`
 
 	/* A ComputeBackendService to receive the matched traffic. This is
 	used only for internal load balancing. */
-	// +kcc:proto:field=google.cloud.compute.v1.ForwardingRule.backend_service
+	// +kcc:proto:field=google.cloud.compute.v1beta.ForwardingRule.backend_service
 	BackendServiceRef *ComputeBackendServiceRef `json:"backendServiceRef,omitempty"`
 
 	/* Immutable. An optional description of this resource. Provide this property when
 	you create the resource. */
-	// +kcc:proto:field=google.cloud.compute.v1.ForwardingRule.description
+	// +kcc:proto:field=google.cloud.compute.v1beta.ForwardingRule.description
 	Description *string `json:"description,omitempty"`
 
 	/* The IP address that this forwarding rule is serving on behalf of.
@@ -172,7 +172,7 @@ type ComputeForwardingRuleSpec struct {
 	forwarding rule. By default, if this field is empty, an ephemeral
 	internal IP address will be automatically allocated from the IP
 	range of the subnet or network configured for this forwarding rule. */
-	// +kcc:proto:field=google.cloud.compute.v1.ForwardingRule.I_p_address
+	// +kcc:proto:field=google.cloud.compute.v1beta.ForwardingRule.I_p_address
 	IpAddress *IpAddress `json:"ipAddress,omitempty"`
 
 	/* Immutable. The IP protocol to which this rule applies.
@@ -189,14 +189,14 @@ type ComputeForwardingRuleSpec struct {
 	A Forwarding Rule with protocol L3_DEFAULT can attach with target instance or
 	backend service with UNSPECIFIED protocol.
 	A forwarding rule with "L3_DEFAULT" IPProtocal cannot be attached to a backend service with TCP or UDP. Possible values: ["TCP", "UDP", "ESP", "AH", "SCTP", "ICMP", "L3_DEFAULT"]. */
-	// +kcc:proto:field=google.cloud.compute.v1.ForwardingRule.I_p_protocol
+	// +kcc:proto:field=google.cloud.compute.v1beta.ForwardingRule.I_p_protocol
 	IpProtocol *string `json:"ipProtocol,omitempty"`
 
 	/* Immutable. The IP address version that will be used by this forwarding rule.
 	Valid options are IPV4 and IPV6.
 
 	If not set, the IPv4 address will be used by default. Possible values: ["IPV4", "IPV6"]. */
-	// +kcc:proto:field=google.cloud.compute.v1.ForwardingRule.ip_version
+	// +kcc:proto:field=google.cloud.compute.v1beta.ForwardingRule.ip_version
 	IpVersion *string `json:"ipVersion,omitempty"`
 
 	/* Immutable. Indicates whether or not this load balancer can be used as a collector for
@@ -206,14 +206,14 @@ type ComputeForwardingRuleSpec struct {
 
 	This can only be set to true for load balancers that have their
 	'loadBalancingScheme' set to 'INTERNAL'. */
-	// +kcc:proto:field=google.cloud.compute.v1.ForwardingRule.is_mirroring_collector
+	// +kcc:proto:field=google.cloud.compute.v1beta.ForwardingRule.is_mirroring_collector
 	IsMirroringCollector *bool `json:"isMirroringCollector,omitempty"`
 
 	/* Immutable. Specifies the forwarding rule type.
 
 	Must set to empty for private service connect forwarding rule. For more information about forwarding rules, refer to
 	[Forwarding rule concepts](https://cloud.google.com/load-balancing/docs/forwarding-rule-concepts). Default value: "EXTERNAL" Possible values: ["EXTERNAL", "EXTERNAL_MANAGED", "INTERNAL", "INTERNAL_MANAGED", ""]. */
-	// +kcc:proto:field=google.cloud.compute.v1.ForwardingRule.load_balancing_scheme
+	// +kcc:proto:field=google.cloud.compute.v1beta.ForwardingRule.load_balancing_scheme
 	LoadBalancingScheme *string `json:"loadBalancingScheme,omitempty"`
 
 	/* Location represents the geographical location of the ComputeForwardingRule. Specify a region name or "global" for global resources. Reference: GCP definition of regions/zones (https://cloud.google.com/compute/docs/regions-zones/) */
@@ -236,7 +236,7 @@ type ComputeForwardingRuleSpec struct {
 
 	metadataFilters only applies to Loadbalancers that have their
 	loadBalancingScheme set to INTERNAL_SELF_MANAGED. */
-	// +kcc:proto:field=google.cloud.compute.v1.ForwardingRule.metadata_filters
+	// +kcc:proto:field=google.cloud.compute.v1beta.ForwardingRule.metadata_filters
 	MetadataFilters []MetadataFilter `json:"metadataFilters,omitempty"`
 
 	/* This field is not used for external load balancing. For internal
@@ -256,11 +256,11 @@ type ComputeForwardingRuleSpec struct {
 	If this field is not specified, it is assumed to be 'PREMIUM'.
 	If 'IPAddress' is specified, this value must be equal to the
 	networkTier of the Address. Possible values: ["PREMIUM", "STANDARD"]. */
-	// +kcc:proto:field=google.cloud.compute.v1.ForwardingRule.network_tier
+	// +kcc:proto:field=google.cloud.compute.v1beta.ForwardingRule.network_tier
 	NetworkTier *string `json:"networkTier,omitempty"`
 
 	/* Immutable. This is used in PSC consumer ForwardingRule to control whether it should try to auto-generate a DNS zone or not. Non-PSC forwarding rules do not use this field. */
-	// +kcc:proto:field=google.cloud.compute.v1.ForwardingRule.no_automate_dns_zone
+	// +kcc:proto:field=google.cloud.compute.v1beta.ForwardingRule.no_automate_dns_zone
 	NoAutomateDnsZone *bool `json:"noAutomateDnsZone,omitempty"`
 
 	/* Immutable. This field can only be used:
@@ -286,7 +286,7 @@ type ComputeForwardingRuleSpec struct {
 	For internal forwarding rules within the same VPC network, two or more
 	forwarding rules cannot use the same '[IPAddress, IPProtocol]'
 	pair, and cannot have overlapping 'portRange's. */
-	// +kcc:proto:field=google.cloud.compute.v1.ForwardingRule.port_range
+	// +kcc:proto:field=google.cloud.compute.v1beta.ForwardingRule.port_range
 	PortRange *string `json:"portRange,omitempty"`
 
 	/* Immutable. This field can only be used:
@@ -310,7 +310,7 @@ type ComputeForwardingRuleSpec struct {
 	pair, and cannot share any values defined in 'ports'.
 
 	The 'ports' and 'port_range' fields are mutually exclusive. */
-	// +kcc:proto:field=google.cloud.compute.v1.ForwardingRule.ports
+	// +kcc:proto:field=google.cloud.compute.v1beta.ForwardingRule.ports
 	Ports []string `json:"ports,omitempty"`
 
 	/* Immutable. Optional. The name of the resource. Used for creation and acquisition. When unset, the value of `metadata.name` is used as the default. */
@@ -319,7 +319,7 @@ type ComputeForwardingRuleSpec struct {
 	/* Immutable. Service Directory resources to register this forwarding rule with.
 
 	Currently, only supports a single Service Directory resource. */
-	// +kcc:proto:field=google.cloud.compute.v1.ForwardingRule.service_directory_registrations
+	// +kcc:proto:field=google.cloud.compute.v1beta.ForwardingRule.service_directory_registrations
 	ServiceDirectoryRegistrations []ForwardingruleServiceDirectoryRegistrations `json:"serviceDirectoryRegistrations,omitempty"`
 
 	/* Immutable. An optional prefix to the service name for this Forwarding Rule.
@@ -334,11 +334,11 @@ type ComputeForwardingRuleSpec struct {
 	character, which cannot be a dash.
 
 	This field is only used for INTERNAL load balancing. */
-	// +kcc:proto:field=google.cloud.compute.v1.ForwardingRule.service_label
+	// +kcc:proto:field=google.cloud.compute.v1beta.ForwardingRule.service_label
 	ServiceLabel *string `json:"serviceLabel,omitempty"`
 
 	/* Immutable. If not empty, this Forwarding Rule will only forward the traffic when the source IP address matches one of the IP addresses or CIDR ranges set here. Note that a Forwarding Rule can only have up to 64 source IP ranges, and this field can only be used with a regional Forwarding Rule whose scheme is EXTERNAL. Each sourceIpRange entry should be either an IP address (for example, 1.2.3.4) or a CIDR range (for example, 1.2.3.0/24). */
-	// +kcc:proto:field=google.cloud.compute.v1.ForwardingRule.source_ip_ranges
+	// +kcc:proto:field=google.cloud.compute.v1beta.ForwardingRule.source_ip_ranges
 	SourceIpRanges []string `json:"sourceIpRanges,omitempty"`
 
 	/* Immutable. The subnetwork that the load balanced IP should belong to for this
@@ -348,47 +348,47 @@ type ComputeForwardingRuleSpec struct {
 	If the network specified is in auto subnet mode, this field is
 	optional. However, if the network is in custom subnet mode, a
 	subnetwork must be specified. */
-	// +kcc:proto:field=google.cloud.compute.v1.ForwardingRule.subnetwork
+	// +kcc:proto:field=google.cloud.compute.v1beta.ForwardingRule.subnetwork
 	SubnetworkRef *refs.ComputeSubnetworkRef `json:"subnetworkRef,omitempty"`
 
 	/* The target resource to receive the matched traffic. The forwarded
 	traffic must be of a type appropriate to the target object. For
 	INTERNAL_SELF_MANAGED load balancing, only HTTP and HTTPS targets
 	are valid. */
-	// +kcc:proto:field=google.cloud.compute.v1.ForwardingRule.target
+	// +kcc:proto:field=google.cloud.compute.v1beta.ForwardingRule.target
 	Target *Target `json:"target,omitempty"`
 }
 
-// +kcc:status:proto=google.cloud.compute.v1.ForwardingRule
+// +kcc:status:proto=google.cloud.compute.v1beta.ForwardingRule
 type ComputeForwardingRuleStatus struct {
 	commonv1alpha1.CommonStatus `json:",inline"`
 	/* [Output Only] The URL for the corresponding base Forwarding Rule. By base Forwarding Rule, we mean the Forwarding Rule that has the same IP address, protocol, and port settings with the current Forwarding Rule, but without sourceIPRanges specified. Always empty if the current Forwarding Rule does not have sourceIPRanges specified. */
-	// +kcc:proto:field=google.cloud.compute.v1.ForwardingRule.base_forwarding_rule
+	// +kcc:proto:field=google.cloud.compute.v1beta.ForwardingRule.base_forwarding_rule
 	BaseForwardingRule *string `json:"baseForwardingRule,omitempty"`
 
 	/* Creation timestamp in RFC3339 text format. */
-	// +kcc:proto:field=google.cloud.compute.v1.ForwardingRule.creation_timestamp
+	// +kcc:proto:field=google.cloud.compute.v1beta.ForwardingRule.creation_timestamp
 	CreationTimestamp *string `json:"creationTimestamp,omitempty"`
 
 	/* The fingerprint used for optimistic locking of this resource.  Used
 	internally during updates. */
-	// +kcc:proto:field=google.cloud.compute.v1.ForwardingRule.label_fingerprint
+	// +kcc:proto:field=google.cloud.compute.v1beta.ForwardingRule.label_fingerprint
 	LabelFingerprint *string `json:"labelFingerprint,omitempty"`
 
 	/* The PSC connection id of the PSC Forwarding Rule. */
-	// +kcc:proto:field=google.cloud.compute.v1.ForwardingRule.psc_connection_id
+	// +kcc:proto:field=google.cloud.compute.v1beta.ForwardingRule.psc_connection_id
 	PscConnectionId *string `json:"pscConnectionId,omitempty"`
 
 	/* The PSC connection status of the PSC Forwarding Rule. Possible values: 'STATUS_UNSPECIFIED', 'PENDING', 'ACCEPTED', 'REJECTED', 'CLOSED'. */
-	// +kcc:proto:field=google.cloud.compute.v1.ForwardingRule.psc_connection_status
+	// +kcc:proto:field=google.cloud.compute.v1beta.ForwardingRule.psc_connection_status
 	PscConnectionStatus *string `json:"pscConnectionStatus,omitempty"`
 
-	// +kcc:proto:field=google.cloud.compute.v1.ForwardingRule.self_link
+	// +kcc:proto:field=google.cloud.compute.v1beta.ForwardingRule.self_link
 	SelfLink *string `json:"selfLink,omitempty"`
 
 	/* The internal fully qualified service name for this Forwarding Rule.
 	This field is only used for INTERNAL load balancing. */
-	// +kcc:proto:field=google.cloud.compute.v1.ForwardingRule.service_name
+	// +kcc:proto:field=google.cloud.compute.v1beta.ForwardingRule.service_name
 	ServiceName *string `json:"serviceName,omitempty"`
 }
 

@@ -577,7 +577,7 @@ selfLink: string
 
 ### Target Https Proxy With Certificate Manager Certificates
 ```yaml
-# Copyright 2024 Google LLC
+# Copyright 2026 Google LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -717,7 +717,7 @@ stringData:
 
 ### Target Https Proxy With Ssl Certificates
 ```yaml
-# Copyright 2020 Google LLC
+# Copyright 2026 Google LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.

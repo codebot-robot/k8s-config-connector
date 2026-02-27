@@ -1,4 +1,4 @@
-// Copyright 2024 Google LLC
+// Copyright 2026 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -29,15 +29,15 @@ var (
 )
 
 // ComputeTargetTCPProxySpec defines the desired state of ComputeTargetTCPProxy
-// +kcc:spec:proto=google.cloud.compute.v1.TargetTcpProxy
+// +kcc:spec:proto=google.cloud.compute.v1beta.TargetTcpProxy
 type ComputeTargetTCPProxySpec struct {
 	// A reference to the ComputeBackendService resource.
 	// +required
-	// +kcc:proto:field=google.cloud.compute.v1.TargetTcpProxy.service
+	// +kcc:proto:field=google.cloud.compute.v1beta.TargetTcpProxy.service
 	BackendServiceRef *ComputeBackendServiceRef `json:"backendServiceRef"`
 
 	// Immutable. An optional description of this resource.
-	// +kcc:proto:field=google.cloud.compute.v1.TargetTcpProxy.description
+	// +kcc:proto:field=google.cloud.compute.v1beta.TargetTcpProxy.description
 	Description *string `json:"description,omitempty"`
 
 	// The geographical location of the ComputeTargetTCPProxy.
@@ -46,12 +46,12 @@ type ComputeTargetTCPProxySpec struct {
 
 	// Immutable. This field only applies when the forwarding rule that references
 	// this target proxy has a loadBalancingScheme set to INTERNAL_SELF_MANAGED.
-	// +kcc:proto:field=google.cloud.compute.v1.TargetTcpProxy.proxy_bind
+	// +kcc:proto:field=google.cloud.compute.v1beta.TargetTcpProxy.proxy_bind
 	ProxyBind *bool `json:"proxyBind,omitempty"`
 
 	// Specifies the type of proxy header to append before sending data to
 	// the backend. Default value: "NONE" Possible values: ["NONE", "PROXY_V1"].
-	// +kcc:proto:field=google.cloud.compute.v1.TargetTcpProxy.proxy_header
+	// +kcc:proto:field=google.cloud.compute.v1beta.TargetTcpProxy.proxy_header
 	ProxyHeader *string `json:"proxyHeader,omitempty"`
 
 	// The ComputeTargetTCPProxy name. If not given, the metadata.name will be used.
@@ -59,7 +59,7 @@ type ComputeTargetTCPProxySpec struct {
 }
 
 // ComputeTargetTCPProxyStatus defines the config connector machine state of ComputeTargetTCPProxy
-// +kcc:status:proto=google.cloud.compute.v1.TargetTcpProxy
+// +kcc:status:proto=google.cloud.compute.v1beta.TargetTcpProxy
 type ComputeTargetTCPProxyStatus struct {
 	// Conditions represent the latest available observations of the object's current state.
 	Conditions []v1alpha1.Condition `json:"conditions,omitempty"`
@@ -71,15 +71,15 @@ type ComputeTargetTCPProxyStatus struct {
 	ExternalRef *string `json:"externalRef,omitempty"`
 
 	// Creation timestamp in RFC3339 text format.
-	// +kcc:proto:field=google.cloud.compute.v1.TargetTcpProxy.creation_timestamp
+	// +kcc:proto:field=google.cloud.compute.v1beta.TargetTcpProxy.creation_timestamp
 	CreationTimestamp *string `json:"creationTimestamp,omitempty"`
 
 	// The unique identifier for the resource.
-	// +kcc:proto:field=google.cloud.compute.v1.TargetTcpProxy.id
+	// +kcc:proto:field=google.cloud.compute.v1beta.TargetTcpProxy.id
 	ProxyId *int64 `json:"proxyId,omitempty"`
 
 	// The SelfLink for the resource.
-	// +kcc:proto:field=google.cloud.compute.v1.TargetTcpProxy.self_link
+	// +kcc:proto:field=google.cloud.compute.v1beta.TargetTcpProxy.self_link
 	SelfLink *string `json:"selfLink,omitempty"`
 }
 

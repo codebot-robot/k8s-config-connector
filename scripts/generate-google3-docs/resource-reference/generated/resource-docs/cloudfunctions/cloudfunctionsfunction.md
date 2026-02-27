@@ -726,7 +726,7 @@ results in a new version of a function being created.{% endverbatim %}</p>
 
 ### Eventtrigger With PubSubTopic
 ```yaml
-# Copyright 2022 Google LLC
+# Copyright 2026 Google LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -809,7 +809,7 @@ spec:
 
 ### Eventtrigger With StorageBucket
 ```yaml
-# Copyright 2022 Google LLC
+# Copyright 2026 Google LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -865,7 +865,7 @@ spec:
 
 ### Httpstrigger
 ```yaml
-# Copyright 2022 Google LLC
+# Copyright 2026 Google LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.

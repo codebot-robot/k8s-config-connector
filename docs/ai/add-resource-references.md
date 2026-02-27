@@ -29,7 +29,7 @@ If the reference object does not exist, you should create one. You can use `apis
 Here is an example of a reference object:
 
 ```go
-// Copyright 2025 Google LLC
+// Copyright 2026 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not not use this file except in compliance with the License.

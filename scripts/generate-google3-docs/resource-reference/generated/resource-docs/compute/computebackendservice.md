@@ -2359,7 +2359,7 @@ object. This field is used in optimistic locking.{% endverbatim %}</p>
 
 ### External Load Balancing Backend Service
 ```yaml
-# Copyright 2020 Google LLC
+# Copyright 2026 Google LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -2473,7 +2473,7 @@ spec:
 
 ### Internal Managed Load Balancing Backend Service
 ```yaml
-# Copyright 2020 Google LLC
+# Copyright 2026 Google LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -2570,7 +2570,7 @@ spec:
 
 ### Oauth2clientid Backend Service
 ```yaml
-# Copyright 2020 Google LLC
+# Copyright 2026 Google LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.

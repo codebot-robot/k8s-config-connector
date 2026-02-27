@@ -442,7 +442,7 @@ updateTime: string
 
 ### Membership With Expiration Date
 ```yaml
-# Copyright 2021 Google LLC
+# Copyright 2026 Google LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -486,7 +486,7 @@ spec:
 
 ### Membership With Manager Role
 ```yaml
-# Copyright 2021 Google LLC
+# Copyright 2026 Google LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.

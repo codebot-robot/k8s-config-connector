@@ -699,7 +699,7 @@ updateTime: string
 
 ### Explicit Log Metric
 ```yaml
-# Copyright 2022 Google LLC
+# Copyright 2026 Google LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -735,7 +735,7 @@ spec:
 
 ### Exponential Log Metric
 ```yaml
-# Copyright 2022 Google LLC
+# Copyright 2026 Google LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -771,7 +771,7 @@ spec:
 
 ### Int Log Metric
 ```yaml
-# Copyright 2022 Google LLC
+# Copyright 2026 Google LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -801,7 +801,7 @@ spec:
 
 ### Linear Log Metric
 ```yaml
-# Copyright 2022 Google LLC
+# Copyright 2026 Google LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.

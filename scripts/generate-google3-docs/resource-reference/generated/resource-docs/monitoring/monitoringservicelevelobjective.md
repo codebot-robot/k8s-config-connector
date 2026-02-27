@@ -1057,7 +1057,7 @@ serviceManagementOwned: boolean
 
 ### Request Based Distribution Cut
 ```yaml
-# Copyright 2020 Google LLC
+# Copyright 2026 Google LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -1107,7 +1107,7 @@ spec:
 
 ### Request Based Good Total Ratio
 ```yaml
-# Copyright 2020 Google LLC
+# Copyright 2026 Google LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -1155,7 +1155,7 @@ spec:
 
 ### Request Based Gtr Total Service Filter
 ```yaml
-# Copyright 2020 Google LLC
+# Copyright 2026 Google LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -1203,7 +1203,7 @@ spec:
 
 ### Window Based Good Bad Metric Filter
 ```yaml
-# Copyright 2020 Google LLC
+# Copyright 2026 Google LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -1250,7 +1250,7 @@ spec:
 
 ### Window Based Gtr Distribution Cut
 ```yaml
-# Copyright 2020 Google LLC
+# Copyright 2026 Google LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -1304,7 +1304,7 @@ spec:
 
 ### Window Based Gtr Performance Gtr
 ```yaml
-# Copyright 2020 Google LLC
+# Copyright 2026 Google LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -1356,7 +1356,7 @@ spec:
 
 ### Window Based Gtr Performance Gtr Total Service Filter
 ```yaml
-# Copyright 2020 Google LLC
+# Copyright 2026 Google LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -1408,7 +1408,7 @@ spec:
 
 ### Window Based Metric Mean Filter
 ```yaml
-# Copyright 2020 Google LLC
+# Copyright 2026 Google LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -1459,7 +1459,7 @@ spec:
 
 ### Window Based Metric Sum Filter
 ```yaml
-# Copyright 2020 Google LLC
+# Copyright 2026 Google LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.

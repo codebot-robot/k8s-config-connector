@@ -1251,7 +1251,7 @@ serviceName: string
 
 ### Global Forwarding Rule With Target Http Proxy
 ```yaml
-# Copyright 2020 Google LLC
+# Copyright 2026 Google LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -1323,7 +1323,7 @@ spec:
 
 ### Global Forwarding Rule With Target Ssl Proxy
 ```yaml
-# Copyright 2020 Google LLC
+# Copyright 2026 Google LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -1459,7 +1459,7 @@ stringData:
 
 ### Global Forwarding Rule With Target Tcp Proxy
 ```yaml
-# Copyright 2020 Google LLC
+# Copyright 2026 Google LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -1521,7 +1521,7 @@ spec:
 
 ### Global Forwarding Rule With Target gRPC Proxy
 ```yaml
-# Copyright 2021 Google LLC
+# Copyright 2026 Google LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -1585,7 +1585,7 @@ spec:
 
 ### Global Internal Forwarding Rule With Target Http Proxy
 ```yaml
-# Copyright 2020 Google LLC
+# Copyright 2026 Google LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -1719,7 +1719,7 @@ spec:
 
 ### Regional Forwarding Rule
 ```yaml
-# Copyright 2020 Google LLC
+# Copyright 2026 Google LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -1780,7 +1780,7 @@ spec:
 
 ### Regional Forwarding Rule Vpc Psc
 ```yaml
-# Copyright 2024 Google LLC
+# Copyright 2026 Google LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.

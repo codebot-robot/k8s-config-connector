@@ -1638,7 +1638,7 @@ observedGeneration: integer
 
 ### DNS A Record Set
 ```yaml
-# Copyright 2020 Google LLC
+# Copyright 2026 Google LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -1675,7 +1675,7 @@ spec:
 
 ### DNS A Record Set With Compute Address Reference
 ```yaml
-# Copyright 2020 Google LLC
+# Copyright 2026 Google LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -1735,7 +1735,7 @@ spec:
 
 ### DNS Aaaa Record Set
 ```yaml
-# Copyright 2020 Google LLC
+# Copyright 2026 Google LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -1772,7 +1772,7 @@ spec:
 
 ### DNS Cname Record Set
 ```yaml
-# Copyright 2020 Google LLC
+# Copyright 2026 Google LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -1809,7 +1809,7 @@ spec:
 
 ### DNS Mx Record Set
 ```yaml
-# Copyright 2020 Google LLC
+# Copyright 2026 Google LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -1850,7 +1850,7 @@ spec:
 
 ### DNS Ns Record Set
 ```yaml
-# Copyright 2020 Google LLC
+# Copyright 2026 Google LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -1890,7 +1890,7 @@ spec:
 
 ### DNS Routing Policy Geo
 ```yaml
-# Copyright 2020 Google LLC
+# Copyright 2026 Google LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -1935,7 +1935,7 @@ spec:
 
 ### DNS Routing Policy Geo Health Checks
 ```yaml
-# Copyright 2020 Google LLC
+# Copyright 2026 Google LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -2077,7 +2077,7 @@ spec:
 
 ### DNS Routing Policy Geo With Compute Address Reference
 ```yaml
-# Copyright 2020 Google LLC
+# Copyright 2026 Google LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -2163,7 +2163,7 @@ spec:
 
 ### DNS Routing Policy Primary Backup
 ```yaml
-# Copyright 2020 Google LLC
+# Copyright 2026 Google LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -2344,7 +2344,7 @@ spec:
 
 ### DNS Routing Policy Wrr
 ```yaml
-# Copyright 2020 Google LLC
+# Copyright 2026 Google LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -2389,7 +2389,7 @@ spec:
 
 ### DNS Routing Policy Wrr Health Checks
 ```yaml
-# Copyright 2020 Google LLC
+# Copyright 2026 Google LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -2531,7 +2531,7 @@ spec:
 
 ### DNS Srv Record Set
 ```yaml
-# Copyright 2020 Google LLC
+# Copyright 2026 Google LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -2568,7 +2568,7 @@ spec:
 
 ### DNS Txt Record Set
 ```yaml
-# Copyright 2020 Google LLC
+# Copyright 2026 Google LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -2607,7 +2607,7 @@ spec:
 
 ### Dnssec Dnskey Record Set
 ```yaml
-# Copyright 2020 Google LLC
+# Copyright 2026 Google LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -2646,7 +2646,7 @@ spec:
 
 ### Dnssec Ds Record Set
 ```yaml
-# Copyright 2020 Google LLC
+# Copyright 2026 Google LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -2685,7 +2685,7 @@ spec:
 
 ### Dnssec Ipsecvpnkey Record Set
 ```yaml
-# Copyright 2020 Google LLC
+# Copyright 2026 Google LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -2724,7 +2724,7 @@ spec:
 
 ### Dnssec Sshfp Record Set
 ```yaml
-# Copyright 2020 Google LLC
+# Copyright 2026 Google LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.

@@ -25,7 +25,7 @@ Here is a template for the script. Remember to make it executable (`chmod +x <fi
 **Example for `dev/ci/presubmits/tests-e2e-samples-storage`:**
 ```bash
 #!/bin/bash
-# Copyright 2025 Google LLC
+# Copyright 2026 Google LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -91,7 +91,7 @@ For reference, here is the content of the generator script:
 
 ```bash
 #!/usr/bin/env bash
-# Copyright 2025 Google LLC
+# Copyright 2026 Google LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -116,7 +116,7 @@ cd ${REPO_ROOT}
 
 
 cat > ${REPO_ROOT}/.github/workflows/ci-presubmit.yaml <<EOF
-# Copyright 2025 Google LLC
+# Copyright 2026 Google LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.

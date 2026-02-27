@@ -1622,7 +1622,7 @@ observedGeneration: integer
 
 ### Config Management Feature Membership
 ```yaml
-# Copyright 2021 Google LLC
+# Copyright 2026 Google LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -1749,7 +1749,7 @@ spec:
 
 ### Configsync Auto Upgrade Feature Membership
 ```yaml
-# Copyright 2024 Google LLC
+# Copyright 2026 Google LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -1877,7 +1877,7 @@ spec:
 
 ### Service Mesh Feature Membership
 ```yaml
-# Copyright 2021 Google LLC
+# Copyright 2026 Google LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
