@@ -24,17 +24,18 @@ cd ${REPO_ROOT}/dev/tools/controllerbuilder
 ./generate-proto.sh
 
 go run . generate-types \
-  --service google.cloud.compute.v1 \
+  --service google.cloud.compute.v1beta \
   --api-version compute.cnrm.cloud.google.com/v1beta1  \
   --resource ComputeFirewallPolicyRule:FirewallPolicyRule \
   --resource ComputeForwardingRule:ForwardingRule \
   --resource ComputeSecurityPolicy:SecurityPolicy \
   --resource ComputeSubnetwork:Subnetwork \
-  --resource ComputeTargetTcpProxy:TargetTcpProxy
+  --resource ComputeTargetTcpProxy:TargetTcpProxy \
+  --resource ComputeFutureReservation:FutureReservation
 
 go run . generate-mapper \
     --multiversion \
-    --service google.cloud.compute.v1 \
+    --service google.cloud.compute.v1beta \
     --api-version compute.cnrm.cloud.google.com/v1beta1
 
 cd ${REPO_ROOT}

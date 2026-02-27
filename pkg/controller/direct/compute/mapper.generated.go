@@ -16,12 +16,12 @@
 // +generated:mapper
 // krm.group: compute.cnrm.cloud.google.com
 // krm.version: v1beta1
-// proto.service: google.cloud.compute.v1
+// proto.service: google.cloud.compute.v1beta
 
 package compute
 
 import (
-	pb "cloud.google.com/go/compute/apiv1/computepb"
+	pb "cloud.google.com/go/compute/apiv1beta/computepb"
 	krmcomputev1alpha1 "github.com/GoogleCloudPlatform/k8s-config-connector/apis/compute/v1alpha1"
 	krm "github.com/GoogleCloudPlatform/k8s-config-connector/apis/compute/v1beta1"
 	"github.com/GoogleCloudPlatform/k8s-config-connector/pkg/controller/direct"
@@ -32,16 +32,22 @@ func ComputeSecurityPolicyObservedState_v1beta1_FromProto(mapCtx *direct.MapCont
 		return nil
 	}
 	out := &krm.ComputeSecurityPolicyObservedState{}
+	// MISSING: Associations
 	// MISSING: CreationTimestamp
 	// MISSING: DdosProtectionConfig
+	// MISSING: DisplayName
 	// MISSING: Fingerprint
 	// MISSING: ID
 	// MISSING: Kind
 	// MISSING: LabelFingerprint
 	// MISSING: Labels
 	// MISSING: Name
+	// MISSING: Parent
 	// MISSING: Region
+	// MISSING: RuleTupleCount
 	// MISSING: SelfLink
+	// MISSING: SelfLinkWithID
+	// MISSING: ShortName
 	// MISSING: UserDefinedFields
 	return out
 }
@@ -50,16 +56,22 @@ func ComputeSecurityPolicyObservedState_v1beta1_ToProto(mapCtx *direct.MapContex
 		return nil
 	}
 	out := &pb.SecurityPolicy{}
+	// MISSING: Associations
 	// MISSING: CreationTimestamp
 	// MISSING: DdosProtectionConfig
+	// MISSING: DisplayName
 	// MISSING: Fingerprint
 	// MISSING: ID
 	// MISSING: Kind
 	// MISSING: LabelFingerprint
 	// MISSING: Labels
 	// MISSING: Name
+	// MISSING: Parent
 	// MISSING: Region
+	// MISSING: RuleTupleCount
 	// MISSING: SelfLink
+	// MISSING: SelfLinkWithID
+	// MISSING: ShortName
 	// MISSING: UserDefinedFields
 	return out
 }
@@ -70,19 +82,25 @@ func ComputeSecurityPolicySpec_v1beta1_FromProto(mapCtx *direct.MapContext, in *
 	out := &krm.ComputeSecurityPolicySpec{}
 	out.AdaptiveProtectionConfig = SecurityPolicyAdaptiveProtectionConfig_v1beta1_FromProto(mapCtx, in.GetAdaptiveProtectionConfig())
 	out.AdvancedOptionsConfig = SecurityPolicyAdvancedOptionsConfig_v1beta1_FromProto(mapCtx, in.GetAdvancedOptionsConfig())
+	// MISSING: Associations
 	// MISSING: CreationTimestamp
 	// MISSING: DdosProtectionConfig
 	out.Description = in.Description
+	// MISSING: DisplayName
 	// MISSING: Fingerprint
 	// MISSING: ID
 	// MISSING: Kind
 	// MISSING: LabelFingerprint
 	// MISSING: Labels
 	// MISSING: Name
+	// MISSING: Parent
 	out.RecaptchaOptionsConfig = SecurityPolicyRecaptchaOptionsConfig_v1beta1_FromProto(mapCtx, in.GetRecaptchaOptionsConfig())
 	// MISSING: Region
+	// MISSING: RuleTupleCount
 	out.Rules = direct.Slice_FromProto(mapCtx, in.Rules, SecurityPolicyRule_v1beta1_FromProto)
 	// MISSING: SelfLink
+	// MISSING: SelfLinkWithID
+	// MISSING: ShortName
 	out.Type = in.Type
 	// MISSING: UserDefinedFields
 	return out
@@ -94,19 +112,25 @@ func ComputeSecurityPolicySpec_v1beta1_ToProto(mapCtx *direct.MapContext, in *kr
 	out := &pb.SecurityPolicy{}
 	out.AdaptiveProtectionConfig = SecurityPolicyAdaptiveProtectionConfig_v1beta1_ToProto(mapCtx, in.AdaptiveProtectionConfig)
 	out.AdvancedOptionsConfig = SecurityPolicyAdvancedOptionsConfig_v1beta1_ToProto(mapCtx, in.AdvancedOptionsConfig)
+	// MISSING: Associations
 	// MISSING: CreationTimestamp
 	// MISSING: DdosProtectionConfig
 	out.Description = in.Description
+	// MISSING: DisplayName
 	// MISSING: Fingerprint
 	// MISSING: ID
 	// MISSING: Kind
 	// MISSING: LabelFingerprint
 	// MISSING: Labels
 	// MISSING: Name
+	// MISSING: Parent
 	out.RecaptchaOptionsConfig = SecurityPolicyRecaptchaOptionsConfig_v1beta1_ToProto(mapCtx, in.RecaptchaOptionsConfig)
 	// MISSING: Region
+	// MISSING: RuleTupleCount
 	out.Rules = direct.Slice_ToProto(mapCtx, in.Rules, SecurityPolicyRule_v1beta1_ToProto)
 	// MISSING: SelfLink
+	// MISSING: SelfLinkWithID
+	// MISSING: ShortName
 	out.Type = in.Type
 	// MISSING: UserDefinedFields
 	return out
@@ -116,6 +140,7 @@ func ComputeSubnetworkSpec_v1beta1_FromProto(mapCtx *direct.MapContext, in *pb.S
 		return nil
 	}
 	out := &krm.ComputeSubnetworkSpec{}
+	// MISSING: AllowSubnetCIDRRoutesOverlap
 	// MISSING: CreationTimestamp
 	out.Description = in.Description
 	// MISSING: EnableFlowLogs
@@ -141,6 +166,7 @@ func ComputeSubnetworkSpec_v1beta1_FromProto(mapCtx *direct.MapContext, in *pb.S
 	out.Purpose = in.Purpose
 	out.Region = in.Region
 	// MISSING: ReservedInternalRange
+	// MISSING: ResolveSubnetMask
 	out.Role = in.Role
 	out.SecondaryIPRanges = direct.Slice_FromProto(mapCtx, in.SecondaryIpRanges, SubnetworkSecondaryRange_v1beta1_FromProto)
 	// MISSING: SelfLink
@@ -148,6 +174,7 @@ func ComputeSubnetworkSpec_v1beta1_FromProto(mapCtx *direct.MapContext, in *pb.S
 	// MISSING: State
 	// MISSING: SystemReservedExternalIPV6Ranges
 	// MISSING: SystemReservedInternalIPV6Ranges
+	// MISSING: UtilizationDetails
 	return out
 }
 func ComputeSubnetworkSpec_v1beta1_ToProto(mapCtx *direct.MapContext, in *krm.ComputeSubnetworkSpec) *pb.Subnetwork {
@@ -155,6 +182,7 @@ func ComputeSubnetworkSpec_v1beta1_ToProto(mapCtx *direct.MapContext, in *krm.Co
 		return nil
 	}
 	out := &pb.Subnetwork{}
+	// MISSING: AllowSubnetCIDRRoutesOverlap
 	// MISSING: CreationTimestamp
 	out.Description = in.Description
 	// MISSING: EnableFlowLogs
@@ -180,6 +208,7 @@ func ComputeSubnetworkSpec_v1beta1_ToProto(mapCtx *direct.MapContext, in *krm.Co
 	out.Purpose = in.Purpose
 	out.Region = in.Region
 	// MISSING: ReservedInternalRange
+	// MISSING: ResolveSubnetMask
 	out.Role = in.Role
 	out.SecondaryIpRanges = direct.Slice_ToProto(mapCtx, in.SecondaryIPRanges, SubnetworkSecondaryRange_v1beta1_ToProto)
 	// MISSING: SelfLink
@@ -187,6 +216,7 @@ func ComputeSubnetworkSpec_v1beta1_ToProto(mapCtx *direct.MapContext, in *krm.Co
 	// MISSING: State
 	// MISSING: SystemReservedExternalIPV6Ranges
 	// MISSING: SystemReservedInternalIPV6Ranges
+	// MISSING: UtilizationDetails
 	return out
 }
 func ComputeSubnetworkStatus_v1beta1_FromProto(mapCtx *direct.MapContext, in *pb.Subnetwork) *krm.ComputeSubnetworkStatus {
@@ -194,6 +224,7 @@ func ComputeSubnetworkStatus_v1beta1_FromProto(mapCtx *direct.MapContext, in *pb
 		return nil
 	}
 	out := &krm.ComputeSubnetworkStatus{}
+	// MISSING: AllowSubnetCIDRRoutesOverlap
 	out.CreationTimestamp = in.CreationTimestamp
 	// MISSING: Description
 	// MISSING: EnableFlowLogs
@@ -217,6 +248,7 @@ func ComputeSubnetworkStatus_v1beta1_FromProto(mapCtx *direct.MapContext, in *pb
 	// MISSING: Purpose
 	// MISSING: Region
 	// MISSING: ReservedInternalRange
+	// MISSING: ResolveSubnetMask
 	// MISSING: Role
 	// MISSING: SecondaryIPRanges
 	out.SelfLink = in.SelfLink
@@ -224,6 +256,7 @@ func ComputeSubnetworkStatus_v1beta1_FromProto(mapCtx *direct.MapContext, in *pb
 	// MISSING: State
 	// MISSING: SystemReservedExternalIPV6Ranges
 	// MISSING: SystemReservedInternalIPV6Ranges
+	// MISSING: UtilizationDetails
 	return out
 }
 func ComputeSubnetworkStatus_v1beta1_ToProto(mapCtx *direct.MapContext, in *krm.ComputeSubnetworkStatus) *pb.Subnetwork {
@@ -231,6 +264,7 @@ func ComputeSubnetworkStatus_v1beta1_ToProto(mapCtx *direct.MapContext, in *krm.
 		return nil
 	}
 	out := &pb.Subnetwork{}
+	// MISSING: AllowSubnetCIDRRoutesOverlap
 	out.CreationTimestamp = in.CreationTimestamp
 	// MISSING: Description
 	// MISSING: EnableFlowLogs
@@ -254,6 +288,7 @@ func ComputeSubnetworkStatus_v1beta1_ToProto(mapCtx *direct.MapContext, in *krm.
 	// MISSING: Purpose
 	// MISSING: Region
 	// MISSING: ReservedInternalRange
+	// MISSING: ResolveSubnetMask
 	// MISSING: Role
 	// MISSING: SecondaryIPRanges
 	out.SelfLink = in.SelfLink
@@ -261,6 +296,7 @@ func ComputeSubnetworkStatus_v1beta1_ToProto(mapCtx *direct.MapContext, in *krm.
 	// MISSING: State
 	// MISSING: SystemReservedExternalIPV6Ranges
 	// MISSING: SystemReservedInternalIPV6Ranges
+	// MISSING: UtilizationDetails
 	return out
 }
 func Expr_v1beta1_FromProto(mapCtx *direct.MapContext, in *pb.Expr) *krm.Expr {
@@ -293,6 +329,7 @@ func FirewallPolicyRuleMatcher_v1beta1_FromProto(mapCtx *direct.MapContext, in *
 	out.DestAddressGroups = in.DestAddressGroups
 	out.DestFqdns = in.DestFqdns
 	out.DestIPRanges = in.DestIpRanges
+	// MISSING: DestNetworkScope
 	// MISSING: DestNetworkType
 	out.DestRegionCodes = in.DestRegionCodes
 	out.DestThreatIntelligences = in.DestThreatIntelligences
@@ -300,6 +337,7 @@ func FirewallPolicyRuleMatcher_v1beta1_FromProto(mapCtx *direct.MapContext, in *
 	out.SrcAddressGroups = in.SrcAddressGroups
 	out.SrcFqdns = in.SrcFqdns
 	out.SrcIPRanges = in.SrcIpRanges
+	// MISSING: SrcNetworkScope
 	// MISSING: SrcNetworkType
 	// MISSING: SrcNetworks
 	out.SrcRegionCodes = in.SrcRegionCodes
@@ -315,6 +353,7 @@ func FirewallPolicyRuleMatcher_v1beta1_ToProto(mapCtx *direct.MapContext, in *kr
 	out.DestAddressGroups = in.DestAddressGroups
 	out.DestFqdns = in.DestFqdns
 	out.DestIpRanges = in.DestIPRanges
+	// MISSING: DestNetworkScope
 	// MISSING: DestNetworkType
 	out.DestRegionCodes = in.DestRegionCodes
 	out.DestThreatIntelligences = in.DestThreatIntelligences
@@ -322,6 +361,7 @@ func FirewallPolicyRuleMatcher_v1beta1_ToProto(mapCtx *direct.MapContext, in *kr
 	out.SrcAddressGroups = in.SrcAddressGroups
 	out.SrcFqdns = in.SrcFqdns
 	out.SrcIpRanges = in.SrcIPRanges
+	// MISSING: SrcNetworkScope
 	// MISSING: SrcNetworkType
 	// MISSING: SrcNetworks
 	out.SrcRegionCodes = in.SrcRegionCodes
@@ -365,6 +405,36 @@ func ForwardingruleServiceDirectoryRegistrations_v1beta1_ToProto(mapCtx *direct.
 	out.Namespace = in.Namespace
 	out.Service = in.Service
 	// MISSING: ServiceDirectoryRegion
+	return out
+}
+func FutureReservationStatus_v1beta1_FromProto(mapCtx *direct.MapContext, in *pb.FutureReservationStatus) *krm.FutureReservationStatus {
+	if in == nil {
+		return nil
+	}
+	out := &krm.FutureReservationStatus{}
+	out.AmendmentStatus = in.AmendmentStatus
+	out.AutoCreatedReservations = in.AutoCreatedReservations
+	out.ExistingMatchingUsageInfo = FutureReservationStatusExistingMatchingUsageInfo_v1beta1_FromProto(mapCtx, in.GetExistingMatchingUsageInfo())
+	out.FulfilledCount = in.FulfilledCount
+	out.LastKnownGoodState = FutureReservationStatusLastKnownGoodState_v1beta1_FromProto(mapCtx, in.GetLastKnownGoodState())
+	out.LockTime = in.LockTime
+	out.ProcurementStatus = in.ProcurementStatus
+	out.SpecificSkuProperties = FutureReservationStatusSpecificSkuProperties_v1beta1_FromProto(mapCtx, in.GetSpecificSkuProperties())
+	return out
+}
+func FutureReservationStatus_v1beta1_ToProto(mapCtx *direct.MapContext, in *krm.FutureReservationStatus) *pb.FutureReservationStatus {
+	if in == nil {
+		return nil
+	}
+	out := &pb.FutureReservationStatus{}
+	out.AmendmentStatus = in.AmendmentStatus
+	out.AutoCreatedReservations = in.AutoCreatedReservations
+	out.ExistingMatchingUsageInfo = FutureReservationStatusExistingMatchingUsageInfo_v1beta1_ToProto(mapCtx, in.ExistingMatchingUsageInfo)
+	out.FulfilledCount = in.FulfilledCount
+	out.LastKnownGoodState = FutureReservationStatusLastKnownGoodState_v1beta1_ToProto(mapCtx, in.LastKnownGoodState)
+	out.LockTime = in.LockTime
+	out.ProcurementStatus = in.ProcurementStatus
+	out.SpecificSkuProperties = FutureReservationStatusSpecificSkuProperties_v1beta1_ToProto(mapCtx, in.SpecificSkuProperties)
 	return out
 }
 func InterconnectCircuitInfo_v1alpha1_FromProto(mapCtx *direct.MapContext, in *pb.InterconnectCircuitInfo) *krmcomputev1alpha1.InterconnectCircuitInfo {
@@ -577,6 +647,7 @@ func SecurityPolicyAdvancedOptionsConfig_v1beta1_FromProto(mapCtx *direct.MapCon
 	out.JsonCustomConfig = SecurityPolicyAdvancedOptionsConfigJsonCustomConfig_v1beta1_FromProto(mapCtx, in.GetJsonCustomConfig())
 	out.JsonParsing = in.JsonParsing
 	out.LogLevel = in.LogLevel
+	// MISSING: RequestBodyInspectionSize
 	out.UserIPRequestHeaders = in.UserIpRequestHeaders
 	return out
 }
@@ -588,6 +659,7 @@ func SecurityPolicyAdvancedOptionsConfig_v1beta1_ToProto(mapCtx *direct.MapConte
 	out.JsonCustomConfig = SecurityPolicyAdvancedOptionsConfigJsonCustomConfig_v1beta1_ToProto(mapCtx, in.JsonCustomConfig)
 	out.JsonParsing = in.JsonParsing
 	out.LogLevel = in.LogLevel
+	// MISSING: RequestBodyInspectionSize
 	out.UserIpRequestHeaders = in.UserIPRequestHeaders
 	return out
 }
@@ -605,6 +677,34 @@ func SecurityPolicyAdvancedOptionsConfigJsonCustomConfig_v1beta1_ToProto(mapCtx 
 	}
 	out := &pb.SecurityPolicyAdvancedOptionsConfigJsonCustomConfig{}
 	out.ContentTypes = in.ContentTypes
+	return out
+}
+func SecurityPolicyAssociation_v1beta1_FromProto(mapCtx *direct.MapContext, in *pb.SecurityPolicyAssociation) *krm.SecurityPolicyAssociation {
+	if in == nil {
+		return nil
+	}
+	out := &krm.SecurityPolicyAssociation{}
+	out.AttachmentID = in.AttachmentId
+	out.DisplayName = in.DisplayName
+	out.ExcludedFolders = in.ExcludedFolders
+	out.ExcludedProjects = in.ExcludedProjects
+	out.Name = in.Name
+	out.SecurityPolicyID = in.SecurityPolicyId
+	out.ShortName = in.ShortName
+	return out
+}
+func SecurityPolicyAssociation_v1beta1_ToProto(mapCtx *direct.MapContext, in *krm.SecurityPolicyAssociation) *pb.SecurityPolicyAssociation {
+	if in == nil {
+		return nil
+	}
+	out := &pb.SecurityPolicyAssociation{}
+	out.AttachmentId = in.AttachmentID
+	out.DisplayName = in.DisplayName
+	out.ExcludedFolders = in.ExcludedFolders
+	out.ExcludedProjects = in.ExcludedProjects
+	out.Name = in.Name
+	out.SecurityPolicyId = in.SecurityPolicyID
+	out.ShortName = in.ShortName
 	return out
 }
 func SecurityPolicyDdosProtectionConfig_v1beta1_FromProto(mapCtx *direct.MapContext, in *pb.SecurityPolicyDdosProtectionConfig) *krm.SecurityPolicyDdosProtectionConfig {
@@ -630,6 +730,8 @@ func SecurityPolicyRule_v1beta1_FromProto(mapCtx *direct.MapContext, in *pb.Secu
 	out := &krm.SecurityPolicyRule{}
 	out.Action = in.Action
 	out.Description = in.Description
+	// MISSING: Direction
+	// MISSING: EnableLogging
 	out.HeaderAction = SecurityPolicyRuleHTTPHeaderAction_v1beta1_FromProto(mapCtx, in.GetHeaderAction())
 	// MISSING: Kind
 	out.Match = SecurityPolicyRuleMatcher_v1beta1_FromProto(mapCtx, in.GetMatch())
@@ -639,6 +741,10 @@ func SecurityPolicyRule_v1beta1_FromProto(mapCtx *direct.MapContext, in *pb.Secu
 	out.Priority = in.Priority
 	out.RateLimitOptions = SecurityPolicyRuleRateLimitOptions_v1beta1_FromProto(mapCtx, in.GetRateLimitOptions())
 	out.RedirectOptions = SecurityPolicyRuleRedirectOptions_v1beta1_FromProto(mapCtx, in.GetRedirectOptions())
+	// MISSING: RuleNumber
+	// MISSING: RuleTupleCount
+	// MISSING: TargetResources
+	// MISSING: TargetServiceAccounts
 	return out
 }
 func SecurityPolicyRule_v1beta1_ToProto(mapCtx *direct.MapContext, in *krm.SecurityPolicyRule) *pb.SecurityPolicyRule {
@@ -648,6 +754,8 @@ func SecurityPolicyRule_v1beta1_ToProto(mapCtx *direct.MapContext, in *krm.Secur
 	out := &pb.SecurityPolicyRule{}
 	out.Action = in.Action
 	out.Description = in.Description
+	// MISSING: Direction
+	// MISSING: EnableLogging
 	out.HeaderAction = SecurityPolicyRuleHTTPHeaderAction_v1beta1_ToProto(mapCtx, in.HeaderAction)
 	// MISSING: Kind
 	out.Match = SecurityPolicyRuleMatcher_v1beta1_ToProto(mapCtx, in.Match)
@@ -657,6 +765,10 @@ func SecurityPolicyRule_v1beta1_ToProto(mapCtx *direct.MapContext, in *krm.Secur
 	out.Priority = in.Priority
 	out.RateLimitOptions = SecurityPolicyRuleRateLimitOptions_v1beta1_ToProto(mapCtx, in.RateLimitOptions)
 	out.RedirectOptions = SecurityPolicyRuleRedirectOptions_v1beta1_ToProto(mapCtx, in.RedirectOptions)
+	// MISSING: RuleNumber
+	// MISSING: RuleTupleCount
+	// MISSING: TargetResources
+	// MISSING: TargetServiceAccounts
 	return out
 }
 func SecurityPolicyRuleHTTPHeaderAction_v1beta1_FromProto(mapCtx *direct.MapContext, in *pb.SecurityPolicyRuleHttpHeaderAction) *krm.SecurityPolicyRuleHTTPHeaderAction {
@@ -720,6 +832,8 @@ func SecurityPolicyRuleMatcherConfig_v1beta1_FromProto(mapCtx *direct.MapContext
 		return nil
 	}
 	out := &krm.SecurityPolicyRuleMatcherConfig{}
+	// MISSING: DestIPRanges
+	// MISSING: Layer4Configs
 	out.SrcIPRanges = in.SrcIpRanges
 	return out
 }
@@ -728,7 +842,27 @@ func SecurityPolicyRuleMatcherConfig_v1beta1_ToProto(mapCtx *direct.MapContext, 
 		return nil
 	}
 	out := &pb.SecurityPolicyRuleMatcherConfig{}
+	// MISSING: DestIPRanges
+	// MISSING: Layer4Configs
 	out.SrcIpRanges = in.SrcIPRanges
+	return out
+}
+func SecurityPolicyRuleMatcherConfigLayer4Config_v1beta1_FromProto(mapCtx *direct.MapContext, in *pb.SecurityPolicyRuleMatcherConfigLayer4Config) *krm.SecurityPolicyRuleMatcherConfigLayer4Config {
+	if in == nil {
+		return nil
+	}
+	out := &krm.SecurityPolicyRuleMatcherConfigLayer4Config{}
+	out.IPProtocol = in.IpProtocol
+	out.Ports = in.Ports
+	return out
+}
+func SecurityPolicyRuleMatcherConfigLayer4Config_v1beta1_ToProto(mapCtx *direct.MapContext, in *krm.SecurityPolicyRuleMatcherConfigLayer4Config) *pb.SecurityPolicyRuleMatcherConfigLayer4Config {
+	if in == nil {
+		return nil
+	}
+	out := &pb.SecurityPolicyRuleMatcherConfigLayer4Config{}
+	out.IpProtocol = in.IPProtocol
+	out.Ports = in.Ports
 	return out
 }
 func SecurityPolicyRuleMatcherExprOptions_v1beta1_FromProto(mapCtx *direct.MapContext, in *pb.SecurityPolicyRuleMatcherExprOptions) *krm.SecurityPolicyRuleMatcherExprOptions {
@@ -983,5 +1117,83 @@ func SubnetworkSecondaryRange_v1beta1_ToProto(mapCtx *direct.MapContext, in *krm
 	out.IpCidrRange = in.IPCIDRRange
 	out.RangeName = in.RangeName
 	// MISSING: ReservedInternalRange
+	return out
+}
+func SubnetworkUtilizationDetails_v1beta1_FromProto(mapCtx *direct.MapContext, in *pb.SubnetworkUtilizationDetails) *krm.SubnetworkUtilizationDetails {
+	if in == nil {
+		return nil
+	}
+	out := &krm.SubnetworkUtilizationDetails{}
+	out.ExternalIPV6InstanceUtilization = SubnetworkUtilizationDetailsIPV6Utilization_v1beta1_FromProto(mapCtx, in.GetExternalIpv6InstanceUtilization())
+	out.ExternalIPV6LbUtilization = SubnetworkUtilizationDetailsIPV6Utilization_v1beta1_FromProto(mapCtx, in.GetExternalIpv6LbUtilization())
+	out.InternalIPV6Utilization = SubnetworkUtilizationDetailsIPV6Utilization_v1beta1_FromProto(mapCtx, in.GetInternalIpv6Utilization())
+	out.IPV4Utilizations = direct.Slice_FromProto(mapCtx, in.Ipv4Utilizations, SubnetworkUtilizationDetailsIPV4Utilization_v1beta1_FromProto)
+	return out
+}
+func SubnetworkUtilizationDetails_v1beta1_ToProto(mapCtx *direct.MapContext, in *krm.SubnetworkUtilizationDetails) *pb.SubnetworkUtilizationDetails {
+	if in == nil {
+		return nil
+	}
+	out := &pb.SubnetworkUtilizationDetails{}
+	out.ExternalIpv6InstanceUtilization = SubnetworkUtilizationDetailsIPV6Utilization_v1beta1_ToProto(mapCtx, in.ExternalIPV6InstanceUtilization)
+	out.ExternalIpv6LbUtilization = SubnetworkUtilizationDetailsIPV6Utilization_v1beta1_ToProto(mapCtx, in.ExternalIPV6LbUtilization)
+	out.InternalIpv6Utilization = SubnetworkUtilizationDetailsIPV6Utilization_v1beta1_ToProto(mapCtx, in.InternalIPV6Utilization)
+	out.Ipv4Utilizations = direct.Slice_ToProto(mapCtx, in.IPV4Utilizations, SubnetworkUtilizationDetailsIPV4Utilization_v1beta1_ToProto)
+	return out
+}
+func SubnetworkUtilizationDetailsIPV4Utilization_v1beta1_FromProto(mapCtx *direct.MapContext, in *pb.SubnetworkUtilizationDetailsIPV4Utilization) *krm.SubnetworkUtilizationDetailsIPV4Utilization {
+	if in == nil {
+		return nil
+	}
+	out := &krm.SubnetworkUtilizationDetailsIPV4Utilization{}
+	out.RangeName = in.RangeName
+	out.TotalAllocatedIP = in.TotalAllocatedIp
+	out.TotalFreeIP = in.TotalFreeIp
+	return out
+}
+func SubnetworkUtilizationDetailsIPV4Utilization_v1beta1_ToProto(mapCtx *direct.MapContext, in *krm.SubnetworkUtilizationDetailsIPV4Utilization) *pb.SubnetworkUtilizationDetailsIPV4Utilization {
+	if in == nil {
+		return nil
+	}
+	out := &pb.SubnetworkUtilizationDetailsIPV4Utilization{}
+	out.RangeName = in.RangeName
+	out.TotalAllocatedIp = in.TotalAllocatedIP
+	out.TotalFreeIp = in.TotalFreeIP
+	return out
+}
+func SubnetworkUtilizationDetailsIPV6Utilization_v1beta1_FromProto(mapCtx *direct.MapContext, in *pb.SubnetworkUtilizationDetailsIPV6Utilization) *krm.SubnetworkUtilizationDetailsIPV6Utilization {
+	if in == nil {
+		return nil
+	}
+	out := &krm.SubnetworkUtilizationDetailsIPV6Utilization{}
+	out.TotalAllocatedIP = Uint128_v1beta1_FromProto(mapCtx, in.GetTotalAllocatedIp())
+	out.TotalFreeIP = Uint128_v1beta1_FromProto(mapCtx, in.GetTotalFreeIp())
+	return out
+}
+func SubnetworkUtilizationDetailsIPV6Utilization_v1beta1_ToProto(mapCtx *direct.MapContext, in *krm.SubnetworkUtilizationDetailsIPV6Utilization) *pb.SubnetworkUtilizationDetailsIPV6Utilization {
+	if in == nil {
+		return nil
+	}
+	out := &pb.SubnetworkUtilizationDetailsIPV6Utilization{}
+	out.TotalAllocatedIp = Uint128_v1beta1_ToProto(mapCtx, in.TotalAllocatedIP)
+	out.TotalFreeIp = Uint128_v1beta1_ToProto(mapCtx, in.TotalFreeIP)
+	return out
+}
+func Uint128_v1beta1_FromProto(mapCtx *direct.MapContext, in *pb.Uint128) *krm.Uint128 {
+	if in == nil {
+		return nil
+	}
+	out := &krm.Uint128{}
+	out.High = in.High
+	out.Low = in.Low
+	return out
+}
+func Uint128_v1beta1_ToProto(mapCtx *direct.MapContext, in *krm.Uint128) *pb.Uint128 {
+	if in == nil {
+		return nil
+	}
+	out := &pb.Uint128{}
+	out.High = in.High
+	out.Low = in.Low
 	return out
 }
