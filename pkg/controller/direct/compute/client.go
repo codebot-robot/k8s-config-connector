@@ -24,7 +24,7 @@ import (
 
 	"google.golang.org/api/option"
 
-	compute "cloud.google.com/go/compute/apiv1"
+	compute "cloud.google.com/go/compute/apiv1beta"
 	computev1beta "cloud.google.com/go/compute/apiv1beta"
 	"github.com/GoogleCloudPlatform/k8s-config-connector/pkg/config"
 )

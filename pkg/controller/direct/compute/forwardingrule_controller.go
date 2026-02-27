@@ -22,8 +22,8 @@ import (
 
 	"k8s.io/klog/v2"
 
-	gcp "cloud.google.com/go/compute/apiv1"
-	computepb "cloud.google.com/go/compute/apiv1/computepb"
+	gcp "cloud.google.com/go/compute/apiv1beta"
+	computepb "cloud.google.com/go/compute/apiv1beta/computepb"
 	krm "github.com/GoogleCloudPlatform/k8s-config-connector/apis/compute/v1beta1"
 	"github.com/GoogleCloudPlatform/k8s-config-connector/pkg/config"
 	"github.com/GoogleCloudPlatform/k8s-config-connector/pkg/controller/direct"

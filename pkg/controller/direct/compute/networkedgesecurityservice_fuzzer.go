@@ -19,7 +19,7 @@
 package compute
 
 import (
-	pb "cloud.google.com/go/compute/apiv1/computepb"
+	pb "cloud.google.com/go/compute/apiv1beta/computepb"
 	"github.com/GoogleCloudPlatform/k8s-config-connector/pkg/fuzztesting"
 )
 

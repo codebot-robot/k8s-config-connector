@@ -23,7 +23,7 @@ cd ${REPO_ROOT}/dev/tools/controllerbuilder
 
 go run . generate-mapper \
     --multiversion \
-    --service google.cloud.compute.v1 \
+    --service google.cloud.compute.v1beta \
     --api-version compute.cnrm.cloud.google.com/v1alpha1
 
 cd ${REPO_ROOT}

@@ -19,7 +19,7 @@
 package compute
 
 import (
-	pb "cloud.google.com/go/compute/apiv1/computepb"
+	pb "cloud.google.com/go/compute/apiv1beta/computepb"
 	krm "github.com/GoogleCloudPlatform/k8s-config-connector/apis/compute/v1alpha1"
 	refs "github.com/GoogleCloudPlatform/k8s-config-connector/apis/refs/v1beta1"
 	"github.com/GoogleCloudPlatform/k8s-config-connector/pkg/controller/direct"

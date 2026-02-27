@@ -24,8 +24,8 @@ import (
 	"context"
 	"fmt"
 
-	compute "cloud.google.com/go/compute/apiv1"
-	computepb "cloud.google.com/go/compute/apiv1/computepb"
+	compute "cloud.google.com/go/compute/apiv1beta"
+	computepb "cloud.google.com/go/compute/apiv1beta/computepb"
 
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"

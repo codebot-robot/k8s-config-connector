@@ -1243,7 +1243,7 @@ func lastComponent(s string) string {
 func usesPointersInProtoBinding(msg protoreflect.MessageDescriptor) bool {
 	// It's not obvious which messages use pointers in Go, so we hard-code the (few) services that do.
 	switch string(msg.ParentFile().Package()) {
-	case "google.cloud.compute.v1":
+	case "google.cloud.compute.v1", "google.cloud.compute.v1beta":
 		return true
 	default:
 		return false

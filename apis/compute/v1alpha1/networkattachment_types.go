@@ -31,7 +31,7 @@ type ComputeNetworkAttachmentParent struct {
 }
 
 // ComputeNetworkAttachmentSpec defines the desired state of ComputeNetworkAttachment
-// +kcc:spec:proto=google.cloud.compute.v1.NetworkAttachment
+// +kcc:spec:proto=google.cloud.compute.v1beta.NetworkAttachment
 type ComputeNetworkAttachmentSpec struct {
 	// Parent reference.
 	ComputeNetworkAttachmentParent `json:",inline"`
@@ -40,27 +40,27 @@ type ComputeNetworkAttachmentSpec struct {
 	ResourceID *string `json:"resourceID,omitempty"`
 
 	// Check the ConnectionPreference enum for the list of possible values.
-	// +kcc:proto:field=google.cloud.compute.v1.NetworkAttachment.connection_preference
+	// +kcc:proto:field=google.cloud.compute.v1beta.NetworkAttachment.connection_preference
 	ConnectionPreference *string `json:"connectionPreference,omitempty"`
 
 	// An optional description of this resource. Provide this property when you create the resource.
-	// +kcc:proto:field=google.cloud.compute.v1.NetworkAttachment.description
+	// +kcc:proto:field=google.cloud.compute.v1beta.NetworkAttachment.description
 	Description *string `json:"description,omitempty"`
 
 	// Fingerprint of this resource. A hash of the contents stored in this object. This field is used in optimistic locking. An up-to-date fingerprint must be provided in order to patch.
-	// +kcc:proto:field=google.cloud.compute.v1.NetworkAttachment.fingerprint
+	// +kcc:proto:field=google.cloud.compute.v1beta.NetworkAttachment.fingerprint
 	Fingerprint *string `json:"fingerprint,omitempty"`
 
 	// Projects that are allowed to connect to this network attachment. The project can be specified using its id or number.
-	// +kcc:proto:field=google.cloud.compute.v1.NetworkAttachment.producer_accept_lists
+	// +kcc:proto:field=google.cloud.compute.v1beta.NetworkAttachment.producer_accept_lists
 	ProducerAcceptLists []*refv1beta1.ProjectRef `json:"producerAcceptLists,omitempty"`
 
 	// Projects that are not allowed to connect to this network attachment. The project can be specified using its id or number.
-	// +kcc:proto:field=google.cloud.compute.v1.NetworkAttachment.producer_reject_lists
+	// +kcc:proto:field=google.cloud.compute.v1beta.NetworkAttachment.producer_reject_lists
 	ProducerRejectLists []*refv1beta1.ProjectRef `json:"producerRejectLists,omitempty"`
 
 	// An array of URLs where each entry is the URL of a subnet provided by the service consumer to use for endpoints in the producers that connect to this network attachment.
-	// +kcc:proto:field=google.cloud.compute.v1.NetworkAttachment.subnetworks
+	// +kcc:proto:field=google.cloud.compute.v1beta.NetworkAttachment.subnetworks
 	SubnetworkRefs []*refv1beta1.ComputeSubnetworkRef `json:"subnetworkRefs,omitempty"`
 }
 
@@ -81,38 +81,38 @@ type ComputeNetworkAttachmentStatus struct {
 }
 
 // ComputeNetworkAttachmentObservedState is the state of the ComputeNetworkAttachment resource as most recently observed in GCP.
-// +kcc:observedstate:proto=google.cloud.compute.v1.NetworkAttachment
+// +kcc:observedstate:proto=google.cloud.compute.v1beta.NetworkAttachment
 type ComputeNetworkAttachmentObservedState struct {
 	// [Output Only] An array of connections for all the producers connected to this network attachment.
-	// +kcc:proto:field=google.cloud.compute.v1.NetworkAttachment.connection_endpoints
+	// +kcc:proto:field=google.cloud.compute.v1beta.NetworkAttachment.connection_endpoints
 	ConnectionEndpoints []NetworkAttachmentConnectedEndpoint `json:"connectionEndpoints,omitempty"`
 
 	// [Output Only] Creation timestamp in RFC3339 text format.
-	// +kcc:proto:field=google.cloud.compute.v1.NetworkAttachment.creation_timestamp
+	// +kcc:proto:field=google.cloud.compute.v1beta.NetworkAttachment.creation_timestamp
 	CreationTimestamp *string `json:"creationTimestamp,omitempty"`
 
 	// [Output Only] The unique identifier for the resource type. The server generates this identifier.
-	// +kcc:proto:field=google.cloud.compute.v1.NetworkAttachment.id
+	// +kcc:proto:field=google.cloud.compute.v1beta.NetworkAttachment.id
 	ID *uint64 `json:"id,omitempty"`
 
 	// [Output Only] Type of the resource.
-	// +kcc:proto:field=google.cloud.compute.v1.NetworkAttachment.kind
+	// +kcc:proto:field=google.cloud.compute.v1beta.NetworkAttachment.kind
 	Kind *string `json:"kind,omitempty"`
 
 	// [Output Only] URL of the region where the network attachment resides. This field applies only to the region resource. You must specify this field as part of the HTTP request URL. It is not settable as a field in the request body.
-	// +kcc:proto:field=google.cloud.compute.v1.NetworkAttachment.region
+	// +kcc:proto:field=google.cloud.compute.v1beta.NetworkAttachment.region
 	Region *string `json:"region,omitempty"`
 
 	// [Output Only] Server-defined URL for the resource.
-	// +kcc:proto:field=google.cloud.compute.v1.NetworkAttachment.self_link
+	// +kcc:proto:field=google.cloud.compute.v1beta.NetworkAttachment.self_link
 	SelfLink *string `json:"selfLink,omitempty"`
 
 	// [Output Only] Server-defined URL for this resource's resource id.
-	// +kcc:proto:field=google.cloud.compute.v1.NetworkAttachment.self_link_with_id
+	// +kcc:proto:field=google.cloud.compute.v1beta.NetworkAttachment.self_link_with_id
 	SelfLinkWithID *string `json:"selfLinkWithID,omitempty"`
 
 	// [Output Only] The URL of the network which the Network Attachment belongs to. Practically it is inferred by fetching the network of the first subnetwork associated. Because it is required that all the subnetworks must be from the same network, it is assured that the Network Attachment belongs to the same network as all the subnetworks.
-	// +kcc:proto:field=google.cloud.compute.v1.NetworkAttachment.network
+	// +kcc:proto:field=google.cloud.compute.v1beta.NetworkAttachment.network
 	Network *string `json:"network,omitempty"`
 }
 

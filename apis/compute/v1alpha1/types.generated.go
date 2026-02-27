@@ -14,109 +14,109 @@
 
 package v1alpha1
 
-// +kcc:proto=google.cloud.compute.v1.InterconnectCircuitInfo
+// +kcc:proto=google.cloud.compute.v1beta.InterconnectCircuitInfo
 type InterconnectCircuitInfo struct {
 	// Customer-side demarc ID for this circuit.
-	// +kcc:proto:field=google.cloud.compute.v1.InterconnectCircuitInfo.customer_demarc_id
+	// +kcc:proto:field=google.cloud.compute.v1beta.InterconnectCircuitInfo.customer_demarc_id
 	CustomerDemarcID *string `json:"customerDemarcID,omitempty"`
 
 	// Google-assigned unique ID for this circuit. Assigned at circuit turn-up.
-	// +kcc:proto:field=google.cloud.compute.v1.InterconnectCircuitInfo.google_circuit_id
+	// +kcc:proto:field=google.cloud.compute.v1beta.InterconnectCircuitInfo.google_circuit_id
 	GoogleCircuitID *string `json:"googleCircuitID,omitempty"`
 
 	// Google-side demarc ID for this circuit. Assigned at circuit turn-up and provided by Google to the customer in the LOA.
-	// +kcc:proto:field=google.cloud.compute.v1.InterconnectCircuitInfo.google_demarc_id
+	// +kcc:proto:field=google.cloud.compute.v1beta.InterconnectCircuitInfo.google_demarc_id
 	GoogleDemarcID *string `json:"googleDemarcID,omitempty"`
 }
 
-// +kcc:proto=google.cloud.compute.v1.InterconnectMacsec
+// +kcc:proto=google.cloud.compute.v1beta.InterconnectMacsec
 type InterconnectMacsec struct {
 	// If set to true, the Interconnect connection is configured with a should-secure MACsec security policy, that allows the Google router to fallback to cleartext traffic if the MKA session cannot be established. By default, the Interconnect connection is configured with a must-secure security policy that drops all traffic if the MKA session cannot be established with your router.
-	// +kcc:proto:field=google.cloud.compute.v1.InterconnectMacsec.fail_open
+	// +kcc:proto:field=google.cloud.compute.v1beta.InterconnectMacsec.fail_open
 	FailOpen *bool `json:"failOpen,omitempty"`
 
 	// Required. A keychain placeholder describing a set of named key objects along with their start times. A MACsec CKN/CAK is generated for each key in the key chain. Google router automatically picks the key with the most recent startTime when establishing or re-establishing a MACsec secure link.
-	// +kcc:proto:field=google.cloud.compute.v1.InterconnectMacsec.pre_shared_keys
+	// +kcc:proto:field=google.cloud.compute.v1beta.InterconnectMacsec.pre_shared_keys
 	PreSharedKeys []InterconnectMacsecPreSharedKey `json:"preSharedKeys,omitempty"`
 }
 
-// +kcc:proto=google.cloud.compute.v1.InterconnectMacsecPreSharedKey
+// +kcc:proto=google.cloud.compute.v1beta.InterconnectMacsecPreSharedKey
 type InterconnectMacsecPreSharedKey struct {
 	// Required. A name for this pre-shared key. The name must be 1-63 characters long, and comply with RFC1035. Specifically, the name must be 1-63 characters long and match the regular expression `[a-z]([-a-z0-9]*[a-z0-9])?` which means the first character must be a lowercase letter, and all following characters must be a dash, lowercase letter, or digit, except the last character, which cannot be a dash.
-	// +kcc:proto:field=google.cloud.compute.v1.InterconnectMacsecPreSharedKey.name
+	// +kcc:proto:field=google.cloud.compute.v1beta.InterconnectMacsecPreSharedKey.name
 	Name *string `json:"name,omitempty"`
 
 	// A RFC3339 timestamp on or after which the key is valid. startTime can be in the future. If the keychain has a single key, startTime can be omitted. If the keychain has multiple keys, startTime is mandatory for each key. The start times of keys must be in increasing order. The start times of two consecutive keys must be at least 6 hours apart.
-	// +kcc:proto:field=google.cloud.compute.v1.InterconnectMacsecPreSharedKey.start_time
+	// +kcc:proto:field=google.cloud.compute.v1beta.InterconnectMacsecPreSharedKey.start_time
 	StartTime *string `json:"startTime,omitempty"`
 }
 
-// +kcc:proto=google.cloud.compute.v1.InterconnectOutageNotification
+// +kcc:proto=google.cloud.compute.v1beta.InterconnectOutageNotification
 type InterconnectOutageNotification struct {
 	// If issue_type is IT_PARTIAL_OUTAGE, a list of the Google-side circuit IDs that will be affected.
-	// +kcc:proto:field=google.cloud.compute.v1.InterconnectOutageNotification.affected_circuits
+	// +kcc:proto:field=google.cloud.compute.v1beta.InterconnectOutageNotification.affected_circuits
 	AffectedCircuits []string `json:"affectedCircuits,omitempty"`
 
 	// A description about the purpose of the outage.
-	// +kcc:proto:field=google.cloud.compute.v1.InterconnectOutageNotification.description
+	// +kcc:proto:field=google.cloud.compute.v1beta.InterconnectOutageNotification.description
 	Description *string `json:"description,omitempty"`
 
 	// Scheduled end time for the outage (milliseconds since Unix epoch).
-	// +kcc:proto:field=google.cloud.compute.v1.InterconnectOutageNotification.end_time
+	// +kcc:proto:field=google.cloud.compute.v1beta.InterconnectOutageNotification.end_time
 	EndTime *int64 `json:"endTime,omitempty"`
 
 	// Form this outage is expected to take, which can take one of the following values: - OUTAGE: The Interconnect may be completely out of service for some or all of the specified window. - PARTIAL_OUTAGE: Some circuits comprising the Interconnect as a whole should remain up, but with reduced bandwidth. Note that the versions of this enum prefixed with "IT_" have been deprecated in favor of the unprefixed values.
 	//  Check the IssueType enum for the list of possible values.
-	// +kcc:proto:field=google.cloud.compute.v1.InterconnectOutageNotification.issue_type
+	// +kcc:proto:field=google.cloud.compute.v1beta.InterconnectOutageNotification.issue_type
 	IssueType *string `json:"issueType,omitempty"`
 
 	// Unique identifier for this outage notification.
-	// +kcc:proto:field=google.cloud.compute.v1.InterconnectOutageNotification.name
+	// +kcc:proto:field=google.cloud.compute.v1beta.InterconnectOutageNotification.name
 	Name *string `json:"name,omitempty"`
 
 	// The party that generated this notification, which can take the following value: - GOOGLE: this notification as generated by Google. Note that the value of NSRC_GOOGLE has been deprecated in favor of GOOGLE.
 	//  Check the Source enum for the list of possible values.
-	// +kcc:proto:field=google.cloud.compute.v1.InterconnectOutageNotification.source
+	// +kcc:proto:field=google.cloud.compute.v1beta.InterconnectOutageNotification.source
 	Source *string `json:"source,omitempty"`
 
 	// Scheduled start time for the outage (milliseconds since Unix epoch).
-	// +kcc:proto:field=google.cloud.compute.v1.InterconnectOutageNotification.start_time
+	// +kcc:proto:field=google.cloud.compute.v1beta.InterconnectOutageNotification.start_time
 	StartTime *int64 `json:"startTime,omitempty"`
 
 	// State of this notification, which can take one of the following values: - ACTIVE: This outage notification is active. The event could be in the past, present, or future. See start_time and end_time for scheduling. - CANCELLED: The outage associated with this notification was cancelled before the outage was due to start. - COMPLETED: The outage associated with this notification is complete. Note that the versions of this enum prefixed with "NS_" have been deprecated in favor of the unprefixed values.
 	//  Check the State enum for the list of possible values.
-	// +kcc:proto:field=google.cloud.compute.v1.InterconnectOutageNotification.state
+	// +kcc:proto:field=google.cloud.compute.v1beta.InterconnectOutageNotification.state
 	State *string `json:"state,omitempty"`
 }
 
-// +kcc:proto=google.cloud.compute.v1.NetworkAttachmentConnectedEndpoint
+// +kcc:proto=google.cloud.compute.v1beta.NetworkAttachmentConnectedEndpoint
 type NetworkAttachmentConnectedEndpoint struct {
 	// The IPv4 address assigned to the producer instance network interface. This value will be a range in case of Serverless.
-	// +kcc:proto:field=google.cloud.compute.v1.NetworkAttachmentConnectedEndpoint.ip_address
+	// +kcc:proto:field=google.cloud.compute.v1beta.NetworkAttachmentConnectedEndpoint.ip_address
 	IPAddress *string `json:"ipAddress,omitempty"`
 
 	// The IPv6 address assigned to the producer instance network interface. This is only assigned when the stack types of both the instance network interface and the consumer subnet are IPv4_IPv6.
-	// +kcc:proto:field=google.cloud.compute.v1.NetworkAttachmentConnectedEndpoint.ipv6_address
+	// +kcc:proto:field=google.cloud.compute.v1beta.NetworkAttachmentConnectedEndpoint.ipv6_address
 	IPV6Address *string `json:"ipv6Address,omitempty"`
 
 	// The project id or number of the interface to which the IP was assigned.
-	// +kcc:proto:field=google.cloud.compute.v1.NetworkAttachmentConnectedEndpoint.project_id_or_num
+	// +kcc:proto:field=google.cloud.compute.v1beta.NetworkAttachmentConnectedEndpoint.project_id_or_num
 	ProjectIDOrNum *string `json:"projectIDOrNum,omitempty"`
 
 	// Alias IP ranges from the same subnetwork.
-	// +kcc:proto:field=google.cloud.compute.v1.NetworkAttachmentConnectedEndpoint.secondary_ip_cidr_ranges
+	// +kcc:proto:field=google.cloud.compute.v1beta.NetworkAttachmentConnectedEndpoint.secondary_ip_cidr_ranges
 	SecondaryIPCIDRRanges []string `json:"secondaryIPCIDRRanges,omitempty"`
 
 	// The status of a connected endpoint to this network attachment.
 	//  Check the Status enum for the list of possible values.
-	// +kcc:proto:field=google.cloud.compute.v1.NetworkAttachmentConnectedEndpoint.status
+	// +kcc:proto:field=google.cloud.compute.v1beta.NetworkAttachmentConnectedEndpoint.status
 	Status *string `json:"status,omitempty"`
 
 	// The subnetwork used to assign the IP to the producer instance network interface.
-	// +kcc:proto:field=google.cloud.compute.v1.NetworkAttachmentConnectedEndpoint.subnetwork
+	// +kcc:proto:field=google.cloud.compute.v1beta.NetworkAttachmentConnectedEndpoint.subnetwork
 	Subnetwork *string `json:"subnetwork,omitempty"`
 
 	// [Output Only] The CIDR range of the subnet from which the IPv4 internal IP was allocated from.
-	// +kcc:proto:field=google.cloud.compute.v1.NetworkAttachmentConnectedEndpoint.subnetwork_cidr_range
+	// +kcc:proto:field=google.cloud.compute.v1beta.NetworkAttachmentConnectedEndpoint.subnetwork_cidr_range
 	SubnetworkCIDRRange *string `json:"subnetworkCIDRRange,omitempty"`
 }
