@@ -167,7 +167,7 @@ type ComputeFutureReservationObservedState struct {
 	// +kcc:proto:field=google.cloud.compute.v1beta.FutureReservationStatus.procurement_status
 	ProcurementStatus *string `json:"procurementStatus,omitempty"`
 
-	// +kcc:proto:field=google.cloud.compute.v1beta.FutureReservation.specific_sku_properties
+	// +kcc:proto:field=google.cloud.compute.v1beta.FutureReservationStatus.specific_sku_properties
 	SpecificSkuProperties *FutureReservationStatusSpecificSkuProperties `json:"specificSkuProperties,omitempty"`
 
 	// [Output Only] The creation timestamp for this future reservation in RFC3339 text format.
