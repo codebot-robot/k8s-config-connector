@@ -79,6 +79,7 @@ var (
 		"addons_config.0.gcs_fuse_csi_driver_config",
 		"addons_config.0.istio_config",
 		"addons_config.0.kalm_config",
+		"addons_config.0.parallelstore_csi_driver_config",
 	}
 
 	privateClusterConfigKeys = []string{
@@ -446,6 +447,22 @@ func ResourceContainerCluster() *schema.Resource {
 							AtLeastOneOf: addonsConfigKeys,
 							MaxItems:     1,
 							Description:  `Configuration for the KALM addon, which manages the lifecycle of k8s. It is disabled by default; Set enabled = true to enable.`,
+							Elem: &schema.Resource{
+								Schema: map[string]*schema.Schema{
+									"enabled": {
+										Type:     schema.TypeBool,
+										Required: true,
+									},
+								},
+							},
+						},
+						"parallelstore_csi_driver_config": {
+							Type:         schema.TypeList,
+							Optional:     true,
+							Computed:     true,
+							AtLeastOneOf: addonsConfigKeys,
+							MaxItems:     1,
+							Description:  `The status of the Parallelstore CSI driver addon, which allows the usage of Parallelstore as volumes. Defaults to disabled; set enabled = true to enable.`,
 							Elem: &schema.Resource{
 								Schema: map[string]*schema.Schema{
 									"enabled": {
@@ -4372,26 +4389,34 @@ func expandClusterAddonsConfig(configured interface{}) *container.AddonsConfig {
 		}
 	}
 
-	if v, ok := config["istio_config"]; ok && len(v.([]interface{})) > 0 {
-		addon := v.([]interface{})[0].(map[string]interface{})
-		ac.IstioConfig = &container.IstioConfig{
-			Disabled:        addon["disabled"].(bool),
-			Auth:            addon["auth"].(string),
-			ForceSendFields: []string{"Disabled"},
+		if v, ok := config["istio_config"]; ok && len(v.([]interface{})) > 0 {
+			addon := v.([]interface{})[0].(map[string]interface{})
+			ac.IstioConfig = &container.IstioConfig{
+				Disabled:        addon["disabled"].(bool),
+				Auth:            addon["auth"].(string),
+				ForceSendFields: []string{"Disabled"},
+			}
 		}
-	}
-
-	if v, ok := config["kalm_config"]; ok && len(v.([]interface{})) > 0 {
-		addon := v.([]interface{})[0].(map[string]interface{})
-		ac.KalmConfig = &container.KalmConfig{
-			Enabled:         addon["enabled"].(bool),
-			ForceSendFields: []string{"Enabled"},
+	
+		if v, ok := config["kalm_config"]; ok && len(v.([]interface{})) > 0 {
+			addon := v.([]interface{})[0].(map[string]interface{})
+			ac.KalmConfig = &container.KalmConfig{
+				Enabled:         addon["enabled"].(bool),
+				ForceSendFields: []string{"Enabled"},
+			}
 		}
+	
+		if v, ok := config["parallelstore_csi_driver_config"]; ok && len(v.([]interface{})) > 0 {
+			addon := v.([]interface{})[0].(map[string]interface{})
+			ac.ParallelstoreCsiDriverConfig = &container.ParallelstoreCsiDriverConfig{
+				Enabled:         addon["enabled"].(bool),
+				ForceSendFields: []string{"Enabled"},
+			}
+		}
+	
+		return ac
 	}
-
-	return ac
-}
-
+	
 func expandPodCidrOverprovisionConfig(configured interface{}) *container.PodCIDROverprovisionConfig {
 	l := configured.([]interface{})
 	if len(l) == 0 || l[0] == nil {
@@ -5553,25 +5578,33 @@ func flattenClusterAddonsConfig(c *container.AddonsConfig) []map[string]interfac
 		}
 	}
 
-	if c.IstioConfig != nil {
-		result["istio_config"] = []map[string]interface{}{
-			{
-				"disabled": c.IstioConfig.Disabled,
-				"auth":     c.IstioConfig.Auth,
-			},
+		if c.IstioConfig != nil {
+			result["istio_config"] = []map[string]interface{}{
+				{
+					"disabled": c.IstioConfig.Disabled,
+					"auth":     c.IstioConfig.Auth,
+				},
+			}
 		}
-	}
-
-	if c.KalmConfig != nil {
-		result["kalm_config"] = []map[string]interface{}{
-			{
-				"enabled": c.KalmConfig.Enabled,
-			},
+	
+		if c.KalmConfig != nil {
+			result["kalm_config"] = []map[string]interface{}{
+				{
+					"enabled": c.KalmConfig.Enabled,
+				},
+			}
 		}
+	
+		if c.ParallelstoreCsiDriverConfig != nil {
+			result["parallelstore_csi_driver_config"] = []map[string]interface{}{
+				{
+					"enabled": c.ParallelstoreCsiDriverConfig.Enabled,
+				},
+			}
+		}
+		return []map[string]interface{}{result}
 	}
-	return []map[string]interface{}{result}
-}
-
+	
 func flattenClusterNodePools(d *schema.ResourceData, config *transport_tpg.Config, c []*container.NodePool) ([]map[string]interface{}, error) {
 	nodePools := make([]map[string]interface{}, 0, len(c))
 

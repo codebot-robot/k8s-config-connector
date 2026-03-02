@@ -441,6 +441,22 @@ var schemaNodePool = map[string]*schema.Schema{
 			},
 		},
 	},
+
+	"queued_provisioning": {
+		Type:        schema.TypeList,
+		Optional:    true,
+		MaxItems:    1,
+		Description: `Specifies whether queued provisioning is enabled for the node pool.`,
+		Elem: &schema.Resource{
+			Schema: map[string]*schema.Schema{
+				"enabled": {
+					Type:        schema.TypeBool,
+					Optional:    true,
+					Description: `Specifies whether queued provisioning is enabled for the node pool.`,
+				},
+			},
+		},
+	},
 }
 
 type NodePoolInformation struct {
@@ -945,6 +961,13 @@ func expandNodePool(d *schema.ResourceData, prefix string) (*container.NodePool,
 		}
 	}
 
+	if v, ok := d.GetOk(prefix + "queued_provisioning"); ok && len(v.([]interface{})) > 0 {
+		queuedProvisioning := v.([]interface{})[0].(map[string]interface{})
+		np.QueuedProvisioning = &container.QueuedProvisioning{
+			Enabled: queuedProvisioning["enabled"].(bool),
+		}
+	}
+
 	if v, ok := d.GetOk(prefix + "upgrade_settings"); ok {
 		upgradeSettingsConfig := v.([]interface{})[0].(map[string]interface{})
 		np.UpgradeSettings = &container.UpgradeSettings{}
@@ -1128,6 +1151,14 @@ func flattenNodePool(d *schema.ResourceData, config *transport_tpg.Config, np *c
 			"auto_repair":  np.Management.AutoRepair,
 			"auto_upgrade": np.Management.AutoUpgrade,
 		},
+	}
+
+	if np.QueuedProvisioning != nil {
+		nodePool["queued_provisioning"] = []map[string]interface{}{
+			{
+				"enabled": np.QueuedProvisioning.Enabled,
+			},
+		}
 	}
 
 	if np.UpgradeSettings != nil {
@@ -1324,6 +1355,46 @@ func nodePoolUpdate(d *schema.ResourceData, meta interface{}, nodePoolInfo *Node
 			return err
 		}
 		log.Printf("[INFO] Updated autoscaling in Node Pool %s", d.Id())
+	}
+
+	if d.HasChange(prefix + "queued_provisioning") {
+		req := &container.UpdateNodePoolRequest{
+			Name: name,
+		}
+		if v, ok := d.GetOk(prefix + "queued_provisioning"); ok && len(v.([]interface{})) > 0 {
+			queuedProvisioning := v.([]interface{})[0].(map[string]interface{})
+			req.QueuedProvisioning = &container.QueuedProvisioning{
+				Enabled: queuedProvisioning["enabled"].(bool),
+			}
+		} else {
+			req.QueuedProvisioning = &container.QueuedProvisioning{
+				Enabled: false,
+			}
+		}
+
+		updateF := func() error {
+			clusterNodePoolsUpdateCall := config.NewContainerClient(userAgent).Projects.Locations.Clusters.NodePools.Update(nodePoolInfo.fullyQualifiedName(name), req)
+			if config.UserProjectOverride {
+				clusterNodePoolsUpdateCall.Header().Add("X-Goog-User-Project", nodePoolInfo.project)
+			}
+			op, err := clusterNodePoolsUpdateCall.Do()
+			if err != nil {
+				return err
+			}
+
+			// Wait until it's updated
+			return ContainerOperationWait(config, op,
+				nodePoolInfo.project,
+				nodePoolInfo.location,
+				"updating GKE node pool queued_provisioning", userAgent,
+				timeout)
+		}
+
+		if err := retryWhileIncompatibleOperation(timeout, npLockKey, updateF); err != nil {
+			return err
+		}
+
+		log.Printf("[INFO] Updated queued_provisioning for node pool %s", name)
 	}
 
 	if d.HasChange(prefix + "node_config") {
