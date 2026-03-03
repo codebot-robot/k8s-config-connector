@@ -137,23 +137,23 @@ func addRefsToCRD(crd *apiextensions.CustomResourceDefinition) error {
 		return nil
 	}
 	for _, v := range crd.Spec.Versions {
-		if err := addRefsToProps("", v.Schema.OpenAPIV3Schema); err != nil {
+		if err := addRefsToProps(crd, "", v.Schema.OpenAPIV3Schema); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func addRefsToProps(fieldPath string, props *apiextensions.JSONSchemaProps) error {
+func addRefsToProps(crd *apiextensions.CustomResourceDefinition, fieldPath string, props *apiextensions.JSONSchemaProps) error {
 	// Descend into arrays
 	if props.Items != nil {
 		if props.Items.Schema != nil {
-			if err := addRefsToProps(fieldPath+"[]", props.Items.Schema); err != nil {
+			if err := addRefsToProps(crd, fieldPath+"[]", props.Items.Schema); err != nil {
 				return err
 			}
 		}
 		for i := range props.Items.JSONSchemas {
-			if err := addRefsToProps(fieldPath+"[]", &props.Items.JSONSchemas[i]); err != nil {
+			if err := addRefsToProps(crd, fieldPath+"[]", &props.Items.JSONSchemas[i]); err != nil {
 				return err
 			}
 		}
@@ -162,13 +162,13 @@ func addRefsToProps(fieldPath string, props *apiextensions.JSONSchemaProps) erro
 	// Descend into objects
 	for k := range props.Properties {
 		v := props.Properties[k]
-		if err := addRefsToProps(fieldPath+"."+k, &v); err != nil {
+		if err := addRefsToProps(crd, fieldPath+"."+k, &v); err != nil {
 			return err
 		}
 		props.Properties[k] = v
 	}
 
-	if err := addValidationToRefs(fieldPath, props); err != nil {
+	if err := addValidationToRefs(crd, fieldPath, props); err != nil {
 		return err
 	}
 	return nil
@@ -255,7 +255,7 @@ oneOf:
             - external
 `
 
-func addValidationToRefs(fieldPath string, props *apiextensions.JSONSchemaProps) error {
+func addValidationToRefs(crd *apiextensions.CustomResourceDefinition, fieldPath string, props *apiextensions.JSONSchemaProps) error {
 	// Is this a ref?
 	if props.Type != "object" {
 		return nil
@@ -306,13 +306,17 @@ oneOf:
 				ruleYAML = refRuleWithKind
 			}
 		} else if signature == "external,kind,name,namespace" {
-			ruleYAML = refRuleWithKind
-			// kind is optional for projectRef (and maybe in future other well-known ref types)
-			// fieldPath is the best mechanism we have today (?)
-			// TODO: We should remove the hard-coded isProjectPath and requiredAccessLevels logic
-			// and rely entirely on whether kind is required in the underlying type.
-			if isProjectPath(fieldPath) || strings.HasSuffix(fieldPath, ".requiredAccessLevels[]") || !slices.Contains(props.Required, "kind") {
+			delRule := &apiextensions.JSONSchemaProps{}
+			if crd.Spec.Names.Kind == "NetworkServicesHTTPRoute" && strings.Contains(fieldPath, ".serviceRef") {
+				if err := yaml.Unmarshal([]byte(refRuleWithOptionalKind), &delRule); err != nil {
+					return err
+				}
+				props.OneOf = delRule.OneOf
+				return nil
+			} else if isProjectPath(fieldPath) || strings.HasSuffix(fieldPath, ".requiredAccessLevels[]") || !slices.Contains(props.Required, "kind") {
 				ruleYAML = refRuleWithOptionalKind
+			} else {
+				ruleYAML = refRuleWithKind
 			}
 		} else if signature == "external,name,namespace" {
 			ruleYAML = refRuleWithoutKind
