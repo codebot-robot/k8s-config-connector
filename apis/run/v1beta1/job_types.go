@@ -126,6 +126,10 @@ type RunJobObservedState struct {
 	// deleted.
 	Uid *string `json:"uid,omitempty"`
 
+	// Output only. The last-gen that the server has seen.
+	// +kcc:proto:field=google.cloud.run.v2.Job.observed_generation
+	ObservedGeneration *int64 `json:"observedGeneration,omitempty"`
+
 	// Output only. Returns true if the Job is currently being acted upon by the
 	// system to bring it into the desired state.
 	//
@@ -157,6 +161,7 @@ type RunJobObservedState struct {
 // +kubebuilder:metadata:labels="cnrm.cloud.google.com/managed-by-kcc=true"
 // +kubebuilder:metadata:labels="cnrm.cloud.google.com/system=true"
 // +kubebuilder:metadata:labels="cnrm.cloud.google.com/tf2crd=true"
+// +kubebuilder:metadata:labels="cnrm.cloud.google.com/default-controller=direct"
 // +kubebuilder:metadata:labels="cnrm.cloud.google.com/stability-level=stable"
 // +kubebuilder:printcolumn:name="Age",JSONPath=".metadata.creationTimestamp",type="date"
 // +kubebuilder:printcolumn:name="Ready",JSONPath=".status.conditions[?(@.type=='Ready')].status",type="string",description="When 'True', the most recent reconcile of the resource succeeded"

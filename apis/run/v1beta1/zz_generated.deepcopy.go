@@ -1072,6 +1072,11 @@ func (in *RunJobObservedState) DeepCopyInto(out *RunJobObservedState) {
 		*out = new(string)
 		**out = **in
 	}
+	if in.ObservedGeneration != nil {
+		in, out := &in.ObservedGeneration, &out.ObservedGeneration
+		*out = new(int64)
+		**out = **in
+	}
 	if in.Reconciling != nil {
 		in, out := &in.Reconciling, &out.Reconciling
 		*out = new(bool)
@@ -1329,6 +1334,11 @@ func (in *RunServiceObservedState) DeepCopyInto(out *RunServiceObservedState) {
 	if in.Reconciling != nil {
 		in, out := &in.Reconciling, &out.Reconciling
 		*out = new(bool)
+		**out = **in
+	}
+	if in.ObservedGeneration != nil {
+		in, out := &in.ObservedGeneration, &out.ObservedGeneration
+		*out = new(int64)
 		**out = **in
 	}
 	if in.Etag != nil {

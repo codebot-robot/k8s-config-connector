@@ -389,7 +389,7 @@
 | redis.cnrm.cloud.google.com                   | RedisInstance                                   | False        | True        | False  | Terraform  |
 | resourcemanager.cnrm.cloud.google.com         | ResourceManagerLien                             | False        | True        | False  | Terraform  |
 | resourcemanager.cnrm.cloud.google.com         | ResourceManagerPolicy                           | False        | True        | False  | Terraform  |
-| run.cnrm.cloud.google.com                     | RunJob                                          | False        | True        | False  | Terraform  |
+| run.cnrm.cloud.google.com                     | RunJob                                          | False        | True        | False  | Direct     |
 | run.cnrm.cloud.google.com                     | RunService                                      | False        | True        | False  | Direct     |
 | secretmanager.cnrm.cloud.google.com           | SecretManagerSecret                             | False        | True        | False  | Terraform  |
 | secretmanager.cnrm.cloud.google.com           | SecretManagerSecretVersion                      | False        | True        | False  | Terraform  |
