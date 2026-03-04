@@ -704,5 +704,13 @@ type Condition struct {
 	ExecutionReason *string `json:"executionReason,omitempty"`
 }
 
-// +kcc:proto=google.cloud.run.v2.Container
-type ContainerObservedState struct{}
+// +kcc:observedstate:proto=google.cloud.run.v2.Container
+type ContainerObservedState struct {
+	// Base image for this container. Only supported for services.
+	// +kcc:proto:field=google.cloud.run.v2.Container.base_image_uri
+	BaseImageURI *string `json:"baseImageURI,omitempty"`
+
+	// Output only. The build information of the container.
+	// +kcc:proto:field=google.cloud.run.v2.Container.build_info
+	BuildInfo *BuildInfoObservedState `json:"buildInfo,omitempty"`
+}

@@ -1167,6 +1167,34 @@ spec:
                 description: Output only. Returns true if the Service is currently
                   being acted upon by the system to bring it into the desired state.
                 type: boolean
+              template:
+                description: Output only. The template used to create revisions for
+                  this Service.
+                properties:
+                  containers:
+                    description: Holds the single container that defines the unit
+                      of execution for this Revision.
+                    items:
+                      properties:
+                        baseImageURI:
+                          description: Base image for this container. Only supported
+                            for services.
+                          type: string
+                        buildInfo:
+                          description: Output only. The build information of the container.
+                          properties:
+                            functionTarget:
+                              description: Output only. Entry point of the function
+                                when the image is a Cloud Run function.
+                              type: string
+                            sourceLocation:
+                              description: Output only. Source code location of the
+                                image.
+                              type: string
+                          type: object
+                      type: object
+                    type: array
+                type: object
               terminalCondition:
                 description: Output only. The Condition of this Service, containing
                   its readiness status.

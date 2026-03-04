@@ -142,6 +142,10 @@ type RunServiceObservedState struct {
 
 	// Output only. A system-generated fingerprint for this version of the resource.
 	Etag *string `json:"etag,omitempty"`
+
+	// Output only. The template used to create revisions for this Service.
+	// +kcc:proto:field=google.cloud.run.v2.Service.template
+	Template *RevisionTemplateObservedState `json:"template,omitempty"`
 }
 
 // +genclient

@@ -1,4 +1,4 @@
-// Copyright 2025 Google LLC
+// Copyright 2026 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -301,8 +301,8 @@ func ContainerObservedState_FromProto(mapCtx *direct.MapContext, in *pb.Containe
 	// MISSING: LivenessProbe
 	// MISSING: StartupProbe
 	// MISSING: DependsOn
-	// MISSING: BaseImageURI
-	// MISSING: BuildInfo
+	out.BaseImageURI = direct.LazyPtr(in.GetBaseImageUri())
+	out.BuildInfo = BuildInfoObservedState_FromProto(mapCtx, in.GetBuildInfo())
 	return out
 }
 func ContainerObservedState_ToProto(mapCtx *direct.MapContext, in *krm.ContainerObservedState) *pb.Container {
@@ -322,8 +322,8 @@ func ContainerObservedState_ToProto(mapCtx *direct.MapContext, in *krm.Container
 	// MISSING: LivenessProbe
 	// MISSING: StartupProbe
 	// MISSING: DependsOn
-	// MISSING: BaseImageURI
-	// MISSING: BuildInfo
+	out.BaseImageUri = direct.ValueOf(in.BaseImageURI)
+	out.BuildInfo = BuildInfoObservedState_ToProto(mapCtx, in.BuildInfo)
 	return out
 }
 func ContainerPort_FromProto(mapCtx *direct.MapContext, in *pb.ContainerPort) *krm.ContainerPort {
@@ -867,6 +867,7 @@ func RunServiceObservedState_FromProto(mapCtx *direct.MapContext, in *pb.Service
 	out.ExpireTime = direct.StringTimestamp_FromProto(mapCtx, in.GetExpireTime())
 	out.Creator = direct.LazyPtr(in.GetCreator())
 	out.LastModifier = direct.LazyPtr(in.GetLastModifier())
+	out.Template = RevisionTemplateObservedState_FromProto(mapCtx, in.GetTemplate())
 	out.Urls = in.Urls
 	// MISSING: ObservedGeneration
 	if v := in.GetTerminalCondition(); v != nil {
@@ -898,6 +899,7 @@ func RunServiceObservedState_ToProto(mapCtx *direct.MapContext, in *krm.RunServi
 	out.ExpireTime = direct.StringTimestamp_ToProto(mapCtx, in.ExpireTime)
 	out.Creator = direct.ValueOf(in.Creator)
 	out.LastModifier = direct.ValueOf(in.LastModifier)
+	out.Template = RevisionTemplateObservedState_ToProto(mapCtx, in.Template)
 	out.Urls = in.Urls
 	// MISSING: ObservedGeneration
 	if len(in.TerminalCondition) > 0 && in.TerminalCondition[0] != nil {
