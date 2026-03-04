@@ -1258,7 +1258,7 @@ spec:
                 type: array
               uid:
                 description: Output only. Server assigned unique identifier for the
-                  trigger.
+                  Service.
                 type: string
               updateTime:
                 description: Output only. The last-modified time.

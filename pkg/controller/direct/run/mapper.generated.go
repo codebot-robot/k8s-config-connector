@@ -877,8 +877,7 @@ func RunServiceObservedState_FromProto(mapCtx *direct.MapContext, in *pb.Service
 	out.LatestReadyRevision = direct.LazyPtr(in.GetLatestReadyRevision())
 	out.LatestCreatedRevision = direct.LazyPtr(in.GetLatestCreatedRevision())
 	out.TrafficStatuses = direct.Slice_FromProto(mapCtx, in.TrafficStatuses, TrafficTargetStatus_FromProto)
-	// MISSING: URI
-	// (near miss): "URI" vs "Uri"
+	out.URI = direct.LazyPtr(in.GetUri())
 	// MISSING: SatisfiesPzs
 	out.Reconciling = direct.LazyPtr(in.GetReconciling())
 	out.Etag = direct.LazyPtr(in.GetEtag())
@@ -909,8 +908,7 @@ func RunServiceObservedState_ToProto(mapCtx *direct.MapContext, in *krm.RunServi
 	out.LatestReadyRevision = direct.ValueOf(in.LatestReadyRevision)
 	out.LatestCreatedRevision = direct.ValueOf(in.LatestCreatedRevision)
 	out.TrafficStatuses = direct.Slice_ToProto(mapCtx, in.TrafficStatuses, TrafficTargetStatus_ToProto)
-	// MISSING: URI
-	// (near miss): "URI" vs "Uri"
+	out.Uri = direct.ValueOf(in.URI)
 	// MISSING: SatisfiesPzs
 	out.Reconciling = direct.ValueOf(in.Reconciling)
 	out.Etag = direct.ValueOf(in.Etag)
@@ -939,7 +937,6 @@ func RunServiceSpec_FromProto(mapCtx *direct.MapContext, in *pb.Service) *krm.Ru
 	out.CustomAudiences = in.CustomAudiences
 	// MISSING: ObservedGeneration
 	// MISSING: Conditions
-	// MISSING: URI
 	// MISSING: SatisfiesPzs
 	out.BuildConfig = BuildConfig_FromProto(mapCtx, in.GetBuildConfig())
 	return out
@@ -967,7 +964,6 @@ func RunServiceSpec_ToProto(mapCtx *direct.MapContext, in *krm.RunServiceSpec) *
 	out.CustomAudiences = in.CustomAudiences
 	// MISSING: ObservedGeneration
 	// MISSING: Conditions
-	// MISSING: URI
 	// MISSING: SatisfiesPzs
 	out.BuildConfig = BuildConfig_ToProto(mapCtx, in.BuildConfig)
 	return out

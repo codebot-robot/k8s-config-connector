@@ -1321,8 +1321,8 @@ func (in *RunServiceObservedState) DeepCopyInto(out *RunServiceObservedState) {
 			(*in)[i].DeepCopyInto(&(*out)[i])
 		}
 	}
-	if in.Uri != nil {
-		in, out := &in.Uri, &out.Uri
+	if in.URI != nil {
+		in, out := &in.URI, &out.URI
 		*out = new(string)
 		**out = **in
 	}

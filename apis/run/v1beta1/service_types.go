@@ -96,51 +96,66 @@ type RunServiceStatus struct {
 	ObservedState *RunServiceObservedState `json:",inline"`
 }
 
-// +kcc:spec:proto=google.cloud.run.v2.Service
+// +kcc:observedstate:proto=google.cloud.run.v2.Service
 type RunServiceObservedState struct {
-	// Output only. Server assigned unique identifier for the trigger.
+	// Output only. Server assigned unique identifier for the Service.
+	// +kcc:proto:field=google.cloud.run.v2.Service.uid
 	Uid *string `json:"uid,omitempty"`
 
 	// Output only. The creation time.
+	// +kcc:proto:field=google.cloud.run.v2.Service.create_time
 	CreateTime *string `json:"createTime,omitempty"`
 
 	// Output only. The last-modified time.
+	// +kcc:proto:field=google.cloud.run.v2.Service.update_time
 	UpdateTime *string `json:"updateTime,omitempty"`
 
 	// Output only. The deletion time.
+	// +kcc:proto:field=google.cloud.run.v2.Service.delete_time
 	DeleteTime *string `json:"deleteTime,omitempty"`
 
 	// Output only. For a deleted resource, the time after which it will be permanently deleted.
+	// +kcc:proto:field=google.cloud.run.v2.Service.expire_time
 	ExpireTime *string `json:"expireTime,omitempty"`
 
 	// Output only. Email address of the authenticated creator.
+	// +kcc:proto:field=google.cloud.run.v2.Service.creator
 	Creator *string `json:"creator,omitempty"`
 
 	// Output only. Email address of the last authenticated modifier.
+	// +kcc:proto:field=google.cloud.run.v2.Service.last_modifier
 	LastModifier *string `json:"lastModifier,omitempty"`
 
 	// Output only. All URLs serving traffic for this Service.
+	// +kcc:proto:field=google.cloud.run.v2.Service.urls
 	Urls []string `json:"urls,omitempty"`
 
 	// Output only. The Condition of this Service, containing its readiness status.
+	// +kcc:proto:field=google.cloud.run.v2.Service.terminal_condition
 	TerminalCondition []*Condition `json:"terminalCondition,omitempty"`
 
 	// Output only. Name of the latest revision that is serving traffic.
+	// +kcc:proto:field=google.cloud.run.v2.Service.latest_ready_revision
 	LatestReadyRevision *string `json:"latestReadyRevision,omitempty"`
 
 	// Output only. Name of the last created revision.
+	// +kcc:proto:field=google.cloud.run.v2.Service.latest_created_revision
 	LatestCreatedRevision *string `json:"latestCreatedRevision,omitempty"`
 
 	// Output only. Detailed status information for corresponding traffic targets.
+	// +kcc:proto:field=google.cloud.run.v2.Service.traffic_statuses
 	TrafficStatuses []TrafficTargetStatus `json:"trafficStatuses,omitempty"`
 
 	// Output only. The main URI in which this Service is serving traffic.
-	Uri *string `json:"uri,omitempty"`
+	// +kcc:proto:field=google.cloud.run.v2.Service.uri
+	URI *string `json:"uri,omitempty"`
 
 	// Output only. Returns true if the Service is currently being acted upon by the system to bring it into the desired state.
+	// +kcc:proto:field=google.cloud.run.v2.Service.reconciling
 	Reconciling *bool `json:"reconciling,omitempty"`
 
 	// Output only. A system-generated fingerprint for this version of the resource.
+	// +kcc:proto:field=google.cloud.run.v2.Service.etag
 	Etag *string `json:"etag,omitempty"`
 
 	// Output only. The template used to create revisions for this Service.
