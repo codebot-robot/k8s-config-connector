@@ -24,7 +24,7 @@ CONFIG_CONNECTOR_IMG ?= gcr.io/${PROJECT_ID}/cnrm/config-connector-cli:${SHORT_S
 # Detects the location of the user golangci-lint cache.
 GOLANGCI_LINT_CACHE := /tmp/golangci-lint
 # When updating this, make sure to update the corresponding action in
-# ./github/workflows/lint.yaml
+# .github/workflows/ci-presubmit.yaml
 GOLANGCI_LINT_VERSION := v2.7.1
 
 # Use Docker BuildKit when building images to allow usage of 'setcap' in
