@@ -17,11 +17,13 @@
 // krm.group: compute.cnrm.cloud.google.com
 // krm.version: v1beta1
 // proto.service: google.cloud.compute.v1
+// proto.service: google.cloud.compute.v1beta
 
 package compute
 
 import (
 	pb "cloud.google.com/go/compute/apiv1/computepb"
+	computepb "cloud.google.com/go/compute/apiv1beta/computepb"
 	krmcomputev1alpha1 "github.com/GoogleCloudPlatform/k8s-config-connector/apis/compute/v1alpha1"
 	krm "github.com/GoogleCloudPlatform/k8s-config-connector/apis/compute/v1beta1"
 	"github.com/GoogleCloudPlatform/k8s-config-connector/pkg/controller/direct"
@@ -365,6 +367,100 @@ func ForwardingruleServiceDirectoryRegistrations_v1beta1_ToProto(mapCtx *direct.
 	out.Namespace = in.Namespace
 	out.Service = in.Service
 	// MISSING: ServiceDirectoryRegion
+	return out
+}
+func FutureReservation_v1beta1_FromProto(mapCtx *direct.MapContext, in *computepb.FutureReservation) *krm.FutureReservation {
+	if in == nil {
+		return nil
+	}
+	out := &krm.FutureReservation{}
+	out.AggregateReservation = AllocationAggregateReservation_v1beta1_FromProto(mapCtx, in.GetAggregateReservation())
+	out.AutoCreatedReservationsDeleteTime = in.AutoCreatedReservationsDeleteTime
+	out.AutoCreatedReservationsDuration = Duration_v1beta1_FromProto(mapCtx, in.GetAutoCreatedReservationsDuration())
+	out.AutoDeleteAutoCreatedReservations = in.AutoDeleteAutoCreatedReservations
+	out.CommitmentInfo = FutureReservationCommitmentInfo_v1beta1_FromProto(mapCtx, in.GetCommitmentInfo())
+	out.CreationTimestamp = in.CreationTimestamp
+	out.DeploymentType = in.DeploymentType
+	out.Description = in.Description
+	out.EnableEmergentMaintenance = in.EnableEmergentMaintenance
+	out.ID = in.Id
+	out.Kind = in.Kind
+	out.Name = in.Name
+	out.NamePrefix = in.NamePrefix
+	out.PlanningStatus = in.PlanningStatus
+	out.ReservationMode = in.ReservationMode
+	out.ReservationName = in.ReservationName
+	out.SchedulingType = in.SchedulingType
+	out.SelfLink = in.SelfLink
+	out.SelfLinkWithID = in.SelfLinkWithId
+	out.ShareSettings = ShareSettings_v1beta1_FromProto(mapCtx, in.GetShareSettings())
+	out.SpecificReservationRequired = in.SpecificReservationRequired
+	out.SpecificSkuProperties = FutureReservationSpecificSkuProperties_v1beta1_FromProto(mapCtx, in.GetSpecificSkuProperties())
+	out.Status = FutureReservationStatus_v1beta1_FromProto(mapCtx, in.GetStatus())
+	out.TimeWindow = FutureReservationTimeWindow_v1beta1_FromProto(mapCtx, in.GetTimeWindow())
+	out.Zone = in.Zone
+	return out
+}
+func FutureReservation_v1beta1_ToProto(mapCtx *direct.MapContext, in *krm.FutureReservation) *computepb.FutureReservation {
+	if in == nil {
+		return nil
+	}
+	out := &computepb.FutureReservation{}
+	out.AggregateReservation = AllocationAggregateReservation_v1beta1_ToProto(mapCtx, in.AggregateReservation)
+	out.AutoCreatedReservationsDeleteTime = in.AutoCreatedReservationsDeleteTime
+	out.AutoCreatedReservationsDuration = Duration_v1beta1_ToProto(mapCtx, in.AutoCreatedReservationsDuration)
+	out.AutoDeleteAutoCreatedReservations = in.AutoDeleteAutoCreatedReservations
+	out.CommitmentInfo = FutureReservationCommitmentInfo_v1beta1_ToProto(mapCtx, in.CommitmentInfo)
+	out.CreationTimestamp = in.CreationTimestamp
+	out.DeploymentType = in.DeploymentType
+	out.Description = in.Description
+	out.EnableEmergentMaintenance = in.EnableEmergentMaintenance
+	out.Id = in.ID
+	out.Kind = in.Kind
+	out.Name = in.Name
+	out.NamePrefix = in.NamePrefix
+	out.PlanningStatus = in.PlanningStatus
+	out.ReservationMode = in.ReservationMode
+	out.ReservationName = in.ReservationName
+	out.SchedulingType = in.SchedulingType
+	out.SelfLink = in.SelfLink
+	out.SelfLinkWithId = in.SelfLinkWithID
+	out.ShareSettings = ShareSettings_v1beta1_ToProto(mapCtx, in.ShareSettings)
+	out.SpecificReservationRequired = in.SpecificReservationRequired
+	out.SpecificSkuProperties = FutureReservationSpecificSkuProperties_v1beta1_ToProto(mapCtx, in.SpecificSkuProperties)
+	out.Status = FutureReservationStatus_v1beta1_ToProto(mapCtx, in.Status)
+	out.TimeWindow = FutureReservationTimeWindow_v1beta1_ToProto(mapCtx, in.TimeWindow)
+	out.Zone = in.Zone
+	return out
+}
+func FutureReservationStatus_v1beta1_FromProto(mapCtx *direct.MapContext, in *computepb.FutureReservationStatus) *krm.FutureReservationStatus {
+	if in == nil {
+		return nil
+	}
+	out := &krm.FutureReservationStatus{}
+	out.AmendmentStatus = in.AmendmentStatus
+	out.AutoCreatedReservations = in.AutoCreatedReservations
+	out.ExistingMatchingUsageInfo = FutureReservationStatusExistingMatchingUsageInfo_v1beta1_FromProto(mapCtx, in.GetExistingMatchingUsageInfo())
+	out.FulfilledCount = in.FulfilledCount
+	out.LastKnownGoodState = FutureReservationStatusLastKnownGoodState_v1beta1_FromProto(mapCtx, in.GetLastKnownGoodState())
+	out.LockTime = in.LockTime
+	out.ProcurementStatus = in.ProcurementStatus
+	out.SpecificSkuProperties = FutureReservationStatusSpecificSkuProperties_v1beta1_FromProto(mapCtx, in.GetSpecificSkuProperties())
+	return out
+}
+func FutureReservationStatus_v1beta1_ToProto(mapCtx *direct.MapContext, in *krm.FutureReservationStatus) *computepb.FutureReservationStatus {
+	if in == nil {
+		return nil
+	}
+	out := &computepb.FutureReservationStatus{}
+	out.AmendmentStatus = in.AmendmentStatus
+	out.AutoCreatedReservations = in.AutoCreatedReservations
+	out.ExistingMatchingUsageInfo = FutureReservationStatusExistingMatchingUsageInfo_v1beta1_ToProto(mapCtx, in.ExistingMatchingUsageInfo)
+	out.FulfilledCount = in.FulfilledCount
+	out.LastKnownGoodState = FutureReservationStatusLastKnownGoodState_v1beta1_ToProto(mapCtx, in.LastKnownGoodState)
+	out.LockTime = in.LockTime
+	out.ProcurementStatus = in.ProcurementStatus
+	out.SpecificSkuProperties = FutureReservationStatusSpecificSkuProperties_v1beta1_ToProto(mapCtx, in.SpecificSkuProperties)
 	return out
 }
 func InterconnectCircuitInfo_v1alpha1_FromProto(mapCtx *direct.MapContext, in *pb.InterconnectCircuitInfo) *krmcomputev1alpha1.InterconnectCircuitInfo {

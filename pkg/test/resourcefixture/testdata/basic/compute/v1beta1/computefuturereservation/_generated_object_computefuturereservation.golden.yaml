@@ -7,11 +7,10 @@ metadata:
   generation: 2
   labels:
     cnrm-test: "true"
-  name: computefuturereservation-${uniqueId}
+  name: ${futureReservationID}
   namespace: ${uniqueId}
 spec:
   autoDeleteAutoCreatedReservations: true
-  zone: us-central1-a
   projectRef:
     external: ${projectId}
   specificSkuProperties:
@@ -22,6 +21,7 @@ spec:
   timeWindow:
     endTime: "2025-12-31T07:00:00Z"
     startTime: "2025-12-01T07:00:00Z"
+  zone: us-central1-a
 status:
   conditions:
   - lastTransitionTime: "1970-01-01T00:00:00Z"
@@ -29,12 +29,12 @@ status:
     reason: UpToDate
     status: "True"
     type: Ready
-  externalRef: projects/${projectId}/zones/us-central1-a/futureReservations/computefuturereservation-${uniqueId}
+  externalRef: projects/${projectId}/zones/us-central1-a/futureReservations/${futureReservationID}
   observedGeneration: 2
   observedState:
     creationTimestamp: "1970-01-01T00:00:00Z"
     id: 1111111111111111
     kind: compute#futureReservation
-    selfLink: https://www.googleapis.com/compute/beta/projects/${projectId}/zones/us-central1-a/futureReservations/computefuturereservation-${uniqueId}
+    selfLink: https://www.googleapis.com/compute/beta/projects/${projectId}/zones/us-central1-a/futureReservations/${futureReservationID}
     selfLinkWithID: https://www.googleapis.com/compute/beta/projects/${projectId}/zones/us-central1-a/futureReservations/${futureReservationID}
     zone: https://www.googleapis.com/compute/beta/projects/${projectId}/zones/us-central1-a
