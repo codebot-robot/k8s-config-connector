@@ -181,6 +181,7 @@ func (a *ServiceAdapter) Create(ctx context.Context, createOp *directbase.Create
 	if mapCtx.Err() != nil {
 		return mapCtx.Err()
 	}
+	status.ObservedGeneration = direct.LazyPtr(created.GetObservedGeneration())
 	status.ExternalRef = direct.LazyPtr(a.id.String())
 	newCookie, err := common.NewLegacyCookie(a.desired, created)
 	if err != nil {
@@ -229,6 +230,7 @@ func (a *ServiceAdapter) updateStatus(ctx context.Context, updated *pb.Service, 
 	if mapCtx.Err() != nil {
 		return mapCtx.Err()
 	}
+	status.ObservedGeneration = direct.LazyPtr(updated.GetObservedGeneration())
 	updatedCookie, err := common.NewLegacyCookie(a.desired, updated)
 	if err != nil {
 		return err

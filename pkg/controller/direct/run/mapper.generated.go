@@ -763,7 +763,7 @@ func RunJobObservedState_FromProto(mapCtx *direct.MapContext, in *pb.Job) *krm.R
 	out.ExpireTime = direct.StringTimestamp_FromProto(mapCtx, in.GetExpireTime())
 	out.Creator = direct.LazyPtr(in.GetCreator())
 	out.LastModifier = direct.LazyPtr(in.GetLastModifier())
-	out.ObservedGeneration = direct.LazyPtr(in.GetObservedGeneration())
+	// MISSING: ObservedGeneration
 	if v := in.GetTerminalCondition(); v != nil {
 		out.TerminalCondition = []*krm.Condition{Condition_FromProto(mapCtx, v)}
 	}
@@ -794,7 +794,7 @@ func RunJobObservedState_ToProto(mapCtx *direct.MapContext, in *krm.RunJobObserv
 	out.ExpireTime = direct.StringTimestamp_ToProto(mapCtx, in.ExpireTime)
 	out.Creator = direct.ValueOf(in.Creator)
 	out.LastModifier = direct.ValueOf(in.LastModifier)
-	out.ObservedGeneration = direct.ValueOf(in.ObservedGeneration)
+	// MISSING: ObservedGeneration
 	if len(in.TerminalCondition) > 0 && in.TerminalCondition[0] != nil {
 		out.TerminalCondition = Condition_ToProto(mapCtx, in.TerminalCondition[0])
 	}
@@ -824,6 +824,7 @@ func RunJobSpec_FromProto(mapCtx *direct.MapContext, in *pb.Job) *krm.RunJobSpec
 	out.LaunchStage = direct.Enum_FromProto(mapCtx, in.GetLaunchStage())
 	out.BinaryAuthorization = BinaryAuthorization_FromProto(mapCtx, in.GetBinaryAuthorization())
 	out.Template = ExecutionTemplate_FromProto(mapCtx, in.GetTemplate())
+	// MISSING: ObservedGeneration
 	// MISSING: Conditions
 	// MISSING: SatisfiesPzs
 	// MISSING: StartExecutionToken
@@ -844,6 +845,7 @@ func RunJobSpec_ToProto(mapCtx *direct.MapContext, in *krm.RunJobSpec) *pb.Job {
 	out.LaunchStage = direct.Enum_ToProto[apipb.LaunchStage](mapCtx, in.LaunchStage)
 	out.BinaryAuthorization = BinaryAuthorization_ToProto(mapCtx, in.BinaryAuthorization)
 	out.Template = ExecutionTemplate_ToProto(mapCtx, in.Template)
+	// MISSING: ObservedGeneration
 	// MISSING: Conditions
 	// MISSING: SatisfiesPzs
 	// MISSING: StartExecutionToken
@@ -867,7 +869,7 @@ func RunServiceObservedState_FromProto(mapCtx *direct.MapContext, in *pb.Service
 	out.LastModifier = direct.LazyPtr(in.GetLastModifier())
 	out.Template = RevisionTemplateObservedState_FromProto(mapCtx, in.GetTemplate())
 	out.Urls = in.Urls
-	out.ObservedGeneration = direct.LazyPtr(in.GetObservedGeneration())
+	// MISSING: ObservedGeneration
 	if v := in.GetTerminalCondition(); v != nil {
 		out.TerminalCondition = []*krm.Condition{Condition_FromProto(mapCtx, v)}
 	}
@@ -898,7 +900,7 @@ func RunServiceObservedState_ToProto(mapCtx *direct.MapContext, in *krm.RunServi
 	out.LastModifier = direct.ValueOf(in.LastModifier)
 	out.Template = RevisionTemplateObservedState_ToProto(mapCtx, in.Template)
 	out.Urls = in.Urls
-	out.ObservedGeneration = direct.ValueOf(in.ObservedGeneration)
+	// MISSING: ObservedGeneration
 	if len(in.TerminalCondition) > 0 && in.TerminalCondition[0] != nil {
 		out.TerminalCondition = Condition_ToProto(mapCtx, in.TerminalCondition[0])
 	}
@@ -933,6 +935,7 @@ func RunServiceSpec_FromProto(mapCtx *direct.MapContext, in *pb.Service) *krm.Ru
 	out.InvokerIAMDisabled = direct.LazyPtr(in.GetInvokerIamDisabled())
 	out.DefaultURIDisabled = direct.LazyPtr(in.GetDefaultUriDisabled())
 	out.CustomAudiences = in.CustomAudiences
+	// MISSING: ObservedGeneration
 	// MISSING: Conditions
 	// MISSING: SatisfiesPzs
 	out.BuildConfig = BuildConfig_FromProto(mapCtx, in.GetBuildConfig())
@@ -959,6 +962,7 @@ func RunServiceSpec_ToProto(mapCtx *direct.MapContext, in *krm.RunServiceSpec) *
 	out.InvokerIamDisabled = direct.ValueOf(in.InvokerIAMDisabled)
 	out.DefaultUriDisabled = direct.ValueOf(in.DefaultURIDisabled)
 	out.CustomAudiences = in.CustomAudiences
+	// MISSING: ObservedGeneration
 	// MISSING: Conditions
 	// MISSING: SatisfiesPzs
 	out.BuildConfig = BuildConfig_ToProto(mapCtx, in.BuildConfig)

@@ -1159,7 +1159,8 @@ spec:
                   traffic.
                 type: string
               observedGeneration:
-                description: Output only. The last-gen that the server has seen.
+                description: ObservedGeneration is the generation of the resource
+                  that was most recently observed by the Config Connector controller.
                 format: int64
                 type: integer
               reconciling:

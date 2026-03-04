@@ -154,10 +154,6 @@ type RunServiceObservedState struct {
 	// +kcc:proto:field=google.cloud.run.v2.Service.reconciling
 	Reconciling *bool `json:"reconciling,omitempty"`
 
-	// Output only. The last-gen that the server has seen.
-	// +kcc:proto:field=google.cloud.run.v2.Service.observed_generation
-	ObservedGeneration *int64 `json:"observedGeneration,omitempty"`
-
 	// Output only. A system-generated fingerprint for this version of the resource.
 	// +kcc:proto:field=google.cloud.run.v2.Service.etag
 	Etag *string `json:"etag,omitempty"`

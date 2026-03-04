@@ -126,10 +126,6 @@ type RunJobObservedState struct {
 	// deleted.
 	Uid *string `json:"uid,omitempty"`
 
-	// Output only. The last-gen that the server has seen.
-	// +kcc:proto:field=google.cloud.run.v2.Job.observed_generation
-	ObservedGeneration *int64 `json:"observedGeneration,omitempty"`
-
 	// Output only. Returns true if the Job is currently being acted upon by the
 	// system to bring it into the desired state.
 	//

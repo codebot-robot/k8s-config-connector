@@ -1111,7 +1111,11 @@ spec:
                   type: object
                 type: array
               observedGeneration:
-                description: Output only. The last-gen that the server has seen.
+                description: ObservedGeneration is the generation of the resource
+                  that was most recently observed by the Config Connector controller.
+                  If this is equal to metadata.generation, then that means that the
+                  current reported status reflects the most recent desired state of
+                  the resource.
                 format: int64
                 type: integer
               reconciling:
