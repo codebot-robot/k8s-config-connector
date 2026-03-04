@@ -420,8 +420,8 @@ func getMultiTypeReferencedResource(resourceRefValRaw map[string]interface{}, tc
 	}
 
 	// "kind" is not specified in rawVal
-	if len(tcs) == 1 {
-		// "single-kind" resource ref uses default kind in tcs[0]
+	if len(tcs) >= 1 {
+		// Default to the first kind in the list for backward compatibility if kind is not specified.
 		tc := &tcs[0]
 		refResource, err := getReferencedResource(resourceRefValRaw, tc, ns, kubeClient)
 		return tc, refResource, err
