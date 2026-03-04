@@ -148,6 +148,10 @@ type RunJobObservedState struct {
 	// execution or empty for newly created Job. Additional information on the
 	// failure can be found in `terminal_condition` and `conditions`.
 	Reconciling *bool `json:"reconciling,omitempty"`
+
+	// ObservedGeneration is the generation of the resource that was most recently observed by the Config Connector controller.
+	// +kcc:proto:field=google.cloud.run.v2.Job.observed_generation
+	ObservedGeneration *int64 `json:"observedGeneration,omitempty"`
 }
 
 // +genclient

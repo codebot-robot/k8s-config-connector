@@ -161,6 +161,10 @@ type RunServiceObservedState struct {
 	// Output only. The template used to create revisions for this Service.
 	// +kcc:proto:field=google.cloud.run.v2.Service.template
 	Template *RevisionTemplateObservedState `json:"template,omitempty"`
+
+	// Output only. The generation of this Service currently being served by the Config Connector controller.
+	// +kcc:proto:field=google.cloud.run.v2.Service.observed_generation
+	ObservedGeneration *int64 `json:"observedGeneration,omitempty"`
 }
 
 // +genclient
