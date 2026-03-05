@@ -8,7 +8,6 @@ metadata:
   creationTimestamp: null
   labels:
     cnrm.cloud.google.com/managed-by-kcc: "true"
-    cnrm.cloud.google.com/system: "true"
   name: memorystoreinstances.memorystore.cnrm.cloud.google.com
 spec:
   group: memorystore.cnrm.cloud.google.com

@@ -3422,4 +3422,4 @@
 [missing_field] crd=workstationconfigs.workstations.cnrm.cloud.google.com version=v1beta1: field ".spec.container.env[].value" is not set in unstructured objects
 [missing_field] crd=workstationconfigs.workstations.cnrm.cloud.google.com version=v1beta1: field ".spec.container.runAsUser" is not set in unstructured objects
 [missing_field] crd=workstationconfigs.workstations.cnrm.cloud.google.com version=v1beta1: field ".spec.container.workingDir" is not set in unstructured objects
-[missing_field] crd=workstationconfigs.workstations.cnrm.cloud.google.com version=v1beta1: field ".spec.persistentDirectories[].gcePD.sourceSnapshot" is not set in unstructured objects
+[missing_field] crd=workstationconfigs.workstations.cnrm.cloud.google.com version=v1beta1: field ".spec.persistentDirectories[].gcePD.sourceSnapshot" is not set in unstructured objects[missing_field] crd=memorystoreinstances.memorystore.cnrm.cloud.google.com version=v1beta1: field ".spec.endpoints[].connections[].pscConnection.port" is not set in unstructured objects

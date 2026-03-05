@@ -419,6 +419,9 @@ func PscConnection_FromProto(mapCtx *direct.MapContext, in *pb.PscConnection) *k
 	if in.GetIpAddress() != "" {
 		out.IpAddress = direct.LazyPtr(in.GetIpAddress())
 	}
+	if in.GetPort() != 0 {
+		out.Port = direct.LazyPtr(in.GetPort())
+	}
 	if in.GetForwardingRule() != "" {
 		out.ForwardingRuleRef = &refs.ComputeForwardingRuleRef{External: in.GetForwardingRule()}
 	}
@@ -437,6 +440,9 @@ func PscConnection_ToProto(mapCtx *direct.MapContext, in *krmv1beta1.PscConnecti
 	out := &pb.PscConnection{}
 	out.PscConnectionId = direct.ValueOf(in.PscConnectionID)
 	out.IpAddress = direct.ValueOf(in.IpAddress)
+	if in.Port != nil {
+		out.Ports = &pb.PscConnection_Port{Port: *in.Port}
+	}
 	if in.ForwardingRuleRef != nil {
 		out.ForwardingRule = in.ForwardingRuleRef.External
 	}

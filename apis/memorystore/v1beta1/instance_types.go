@@ -235,8 +235,7 @@ type PscAutoConnection struct {
 
 // +kcc:proto=google.cloud.memorystore.v1.PscConnection
 type PscConnection struct {
-
-	// Required. The PSC connection id of the forwarding rule connected to the
+	// Optional. Output only. The PSC connection id of the forwarding rule connected to the
 	//  service attachment.
 	// +kcc:proto:field=google.cloud.memorystore.v1.PscConnection.psc_connection_id
 	PscConnectionID *string `json:"pscConnectionID,omitempty"`
@@ -246,6 +245,10 @@ type PscConnection struct {
 	// +kcc:proto:field=google.cloud.memorystore.v1.PscConnection.ip_address
 	// +required
 	IpAddress *string `json:"ipAddress,omitempty"`
+
+	// Optional. Output only. The port of the consumer forwarding rule.
+	// +kcc:proto:field=google.cloud.memorystore.v1.PscConnection.port
+	Port *int32 `json:"port,omitempty"`
 
 	// Required. The URI of the consumer side forwarding rule.
 	//  Format:
@@ -405,7 +408,8 @@ type PscConnectionObservedState struct {
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 // +kubebuilder:resource:categories=gcp,shortName=gcpmemorystoreinstance;gcpmemorystoreinstances
 // +kubebuilder:subresource:status
-// +kubebuilder:metadata:labels="cnrm.cloud.google.com/managed-by-kcc=true";"cnrm.cloud.google.com/system=true";"internal.cloud.google.com/additional-versions=v1alpha1"
+// +kubebuilder:metadata:labels="cnrm.cloud.google.com/managed-by-kcc=true"
+// +kubebuilder:metadata:labels="internal.cloud.google.com/additional-versions=v1alpha1"
 // +kubebuilder:printcolumn:name="Age",JSONPath=".metadata.creationTimestamp",type="date"
 // +kubebuilder:printcolumn:name="Ready",JSONPath=".status.conditions[?(@.type=='Ready')].status",type="string",description="When 'True', the most recent reconcile of the resource succeeded"
 // +kubebuilder:printcolumn:name="Status",JSONPath=".status.conditions[?(@.type=='Ready')].reason",type="string",description="The reason for the value in 'Ready'"
