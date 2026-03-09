@@ -34,8 +34,7 @@ spec:
     pathMatcher:
     - name: path-matcher
       routeRule:
-      - priority: "1"
-        matchRule:
+      - matchRule:
         - prefixMatch: "/"
         originRef:
           external: projects/${projectId}/locations/global/edgeCacheOrigins/networkservicesedgecacheorigin${uniqueId}
@@ -45,5 +44,5 @@ spec:
             defaultTtl: 3600s
             maxTtl: 86400s
             clientTtl: 3600s
-        priority: "2"
+        priority: "1"
 
