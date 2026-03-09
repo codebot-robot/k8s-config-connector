@@ -31,16 +31,12 @@ spec:
       - priority: "1"
         matchRule:
         - prefixMatch: "/"
-        origin: projects/${projectId}/locations/global/edgeCacheOrigins/networkservicesedgecacheorigin${uniqueId}
-        routeAction:
-          cdnPolicy:
-            cacheMode: CACHE_ALL_STATIC
-            defaultTtl: 3600s
-            maxTtl: 86400s
-            clientTtl: 3600s
-            compressionMode: AUTOMATIC
-        routeMethods:
-          allowedMethods:
-          - GET
-          - HEAD
-          - POST
+        originRef:
+          external: projects/${projectId}/locations/global/edgeCacheOrigins/networkservicesedgecacheorigin${uniqueId}
+        cdnPolicy:
+          cacheMode: CACHE_ALL_STATIC
+          defaultTtl: 3600s
+          maxTtl: 86400s
+          clientTtl: 3600s
+        priority: "2"
+

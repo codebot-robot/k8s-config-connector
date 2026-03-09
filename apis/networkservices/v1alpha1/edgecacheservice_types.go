@@ -15,7 +15,6 @@
 package v1alpha1
 
 import (
-	refs "github.com/GoogleCloudPlatform/k8s-config-connector/apis/refs/v1beta1"
 	"github.com/GoogleCloudPlatform/k8s-config-connector/pkg/apis/k8s/v1alpha1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -60,7 +59,7 @@ type EdgecacheserviceAddSignatures struct {
 	This must be specified when the GENERATE_COOKIE or GENERATE_TOKEN_HLS_COOKIELESS actions are specified.  This field may not be specified otherwise. */
 	// +optional
 	// +kcc:proto:field=google.cloud.networkservices.v1.EdgeCacheRouteAction.CDNPolicy.AddSignatures.keyset
-	Keyset *string `json:"keyset,omitempty"`
+	KeysetRef *EdgeCacheKeysetRef `json:"keysetRef,omitempty"`
 
 	/* The query parameter in which to put the generated token.
 
@@ -248,7 +247,7 @@ type EdgecacheserviceCdnPolicy struct {
 	/* The EdgeCacheKeyset containing the set of public keys used to validate signed requests at the edge. */
 	// +optional
 	// +kcc:proto:field=google.cloud.networkservices.v1.EdgeCacheRouteAction.CDNPolicy.signed_request_keyset
-	SignedRequestKeyset *string `json:"signedRequestKeyset,omitempty"`
+	SignedRequestKeysetRef *EdgeCacheKeysetRef `json:"signedRequestKeysetRef,omitempty"`
 
 	/* Limit how far into the future the expiration time of a signed request may be.
 
@@ -277,11 +276,6 @@ type EdgecacheserviceCdnPolicy struct {
 	// +optional
 	// +kcc:proto:field=google.cloud.networkservices.v1.EdgeCacheRouteAction.CDNPolicy.signed_token_options
 	SignedTokenOptions *EdgecacheserviceSignedTokenOptions `json:"signedTokenOptions,omitempty"`
-
-	/* Specifies the compression mode for this route. Possible values: ["DISABLED", "AUTOMATIC"]. */
-	// +optional
-	// +kcc:proto:field=google.cloud.networkservices.v1.EdgeCacheRouteAction.CDNPolicy.compression_mode
-	CompressionMode *string `json:"compressionMode,omitempty"`
 }
 
 type EdgecacheserviceCorsPolicy struct {
@@ -585,7 +579,7 @@ type EdgecacheserviceRouteRule struct {
 	Only one of origin or urlRedirect can be set. */
 	// +optional
 	// +kcc:proto:field=google.cloud.networkservices.v1.EdgeCacheRule.RouteRule.origin
-	Origin *string `json:"origin,omitempty"`
+	OriginRef *EdgeCacheOriginRef `json:"originRef,omitempty"`
 
 	/* The priority of this route rule, where 1 is the highest priority.
 
@@ -605,20 +599,6 @@ type EdgecacheserviceRouteRule struct {
 	// +optional
 	// +kcc:proto:field=google.cloud.networkservices.v1.EdgeCacheRule.RouteRule.url_redirect
 	UrlRedirect *EdgecacheserviceUrlRedirect `json:"urlRedirect,omitempty"`
-
-	/* The list of allowed HTTP methods for this route. */
-	// +optional
-	// +kcc:proto:field=google.cloud.networkservices.v1.EdgeCacheRule.RouteRule.route_methods
-	RouteMethods *EdgecacheserviceRouteMethods `json:"routeMethods,omitempty"`
-}
-
-type EdgecacheserviceRouteMethods struct {
-	/* The list of allowed HTTP methods for this route.
-	Supported methods include: GET, HEAD, POST, PUT, DELETE, PATCH, OPTIONS.
-
-	Media CDN defaults to allowing GET, HEAD, and OPTIONS if routeMethods is not specified. */
-	// +kcc:proto:field=google.cloud.networkservices.v1.EdgeCacheRule.RouteRule.RouteMethods.allowed_methods
-	AllowedMethods []string `json:"allowedMethods"`
 }
 
 type EdgecacheserviceRouting struct {
@@ -752,14 +732,14 @@ type NetworkServicesEdgeCacheServiceSpec struct {
 	/* Resource URL that points at the Cloud Armor edge security policy that is applied on each request against the EdgeCacheService. */
 	// +optional
 	// +kcc:proto:field=google.cloud.networkservices.v1.EdgeCacheService.edge_security_policy
-	EdgeSecurityPolicy *string `json:"edgeSecurityPolicy,omitempty"`
+	EdgeSecurityPolicyRef *NetworkSecurityEdgeSecurityPolicyRef `json:"edgeSecurityPolicyRef,omitempty"`
 
 	/* URLs to sslCertificate resources that are used to authenticate connections between users and the EdgeCacheService.
 
 	Note that only "global" certificates with a "scope" of "EDGE_CACHE" can be attached to an EdgeCacheService. */
 	// +optional
 	// +kcc:proto:field=google.cloud.networkservices.v1.EdgeCacheService.edge_ssl_certificates
-	EdgeSslCertificates []string `json:"edgeSslCertificates,omitempty"`
+	EdgeSslCertificateRefs []ComputeSSLCertificateRef `json:"edgeSslCertificateRefs,omitempty"`
 
 	/* Specifies the logging options for the traffic served by this service. If logging is enabled, logs will be exported to Cloud Logging. */
 	// +optional
@@ -767,7 +747,7 @@ type NetworkServicesEdgeCacheServiceSpec struct {
 	LogConfig *EdgecacheserviceLogConfig `json:"logConfig,omitempty"`
 
 	/* The project that this resource belongs to. */
-	ProjectRef *refs.ProjectRef `json:"projectRef"`
+	ProjectRef ProjectRef `json:"projectRef"`
 
 	/* Require TLS (HTTPS) for all clients connecting to this service.
 
@@ -790,7 +770,7 @@ type NetworkServicesEdgeCacheServiceSpec struct {
 	If not set, the EdgeCacheService has no SSL policy configured, and will default to the "COMPATIBLE" policy. */
 	// +optional
 	// +kcc:proto:field=google.cloud.networkservices.v1.EdgeCacheService.ssl_policy
-	SslPolicy *string `json:"sslPolicy,omitempty"`
+	SslPolicyRef *ComputeSSLPolicyRef `json:"sslPolicyRef,omitempty"`
 }
 
 type NetworkServicesEdgeCacheServiceStatus struct {
@@ -801,9 +781,6 @@ type NetworkServicesEdgeCacheServiceStatus struct {
 	/* ObservedGeneration is the generation of the resource that was most recently observed by the Config Connector controller. If this is equal to metadata.generation, then that means that the current reported status reflects the most recent desired state of the resource. */
 	// +optional
 	ObservedGeneration *int64 `json:"observedGeneration,omitempty"`
-
-	// A unique specifier for the NetworkServicesEdgeCacheService resource in GCP.
-	ExternalRef *string `json:"externalRef,omitempty"`
 
 	/* The IPv4 addresses associated with this service. Addresses are static for the lifetime of the service. */
 	// +optional
@@ -834,6 +811,7 @@ type NetworkServicesEdgeCacheServiceObservedState struct {
 // +kubebuilder:resource:categories=gcp,shortName=gcpnetworkservicesedgecacheservice;gcpnetworkservicesedgecacheservices
 // +kubebuilder:subresource:status
 // +kubebuilder:metadata:labels="cnrm.cloud.google.com/managed-by-kcc=true"
+// +kubebuilder:metadata:labels="cnrm.cloud.google.com/stability-level=alpha"
 // +kubebuilder:metadata:labels="cnrm.cloud.google.com/system=true"
 // +kubebuilder:printcolumn:name="Age",JSONPath=".metadata.creationTimestamp",type="date"
 // +kubebuilder:printcolumn:name="Ready",JSONPath=".status.conditions[?(@.type=='Ready')].status",type="string",description="When 'True', the most recent reconcile of the resource succeeded"
@@ -861,4 +839,58 @@ type NetworkServicesEdgeCacheServiceList struct {
 
 func init() {
 	SchemeBuilder.Register(&NetworkServicesEdgeCacheService{}, &NetworkServicesEdgeCacheServiceList{})
+}
+
+type EdgeCacheKeysetRef struct {
+	/* The EdgeCacheKeyset selflink of form "projects/{{project}}/locations/global/edgeCacheKeysets/{{name}}", when not managed by Config Connector. */
+	External string `json:"external,omitempty"`
+	/* The `name` field of a `EdgeCacheKeyset` resource. */
+	Name string `json:"name,omitempty"`
+	/* The `namespace` field of a `EdgeCacheKeyset` resource. */
+	Namespace string `json:"namespace,omitempty"`
+}
+
+type EdgeCacheOriginRef struct {
+	/* The EdgeCacheOrigin selflink of form "projects/{{project}}/locations/global/edgeCacheOrigins/{{name}}", when not managed by Config Connector. */
+	External string `json:"external,omitempty"`
+	/* The `name` field of a `EdgeCacheOrigin` resource. */
+	Name string `json:"name,omitempty"`
+	/* The `namespace` field of a `EdgeCacheOrigin` resource. */
+	Namespace string `json:"namespace,omitempty"`
+}
+
+type ComputeSSLCertificateRef struct {
+	/* The ComputeSSLCertificate selflink of form "projects/{{project}}/global/sslCertificates/{{name}}", when not managed by Config Connector. */
+	External string `json:"external,omitempty"`
+	/* The `name` field of a `ComputeSSLCertificate` resource. */
+	Name string `json:"name,omitempty"`
+	/* The `namespace` field of a `ComputeSSLCertificate` resource. */
+	Namespace string `json:"namespace,omitempty"`
+}
+
+type ComputeSSLPolicyRef struct {
+	/* The ComputeSSLPolicy selflink of form "projects/{{project}}/global/sslPolicies/{{name}}", when not managed by Config Connector. */
+	External string `json:"external,omitempty"`
+	/* The `name` field of a `ComputeSSLPolicy` resource. */
+	Name string `json:"name,omitempty"`
+	/* The `namespace` field of a `ComputeSSLPolicy` resource. */
+	Namespace string `json:"namespace,omitempty"`
+}
+
+type ProjectRef struct {
+	/* The `projectID` field of a project, when not managed by Config Connector. */
+	External string `json:"external,omitempty"`
+	/* The `name` field of a `Project` resource. */
+	Name string `json:"name,omitempty"`
+	/* The `namespace` field of a `Project` resource. */
+	Namespace string `json:"namespace,omitempty"`
+}
+
+type NetworkSecurityEdgeSecurityPolicyRef struct {
+	/* The NetworkSecurityEdgeSecurityPolicy selflink of form "projects/{{project}}/locations/global/edgeSecurityPolicies/{{name}}", when not managed by Config Connector. */
+	External string `json:"external,omitempty"`
+	/* The `name` field of a `NetworkSecurityEdgeSecurityPolicy` resource. */
+	Name string `json:"name,omitempty"`
+	/* The `namespace` field of a `NetworkSecurityEdgeSecurityPolicy` resource. */
+	Namespace string `json:"namespace,omitempty"`
 }

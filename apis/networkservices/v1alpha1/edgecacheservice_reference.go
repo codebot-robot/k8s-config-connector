@@ -22,6 +22,7 @@ import (
 	"github.com/GoogleCloudPlatform/k8s-config-connector/pkg/k8s"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -51,7 +52,8 @@ func (r *EdgeCacheServiceRef) NormalizedExternal(ctx context.Context, reader cli
 	}
 	// From given External
 	if r.External != "" {
-		if _, _, err := ParseEdgeCacheServiceExternal(r.External); err != nil {
+		id := &EdgeCacheServiceIdentity{}
+		if err := id.FromExternal(r.External); err != nil {
 			return "", err
 		}
 		return r.External, nil
@@ -70,14 +72,16 @@ func (r *EdgeCacheServiceRef) NormalizedExternal(ctx context.Context, reader cli
 		}
 		return "", fmt.Errorf("reading referenced %s %s: %w", NetworkServicesEdgeCacheServiceGVK, key, err)
 	}
-	// Get external from status.externalRef. This is the most trustworthy place.
-	actualExternalRef, _, err := unstructured.NestedString(u.Object, "status", "externalRef")
+
+	obj := &NetworkServicesEdgeCacheService{}
+	if err := runtime.DefaultUnstructuredConverter.FromUnstructured(u.Object, obj); err != nil {
+		return "", fmt.Errorf("converting to EdgeCacheService: %w", err)
+	}
+
+	id, err := obj.GetIdentity(ctx, reader)
 	if err != nil {
-		return "", fmt.Errorf("reading status.externalRef: %w", err)
+		return "", err
 	}
-	if actualExternalRef == "" {
-		return "", k8s.NewReferenceNotReadyError(u.GroupVersionKind(), key)
-	}
-	r.External = actualExternalRef
+	r.External = id.String()
 	return r.External, nil
 }

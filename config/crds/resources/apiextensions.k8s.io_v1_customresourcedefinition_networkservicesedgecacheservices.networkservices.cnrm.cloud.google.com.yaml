@@ -8,6 +8,7 @@ metadata:
   creationTimestamp: null
   labels:
     cnrm.cloud.google.com/managed-by-kcc: "true"
+    cnrm.cloud.google.com/stability-level: alpha
     cnrm.cloud.google.com/system: "true"
   name: networkservicesedgecacheservices.networkservices.cnrm.cloud.google.com
 spec:
@@ -75,17 +76,71 @@ spec:
               disableQuic:
                 description: HTTP/3 (IETF QUIC) and Google QUIC are enabled by default.
                 type: boolean
-              edgeSecurityPolicy:
+              edgeSecurityPolicyRef:
                 description: Resource URL that points at the Cloud Armor edge security
                   policy that is applied on each request against the EdgeCacheService.
-                type: string
-              edgeSslCertificates:
+                oneOf:
+                - not:
+                    required:
+                    - external
+                  required:
+                  - name
+                - not:
+                    anyOf:
+                    - required:
+                      - name
+                    - required:
+                      - namespace
+                  required:
+                  - external
+                properties:
+                  external:
+                    description: The NetworkSecurityEdgeSecurityPolicy selflink of
+                      form "projects/{{project}}/locations/global/edgeSecurityPolicies/{{name}}",
+                      when not managed by Config Connector.
+                    type: string
+                  name:
+                    description: The `name` field of a `NetworkSecurityEdgeSecurityPolicy`
+                      resource.
+                    type: string
+                  namespace:
+                    description: The `namespace` field of a `NetworkSecurityEdgeSecurityPolicy`
+                      resource.
+                    type: string
+                type: object
+              edgeSslCertificateRefs:
                 description: |-
                   URLs to sslCertificate resources that are used to authenticate connections between users and the EdgeCacheService.
 
                   Note that only "global" certificates with a "scope" of "EDGE_CACHE" can be attached to an EdgeCacheService.
                 items:
-                  type: string
+                  oneOf:
+                  - not:
+                      required:
+                      - external
+                    required:
+                    - name
+                  - not:
+                      anyOf:
+                      - required:
+                        - name
+                      - required:
+                        - namespace
+                    required:
+                    - external
+                  properties:
+                    external:
+                      description: The ComputeSSLCertificate selflink of form "projects/{{project}}/global/sslCertificates/{{name}}",
+                        when not managed by Config Connector.
+                      type: string
+                    name:
+                      description: The `name` field of a `ComputeSSLCertificate` resource.
+                      type: string
+                    namespace:
+                      description: The `namespace` field of a `ComputeSSLCertificate`
+                        resource.
+                      type: string
+                  type: object
                 type: array
               logConfig:
                 description: Specifies the logging options for the traffic served
@@ -123,10 +178,6 @@ spec:
                   external:
                     description: The `projectID` field of a project, when not managed
                       by Config Connector.
-                    type: string
-                  kind:
-                    description: The kind of the Project resource; optional but must
-                      be `Project` if provided.
                     type: string
                   name:
                     description: The `name` field of a `Project` resource.
@@ -401,12 +452,40 @@ spec:
                                       type: array
                                   type: object
                                 type: array
-                              origin:
+                              originRef:
                                 description: |-
                                   The Origin resource that requests to this route should fetch from when a matching response is not in cache. Origins can be defined as short names ("my-origin") or fully-qualified resource URLs - e.g. "networkservices.googleapis.com/projects/my-project/global/edgecacheorigins/my-origin"
 
                                   Only one of origin or urlRedirect can be set.
-                                type: string
+                                oneOf:
+                                - not:
+                                    required:
+                                    - external
+                                  required:
+                                  - name
+                                - not:
+                                    anyOf:
+                                    - required:
+                                      - name
+                                    - required:
+                                      - namespace
+                                  required:
+                                  - external
+                                properties:
+                                  external:
+                                    description: The EdgeCacheOrigin selflink of form
+                                      "projects/{{project}}/locations/global/edgeCacheOrigins/{{name}}",
+                                      when not managed by Config Connector.
+                                    type: string
+                                  name:
+                                    description: The `name` field of a `EdgeCacheOrigin`
+                                      resource.
+                                    type: string
+                                  namespace:
+                                    description: The `namespace` field of a `EdgeCacheOrigin`
+                                      resource.
+                                    type: string
+                                type: object
                               priority:
                                 description: |-
                                   The priority of this route rule, where 1 is the highest priority.
@@ -465,7 +544,7 @@ spec:
                                             items:
                                               type: string
                                             type: array
-                                          keyset:
+                                          keysetRef:
                                             description: |-
                                               The keyset to use for signature generation.
 
@@ -475,7 +554,35 @@ spec:
                                               * 'yourKeyset'
 
                                               This must be specified when the GENERATE_COOKIE or GENERATE_TOKEN_HLS_COOKIELESS actions are specified.  This field may not be specified otherwise.
-                                            type: string
+                                            oneOf:
+                                            - not:
+                                                required:
+                                                - external
+                                              required:
+                                              - name
+                                            - not:
+                                                anyOf:
+                                                - required:
+                                                  - name
+                                                - required:
+                                                  - namespace
+                                              required:
+                                              - external
+                                            properties:
+                                              external:
+                                                description: The EdgeCacheKeyset selflink
+                                                  of form "projects/{{project}}/locations/global/edgeCacheKeysets/{{name}}",
+                                                  when not managed by Config Connector.
+                                                type: string
+                                              name:
+                                                description: The `name` field of a
+                                                  `EdgeCacheKeyset` resource.
+                                                type: string
+                                              namespace:
+                                                description: The `namespace` field
+                                                  of a `EdgeCacheKeyset` resource.
+                                                type: string
+                                            type: object
                                           tokenQueryParameter:
                                             description: |-
                                               The query parameter in which to put the generated token.
@@ -588,11 +695,6 @@ spec:
                                           When the cache mode is set to "USE_ORIGIN_HEADERS" or "BYPASS_CACHE", you must omit this field.
                                           A duration in seconds terminated by 's'. Example: "3s".
                                         type: string
-                                      compressionMode:
-                                        description: 'Specifies the compression mode
-                                          for this route. Possible values: ["DISABLED",
-                                          "AUTOMATIC"].'
-                                        type: string
                                       defaultTtl:
                                         description: |-
                                           Specifies the default TTL for cached content served by this origin for responses that do not have an existing valid TTL (max-age or s-max-age).
@@ -651,11 +753,39 @@ spec:
 
                                           Note that when specifying an explicit negativeCachingPolicy, you should take care to specify a cache TTL for all response codes that you wish to cache. The CDNPolicy will not apply any default negative caching when a policy exists.
                                         type: object
-                                      signedRequestKeyset:
+                                      signedRequestKeysetRef:
                                         description: The EdgeCacheKeyset containing
                                           the set of public keys used to validate
                                           signed requests at the edge.
-                                        type: string
+                                        oneOf:
+                                        - not:
+                                            required:
+                                            - external
+                                          required:
+                                          - name
+                                        - not:
+                                            anyOf:
+                                            - required:
+                                              - name
+                                            - required:
+                                              - namespace
+                                          required:
+                                          - external
+                                        properties:
+                                          external:
+                                            description: The EdgeCacheKeyset selflink
+                                              of form "projects/{{project}}/locations/global/edgeCacheKeysets/{{name}}",
+                                              when not managed by Config Connector.
+                                            type: string
+                                          name:
+                                            description: The `name` field of a `EdgeCacheKeyset`
+                                              resource.
+                                            type: string
+                                          namespace:
+                                            description: The `namespace` field of
+                                              a `EdgeCacheKeyset` resource.
+                                            type: string
+                                        type: object
                                       signedRequestMaximumExpirationTtl:
                                         description: |-
                                           Limit how far into the future the expiration time of a signed request may be.
@@ -790,22 +920,6 @@ spec:
                                         type: string
                                     type: object
                                 type: object
-                              routeMethods:
-                                description: The list of allowed HTTP methods for
-                                  this route.
-                                properties:
-                                  allowedMethods:
-                                    description: |-
-                                      The list of allowed HTTP methods for this route.
-                                      Supported methods include: GET, HEAD, POST, PUT, DELETE, PATCH, OPTIONS.
-
-                                      Media CDN defaults to allowing GET, HEAD, and OPTIONS if routeMethods is not specified.
-                                    items:
-                                      type: string
-                                    type: array
-                                required:
-                                - allowedMethods
-                                type: object
                               urlRedirect:
                                 description: The URL redirect configuration for requests
                                   that match this route.
@@ -869,12 +983,37 @@ spec:
                 - hostRule
                 - pathMatcher
                 type: object
-              sslPolicy:
+              sslPolicyRef:
                 description: |-
                   URL of the SslPolicy resource that will be associated with the EdgeCacheService.
 
                   If not set, the EdgeCacheService has no SSL policy configured, and will default to the "COMPATIBLE" policy.
-                type: string
+                oneOf:
+                - not:
+                    required:
+                    - external
+                  required:
+                  - name
+                - not:
+                    anyOf:
+                    - required:
+                      - name
+                    - required:
+                      - namespace
+                  required:
+                  - external
+                properties:
+                  external:
+                    description: The ComputeSSLPolicy selflink of form "projects/{{project}}/global/sslPolicies/{{name}}",
+                      when not managed by Config Connector.
+                    type: string
+                  name:
+                    description: The `name` field of a `ComputeSSLPolicy` resource.
+                    type: string
+                  namespace:
+                    description: The `namespace` field of a `ComputeSSLPolicy` resource.
+                    type: string
+                type: object
             required:
             - projectRef
             - routing
@@ -907,10 +1046,6 @@ spec:
                       type: string
                   type: object
                 type: array
-              externalRef:
-                description: A unique specifier for the NetworkServicesEdgeCacheService
-                  resource in GCP.
-                type: string
               ipv4Addresses:
                 description: The IPv4 addresses associated with this service. Addresses
                   are static for the lifetime of the service.

@@ -21,17 +21,20 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strings"
 	"time"
 
 	krm "github.com/GoogleCloudPlatform/k8s-config-connector/apis/networkservices/v1alpha1"
 	"github.com/GoogleCloudPlatform/k8s-config-connector/pkg/config"
 	"github.com/GoogleCloudPlatform/k8s-config-connector/pkg/controller/direct"
+	"github.com/GoogleCloudPlatform/k8s-config-connector/pkg/controller/direct/common"
 	"github.com/GoogleCloudPlatform/k8s-config-connector/pkg/controller/direct/directbase"
 	"github.com/GoogleCloudPlatform/k8s-config-connector/pkg/controller/direct/registry"
 
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/klog/v2"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 func init() {
@@ -70,6 +73,7 @@ func (m *modelEdgeCacheService) AdapterForObject(ctx context.Context, op *direct
 		id:         id,
 		httpClient: httpClient,
 		desired:    obj,
+		reader:     reader,
 	}, nil
 }
 
@@ -82,6 +86,7 @@ type EdgeCacheServiceAdapter struct {
 	httpClient *http.Client
 	desired    *krm.NetworkServicesEdgeCacheService
 	actual     *EdgeCacheService
+	reader     client.Reader
 }
 
 var _ directbase.Adapter = &EdgeCacheServiceAdapter{}
@@ -125,18 +130,13 @@ func (a *EdgeCacheServiceAdapter) Create(ctx context.Context, createOp *directba
 	mapCtx := &direct.MapContext{}
 
 	desired := a.desired.DeepCopy()
-	resource := EdgeCacheServiceSpec_ToProto(mapCtx, &desired.Spec)
+	resource := EdgeCacheServiceSpec_ToProto(mapCtx, &desired.Spec, a.makeResolveRef(ctx))
 	if mapCtx.Err() != nil {
 		return mapCtx.Err()
 	}
 
-	if resource.Labels == nil {
-		resource.Labels = make(map[string]string)
-	}
-	for k, v := range a.desired.GetObjectMeta().GetLabels() {
-		resource.Labels[k] = v
-	}
-	resource.Labels["managed-by-cnrm"] = "true"
+	resource.Name = a.id.String()
+	resource.Labels = common.ComputeGCPLabels(a.desired.GetObjectMeta().GetLabels())
 
 	url := fmt.Sprintf("https://networkservices.googleapis.com/v1/%s/edgeCacheServices?edgeCacheServiceId=%s", a.id.Parent().String(), a.id.ID())
 	body, err := json.Marshal(resource)
@@ -175,7 +175,6 @@ func (a *EdgeCacheServiceAdapter) Create(ctx context.Context, createOp *directba
 	if mapCtx.Err() != nil {
 		return mapCtx.Err()
 	}
-	status.ExternalRef = direct.LazyPtr(a.id.String())
 	return createOp.UpdateStatus(ctx, status, nil)
 }
 
@@ -185,20 +184,28 @@ func (a *EdgeCacheServiceAdapter) Update(ctx context.Context, updateOp *directba
 	mapCtx := &direct.MapContext{}
 
 	desired := a.desired.DeepCopy()
-	resource := EdgeCacheServiceSpec_ToProto(mapCtx, &desired.Spec)
+	resource := EdgeCacheServiceSpec_ToProto(mapCtx, &desired.Spec, a.makeResolveRef(ctx))
 	if mapCtx.Err() != nil {
 		return mapCtx.Err()
 	}
 
-	if resource.Labels == nil {
-		resource.Labels = make(map[string]string)
-	}
-	for k, v := range a.desired.GetObjectMeta().GetLabels() {
-		resource.Labels[k] = v
-	}
-	resource.Labels["managed-by-cnrm"] = "true"
+	resource.Name = a.id.String()
+	resource.Labels = common.ComputeGCPLabels(a.desired.GetObjectMeta().GetLabels())
 
-	url := fmt.Sprintf("https://networkservices.googleapis.com/v1/%s", a.id.String())
+	updateMask := []string{
+		"description",
+		"labels",
+		"disable_quic",
+		"disable_http2",
+		"require_tls",
+		"edge_ssl_certificates",
+		"routing",
+		"log_config",
+		"edge_security_policy",
+		"ssl_policy",
+	}
+
+	url := fmt.Sprintf("https://networkservices.googleapis.com/v1/%s?updateMask=%s", a.id.String(), strings.Join(updateMask, ","))
 	body, err := json.Marshal(resource)
 	if err != nil {
 		return fmt.Errorf("marshalling resource: %w", err)
@@ -236,6 +243,69 @@ func (a *EdgeCacheServiceAdapter) Update(ctx context.Context, updateOp *directba
 		return mapCtx.Err()
 	}
 	return updateOp.UpdateStatus(ctx, status, nil)
+}
+
+func (a *EdgeCacheServiceAdapter) makeResolveRef(ctx context.Context) func(ref interface{}) string {
+	return func(ref interface{}) string {
+		if ref == nil {
+			return ""
+		}
+		switch r := ref.(type) {
+		case *krm.EdgeCacheKeysetRef:
+			if r == nil {
+				return ""
+			}
+			ext, err := r.NormalizedExternal(ctx, a.reader, a.desired.Namespace)
+			if err != nil {
+				klog.Errorf("resolving EdgeCacheKeysetRef: %v", err)
+				return ""
+			}
+			return ext
+		case *krm.EdgeCacheOriginRef:
+			if r == nil {
+				return ""
+			}
+			ext, err := r.NormalizedExternal(ctx, a.reader, a.desired.Namespace)
+			if err != nil {
+				klog.Errorf("resolving EdgeCacheOriginRef: %v", err)
+				return ""
+			}
+			return ext
+		case *krm.ComputeSSLCertificateRef:
+			if r == nil {
+				return ""
+			}
+			ext, err := r.NormalizedExternal(ctx, a.reader, a.desired.Namespace)
+			if err != nil {
+				klog.Errorf("resolving ComputeSSLCertificateRef: %v", err)
+				return ""
+			}
+			return ext
+		case *krm.ComputeSSLPolicyRef:
+			if r == nil {
+				return ""
+			}
+			ext, err := r.NormalizedExternal(ctx, a.reader, a.desired.Namespace)
+			if err != nil {
+				klog.Errorf("resolving ComputeSSLPolicyRef: %v", err)
+				return ""
+			}
+			return ext
+		case *krm.NetworkSecurityEdgeSecurityPolicyRef:
+			if r == nil {
+				return ""
+			}
+			ext, err := r.NormalizedExternal(ctx, a.reader, a.desired.Namespace)
+			if err != nil {
+				klog.Errorf("resolving NetworkSecurityEdgeSecurityPolicyRef: %v", err)
+				return ""
+			}
+			return ext
+		default:
+			klog.Errorf("unknown reference type: %T", ref)
+			return ""
+		}
+	}
 }
 
 func (a *EdgeCacheServiceAdapter) Export(ctx context.Context) (*unstructured.Unstructured, error) {

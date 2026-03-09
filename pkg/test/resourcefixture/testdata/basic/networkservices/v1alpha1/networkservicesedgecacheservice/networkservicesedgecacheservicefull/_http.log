@@ -119,6 +119,7 @@ User-Agent: kcc/${kccVersion} (+https://github.com/GoogleCloudPlatform/k8s-confi
     "cnrm-test": "true",
     "managed-by-cnrm": "true"
   },
+  "name": "projects/${projectId}/locations/global/edgeCacheServices/edgecacheservice-${uniqueId}",
   "routing": {
     "hostRules": [
       {
@@ -139,23 +140,7 @@ User-Agent: kcc/${kccVersion} (+https://github.com/GoogleCloudPlatform/k8s-confi
               }
             ],
             "origin": "projects/${projectId}/locations/global/edgeCacheOrigins/networkservicesedgecacheorigin${uniqueId}",
-            "priority": "1",
-            "routeAction": {
-              "cdnPolicy": {
-                "cacheMode": "CACHE_ALL_STATIC",
-                "clientTtl": "3600s",
-                "compressionMode": "AUTOMATIC",
-                "defaultTtl": "3600s",
-                "maxTtl": "86400s"
-              }
-            },
-            "routeMethods": {
-              "allowedMethods": [
-                "GET",
-                "HEAD",
-                "POST"
-              ]
-            }
+            "priority": "2"
           }
         ]
       }
@@ -231,23 +216,7 @@ X-Xss-Protection: 0
                 }
               ],
               "origin": "projects/${projectId}/locations/global/edgeCacheOrigins/networkservicesedgecacheorigin${uniqueId}",
-              "priority": "1",
-              "routeAction": {
-                "cdnPolicy": {
-                  "cacheMode": "CACHE_ALL_STATIC",
-                  "clientTtl": "3600s",
-                  "compressionMode": "AUTOMATIC",
-                  "defaultTtl": "3600s",
-                  "maxTtl": "86400s"
-                }
-              },
-              "routeMethods": {
-                "allowedMethods": [
-                  "GET",
-                  "HEAD",
-                  "POST"
-                ]
-              }
+              "priority": "2"
             }
           ]
         }
@@ -293,23 +262,7 @@ Content-Type: application/json
               }
             ],
             "origin": "projects/${projectId}/locations/global/edgeCacheOrigins/networkservicesedgecacheorigin${uniqueId}",
-            "priority": "1",
-            "routeAction": {
-              "cdnPolicy": {
-                "cacheMode": "CACHE_ALL_STATIC",
-                "clientTtl": "3600s",
-                "compressionMode": "AUTOMATIC",
-                "defaultTtl": "3600s",
-                "maxTtl": "86400s"
-              }
-            },
-            "routeMethods": {
-              "allowedMethods": [
-                "GET",
-                "HEAD",
-                "POST"
-              ]
-            }
+            "priority": "2"
           }
         ]
       }

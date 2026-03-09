@@ -118,6 +118,7 @@ User-Agent: kcc/${kccVersion} (+https://github.com/GoogleCloudPlatform/k8s-confi
     "cnrm-test": "true",
     "managed-by-cnrm": "true"
   },
+  "name": "projects/${projectId}/locations/global/edgeCacheServices/edgecacheservice-${uniqueId}",
   "routing": {
     "hostRules": [
       {
@@ -137,7 +138,6 @@ User-Agent: kcc/${kccVersion} (+https://github.com/GoogleCloudPlatform/k8s-confi
                 "prefixMatch": "/"
               }
             ],
-            "origin": "projects/${projectId}/locations/global/edgeCacheOrigins/networkservicesedgecacheorigin${uniqueId}",
             "priority": "1"
           }
         ]
@@ -212,7 +212,6 @@ X-Xss-Protection: 0
                   "prefixMatch": "/"
                 }
               ],
-              "origin": "projects/${projectId}/locations/global/edgeCacheOrigins/networkservicesedgecacheorigin${uniqueId}",
               "priority": "1"
             }
           ]
@@ -257,7 +256,6 @@ Content-Type: application/json
                 "prefixMatch": "/"
               }
             ],
-            "origin": "projects/${projectId}/locations/global/edgeCacheOrigins/networkservicesedgecacheorigin${uniqueId}",
             "priority": "1"
           }
         ]

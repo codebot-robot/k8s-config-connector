@@ -22,7 +22,6 @@ spec:
       routeRule:
       - matchRule:
         - prefixMatch: /
-        origin: projects/${projectId}/locations/global/edgeCacheOrigins/networkservicesedgecacheorigin${uniqueId}
         priority: "1"
 status:
   conditions:
@@ -31,6 +30,5 @@ status:
     reason: UpToDate
     status: "True"
     type: Ready
-  externalRef: projects/${projectId}/locations/global/edgeCacheServices/edgecacheservice-${uniqueId}
   observedGeneration: 1
   observedState: {}
