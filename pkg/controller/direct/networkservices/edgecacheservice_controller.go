@@ -130,12 +130,11 @@ func (a *EdgeCacheServiceAdapter) Create(ctx context.Context, createOp *directba
 	mapCtx := &direct.MapContext{}
 
 	desired := a.desired.DeepCopy()
-	resource := EdgeCacheServiceSpec_ToProto(mapCtx, &desired.Spec, a.makeResolveRef(ctx))
+	resource := EdgeCacheServiceSpec_ToProto(mapCtx, a.id.String(), &desired.Spec, a.makeResolveRef(ctx))
 	if mapCtx.Err() != nil {
 		return mapCtx.Err()
 	}
 
-	resource.Name = a.id.String()
 	resource.Labels = common.ComputeGCPLabels(a.desired.GetObjectMeta().GetLabels())
 
 	url := fmt.Sprintf("https://networkservices.googleapis.com/v1/%s/edgeCacheServices?edgeCacheServiceId=%s", a.id.Parent().String(), a.id.ID())
@@ -184,12 +183,11 @@ func (a *EdgeCacheServiceAdapter) Update(ctx context.Context, updateOp *directba
 	mapCtx := &direct.MapContext{}
 
 	desired := a.desired.DeepCopy()
-	resource := EdgeCacheServiceSpec_ToProto(mapCtx, &desired.Spec, a.makeResolveRef(ctx))
+	resource := EdgeCacheServiceSpec_ToProto(mapCtx, a.id.String(), &desired.Spec, a.makeResolveRef(ctx))
 	if mapCtx.Err() != nil {
 		return mapCtx.Err()
 	}
 
-	resource.Name = a.id.String()
 	resource.Labels = common.ComputeGCPLabels(a.desired.GetObjectMeta().GetLabels())
 
 	updateMask := []string{

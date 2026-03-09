@@ -22,7 +22,7 @@ func ComputeGCPLabels(labels map[string]string) map[string]string {
 	if labels == nil {
 		return map[string]string{}
 	}
-	RemoveByPrefixes(labels, "cnrm.cloud.google.com")
+	RemoveByPrefixes(labels, "cnrm.cloud.google.com", "kubectl.kubernetes.io", "kubernetes.io")
 	labels["managed-by-cnrm"] = "true"
 	return labels
 }

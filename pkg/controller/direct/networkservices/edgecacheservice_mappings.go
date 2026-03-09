@@ -19,11 +19,12 @@ import (
 	"github.com/GoogleCloudPlatform/k8s-config-connector/pkg/controller/direct"
 )
 
-func EdgeCacheServiceSpec_ToProto(mapCtx *direct.MapContext, in *krm.NetworkServicesEdgeCacheServiceSpec, resolve func(ref interface{}) string) *EdgeCacheService {
+func EdgeCacheServiceSpec_ToProto(mapCtx *direct.MapContext, name string, in *krm.NetworkServicesEdgeCacheServiceSpec, resolve func(ref interface{}) string) *EdgeCacheService {
 	if in == nil {
 		return nil
 	}
 	out := &EdgeCacheService{}
+	out.Name = name
 	out.Description = direct.ValueOf(in.Description)
 	out.DisableHttp2 = in.DisableHttp2
 	out.DisableQuic = in.DisableQuic
