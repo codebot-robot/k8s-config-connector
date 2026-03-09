@@ -19,12 +19,13 @@ import (
 )
 
 func ComputeGCPLabels(labels map[string]string) map[string]string {
-	if labels == nil {
-		return map[string]string{}
+	out := make(map[string]string)
+	for k, v := range labels {
+		out[k] = v
 	}
-	RemoveByPrefixes(labels, "cnrm.cloud.google.com", "kubectl.kubernetes.io", "kubernetes.io")
-	labels["managed-by-cnrm"] = "true"
-	return labels
+	RemoveByPrefixes(out, "cnrm.cloud.google.com", "kubectl.kubernetes.io", "kubernetes.io")
+	out["managed-by-cnrm"] = "true"
+	return out
 }
 
 func RemoveByPrefixes(a map[string]string, prefixes ...string) {

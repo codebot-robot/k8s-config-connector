@@ -20,6 +20,12 @@ spec:
   projectRef:
     external: ${projectId}
   description: Full edge cache service
+  disableHttp2: false
+  disableQuic: false
+  requireTls: true
+  logConfig:
+    enable: true
+    sampleRate: 1.0
   routing:
     hostRule:
     - hosts:
@@ -33,10 +39,11 @@ spec:
         - prefixMatch: "/"
         originRef:
           external: projects/${projectId}/locations/global/edgeCacheOrigins/networkservicesedgecacheorigin${uniqueId}
-        cdnPolicy:
-          cacheMode: CACHE_ALL_STATIC
-          defaultTtl: 3600s
-          maxTtl: 86400s
-          clientTtl: 3600s
+        routeAction:
+          cdnPolicy:
+            cacheMode: CACHE_ALL_STATIC
+            defaultTtl: 3600s
+            maxTtl: 86400s
+            clientTtl: 3600s
         priority: "2"
 

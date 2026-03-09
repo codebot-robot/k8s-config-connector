@@ -135,7 +135,7 @@ func (a *EdgeCacheServiceAdapter) Create(ctx context.Context, createOp *directba
 		return mapCtx.Err()
 	}
 
-	resource.Labels = common.ComputeGCPLabels(a.desired.GetObjectMeta().GetLabels())
+	resource.Labels = common.ComputeGCPLabels(desired.GetObjectMeta().GetLabels())
 
 	url := fmt.Sprintf("https://networkservices.googleapis.com/v1/%s/edgeCacheServices?edgeCacheServiceId=%s", a.id.Parent().String(), a.id.ID())
 	body, err := json.Marshal(resource)
@@ -188,7 +188,7 @@ func (a *EdgeCacheServiceAdapter) Update(ctx context.Context, updateOp *directba
 		return mapCtx.Err()
 	}
 
-	resource.Labels = common.ComputeGCPLabels(a.desired.GetObjectMeta().GetLabels())
+	resource.Labels = common.ComputeGCPLabels(desired.GetObjectMeta().GetLabels())
 
 	updateMask := []string{
 		"description",

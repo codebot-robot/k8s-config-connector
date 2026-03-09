@@ -11,8 +11,14 @@ metadata:
   namespace: ${uniqueId}
 spec:
   description: Full edge cache service
+  disableHttp2: false
+  disableQuic: false
+  logConfig:
+    enable: true
+    sampleRate: 1
   projectRef:
     external: ${projectId}
+  requireTls: true
   routing:
     hostRule:
     - hosts:
@@ -26,6 +32,12 @@ spec:
         originRef:
           external: projects/${projectId}/locations/global/edgeCacheOrigins/networkservicesedgecacheorigin${uniqueId}
         priority: "2"
+        routeAction:
+          cdnPolicy:
+            cacheMode: CACHE_ALL_STATIC
+            clientTtl: 3600s
+            defaultTtl: 3600s
+            maxTtl: 86400s
 status:
   conditions:
   - lastTransitionTime: "1970-01-01T00:00:00Z"
