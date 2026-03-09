@@ -41,7 +41,7 @@ func (r *EdgeCacheKeysetRef) NormalizedExternal(ctx context.Context, reader clie
 	u := &unstructured.Unstructured{}
 	u.SetGroupVersionKind(schema.GroupVersionKind{
 		Group:   "networkservices.cnrm.cloud.google.com",
-		Version: "v1beta1",
+		Version: "v1alpha1",
 		Kind:    "EdgeCacheKeyset",
 	})
 	if err := reader.Get(ctx, key, u); err != nil {
@@ -74,7 +74,7 @@ func (r *EdgeCacheOriginRef) NormalizedExternal(ctx context.Context, reader clie
 	u := &unstructured.Unstructured{}
 	u.SetGroupVersionKind(schema.GroupVersionKind{
 		Group:   "networkservices.cnrm.cloud.google.com",
-		Version: "v1beta1",
+		Version: "v1alpha1",
 		Kind:    "EdgeCacheOrigin",
 	})
 	if err := reader.Get(ctx, key, u); err != nil {
