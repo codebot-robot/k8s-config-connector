@@ -21,18 +21,18 @@ type EdgeCacheService struct {
 	Name                string              `json:"name,omitempty"`
 	CreateTime          string              `json:"createTime,omitempty"`
 	UpdateTime          string              `json:"updateTime,omitempty"`
-	Description         string              `json:"description,omitempty"`
-	Labels              map[string]string   `json:"labels,omitempty"`
+	Description         *string             `json:"description,omitempty"`
+	Labels              map[string]string   `json:"labels"`
 	DisableQuic         *bool               `json:"disableQuic,omitempty"`
 	DisableHttp2        *bool               `json:"disableHttp2,omitempty"`
 	RequireTls          *bool               `json:"requireTls,omitempty"`
-	EdgeSslCertificates []string            `json:"edgeSslCertificates,omitempty"`
+	EdgeSslCertificates []string            `json:"edgeSslCertificates"`
 	Ipv4Addresses       []string            `json:"ipv4Addresses,omitempty"`
 	Ipv6Addresses       []string            `json:"ipv6Addresses,omitempty"`
 	Routing             *EdgeCacheRouting   `json:"routing,omitempty"`
 	LogConfig           *EdgeCacheLogConfig `json:"logConfig,omitempty"`
-	EdgeSecurityPolicy  string              `json:"edgeSecurityPolicy,omitempty"`
-	SslPolicy           string              `json:"sslPolicy,omitempty"`
+	EdgeSecurityPolicy  *string             `json:"edgeSecurityPolicy,omitempty"`
+	SslPolicy           *string             `json:"sslPolicy,omitempty"`
 }
 
 type EdgeCacheLogConfig struct {
@@ -61,7 +61,7 @@ type EdgeCacheRoutingRouteRule struct {
 	Description  string                        `json:"description,omitempty"`
 	Priority     string                        `json:"priority,omitempty"`
 	MatchRules   []*EdgeCacheRoutingRouteMatch `json:"matchRules,omitempty"`
-	Origin       string                        `json:"origin,omitempty"`
+	Origin       *string                       `json:"origin,omitempty"`
 	UrlRedirect  *EdgeCacheRoutingUrlRedirect  `json:"urlRedirect,omitempty"`
 	RouteAction  *EdgeCacheRoutingRouteAction  `json:"routeAction,omitempty"`
 	HeaderAction *EdgeCacheRoutingHeaderAction `json:"headerAction,omitempty"`
@@ -106,7 +106,7 @@ type EdgeCacheRoutingCdnPolicy struct {
 	NegativeCaching                   *bool                               `json:"negativeCaching,omitempty"`
 	NegativeCachingPolicy             map[string]string                   `json:"negativeCachingPolicy,omitempty"`
 	SignedRequestMode                 string                              `json:"signedRequestMode,omitempty"`
-	SignedRequestKeyset               string                              `json:"signedRequestKeyset,omitempty"`
+	SignedRequestKeyset               *string                             `json:"signedRequestKeyset,omitempty"`
 	SignedRequestMaximumExpirationTtl string                              `json:"signedRequestMaximumExpirationTtl,omitempty"`
 	AddSignatures                     *EdgeCacheRoutingAddSignatures      `json:"addSignatures,omitempty"`
 	SignedTokenOptions                *EdgeCacheRoutingSignedTokenOptions `json:"signedTokenOptions,omitempty"`
@@ -124,7 +124,7 @@ type EdgeCacheRoutingCacheKeyPolicy struct {
 
 type EdgeCacheRoutingAddSignatures struct {
 	Actions             []string `json:"actions,omitempty"`
-	Keyset              string   `json:"keyset,omitempty"`
+	Keyset              *string  `json:"keyset,omitempty"`
 	TokenTtl            string   `json:"tokenTtl,omitempty"`
 	TokenQueryParameter string   `json:"tokenQueryParameter,omitempty"`
 	CopiedParameters    []string `json:"copiedParameters,omitempty"`

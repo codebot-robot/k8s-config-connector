@@ -31,7 +31,7 @@ spec:
         - prefixMatch: /
         originRef:
           external: projects/${projectId}/locations/global/edgeCacheOrigins/networkservicesedgecacheorigin${uniqueId}
-        priority: "2"
+        priority: "1"
         routeAction:
           cdnPolicy:
             cacheMode: CACHE_ALL_STATIC

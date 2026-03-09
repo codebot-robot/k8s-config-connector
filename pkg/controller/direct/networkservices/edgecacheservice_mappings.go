@@ -25,10 +25,10 @@ func EdgeCacheServiceSpec_ToProto(mapCtx *direct.MapContext, name string, in *kr
 	}
 	out := &EdgeCacheService{}
 	out.Name = name
-	out.Description = direct.ValueOf(in.Description)
+	out.Description = direct.PtrTo(direct.ValueOf(in.Description))
 	out.DisableHttp2 = in.DisableHttp2
 	out.DisableQuic = in.DisableQuic
-	out.EdgeSecurityPolicy = resolve(in.EdgeSecurityPolicyRef)
+	out.EdgeSecurityPolicy = direct.PtrTo(resolve(in.EdgeSecurityPolicyRef))
 	if in.EdgeSslCertificateRefs != nil {
 		out.EdgeSslCertificates = make([]string, len(in.EdgeSslCertificateRefs))
 		for i, ref := range in.EdgeSslCertificateRefs {
@@ -38,13 +38,13 @@ func EdgeCacheServiceSpec_ToProto(mapCtx *direct.MapContext, name string, in *kr
 	out.LogConfig = EdgeCacheServiceLogConfig_ToProto(mapCtx, in.LogConfig)
 	out.RequireTls = in.RequireTls
 	out.Routing = EdgeCacheServiceRouting_ToProto(mapCtx, &in.Routing, resolve)
-	out.SslPolicy = resolve(in.SslPolicyRef)
+	out.SslPolicy = direct.PtrTo(resolve(in.SslPolicyRef))
 	return out
 }
 
 func EdgeCacheServiceLogConfig_ToProto(mapCtx *direct.MapContext, in *krm.EdgecacheserviceLogConfig) *EdgeCacheLogConfig {
 	if in == nil {
-		return nil
+		return &EdgeCacheLogConfig{Enable: direct.PtrTo(false)}
 	}
 	out := &EdgeCacheLogConfig{}
 	out.Enable = in.Enable
@@ -104,7 +104,7 @@ func EdgeCacheRoutingRouteRule_ToProto(mapCtx *direct.MapContext, in *krm.Edgeca
 	for i, v := range in.MatchRule {
 		out.MatchRules[i] = EdgeCacheRoutingRouteMatch_ToProto(mapCtx, &v)
 	}
-	out.Origin = resolve(in.OriginRef)
+	out.Origin = direct.PtrTo(resolve(in.OriginRef))
 	out.Priority = in.Priority
 	out.RouteAction = EdgeCacheRoutingRouteAction_ToProto(mapCtx, in.RouteAction, resolve)
 	out.UrlRedirect = EdgeCacheRoutingUrlRedirect_ToProto(mapCtx, in.UrlRedirect)
@@ -198,7 +198,7 @@ func EdgeCacheRoutingCdnPolicy_ToProto(mapCtx *direct.MapContext, in *krm.Edgeca
 		out.AddSignatures = &EdgeCacheRoutingAddSignatures{
 			Actions:             in.AddSignatures.Actions,
 			CopiedParameters:    in.AddSignatures.CopiedParameters,
-			Keyset:              resolve(in.AddSignatures.KeysetRef),
+			Keyset:              direct.PtrTo(resolve(in.AddSignatures.KeysetRef)),
 			TokenQueryParameter: direct.ValueOf(in.AddSignatures.TokenQueryParameter),
 			TokenTtl:            direct.ValueOf(in.AddSignatures.TokenTtl),
 		}
@@ -221,7 +221,7 @@ func EdgeCacheRoutingCdnPolicy_ToProto(mapCtx *direct.MapContext, in *krm.Edgeca
 	out.NegativeCaching = in.NegativeCaching
 	out.NegativeCachingPolicy = in.NegativeCachingPolicy
 	out.SignedRequestMode = direct.ValueOf(in.SignedRequestMode)
-	out.SignedRequestKeyset = resolve(in.SignedRequestKeysetRef)
+	out.SignedRequestKeyset = direct.PtrTo(resolve(in.SignedRequestKeysetRef))
 	out.SignedRequestMaximumExpirationTtl = direct.ValueOf(in.SignedRequestMaximumExpirationTtl)
 	if in.SignedTokenOptions != nil {
 		out.SignedTokenOptions = &EdgeCacheRoutingSignedTokenOptions{
