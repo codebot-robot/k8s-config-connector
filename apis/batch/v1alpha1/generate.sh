@@ -24,7 +24,7 @@ cd ${REPO_ROOT}/dev/tools/controllerbuilder
 
 ./generate-proto.sh
 
-go run . generate-types \
+${CONTROLLERBUILDER:-go run .} generate-types \
     --service google.cloud.batch.v1 \
     --api-version "batch.cnrm.cloud.google.com/v1alpha1" \
     --overlay ${REPO_ROOT}/apis/batch/v1alpha1/overlay.proto \
@@ -33,7 +33,7 @@ go run . generate-types \
     --resource BatchTask:Task
 
 
-go run . generate-mapper \
+${CONTROLLERBUILDER:-go run .} generate-mapper \
     --service google.cloud.batch.v1 \
     --api-version "batch.cnrm.cloud.google.com/v1alpha1" \
     --overlay ${REPO_ROOT}/apis/batch/v1alpha1/overlay.proto
@@ -41,4 +41,4 @@ go run . generate-mapper \
 cd ${REPO_ROOT}
 dev/tasks/generate-crds
 
-go run -mod=readonly golang.org/x/tools/cmd/goimports@${GOLANG_X_TOOLS_VERSION} -w  pkg/controller/direct/batch/
+${GOIMPORTS:-go run -mod=readonly golang.org/x/tools/cmd/goimports@${GOLANG_X_TOOLS_VERSION}} -w  pkg/controller/direct/batch/

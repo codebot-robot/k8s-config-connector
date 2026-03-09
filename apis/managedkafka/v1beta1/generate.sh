@@ -23,20 +23,9 @@ cd ${REPO_ROOT}/dev/tools/controllerbuilder
 
 ./generate-proto.sh
 
-go run . generate-types \
-  --service google.cloud.managedkafka.v1 \
-  --api-version managedkafka.cnrm.cloud.google.com/v1beta1 \
-  --include-skipped-output \
-  --resource ManagedKafkaCluster:Cluster \
-  --resource ManagedKafkaTopic:Topic
-
-go run . generate-mapper \
-  --service google.cloud.managedkafka.v1 \
-  --api-version managedkafka.cnrm.cloud.google.com/v1beta1 \
-  --include-skipped-output \
-  --multiversion
+${GOIMPORTS:-go run -mod=readonly golang.org/x/tools/cmd/goimports@${GOLANG_X_TOOLS_VERSION}} -w  pkg/controller/direct/managedkafka/
 
 cd ${REPO_ROOT}
 dev/tasks/generate-crds
 
-go run -mod=readonly golang.org/x/tools/cmd/goimports@${GOLANG_X_TOOLS_VERSION} -w  pkg/controller/direct/managedkafka/
+${GOIMPORTS:-go run -mod=readonly golang.org/x/tools/cmd/goimports@${GOLANG_X_TOOLS_VERSION}} -w  pkg/controller/direct/managedkafka/

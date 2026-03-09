@@ -18,7 +18,8 @@ SHORT_SHA := $(shell git rev-parse --short=7 HEAD)
 OPERATOR_IMG ?= gcr.io/${PROJECT_ID}/cnrm/operator:${SHORT_SHA}
 GKE_DISTROLESS_IMG ?= gcr.io/gke-release/gke-distroless/static:gke_distroless_20260207.00_p0
 
-KUSTOMIZE=go run sigs.k8s.io/kustomize/kustomize/v5@v5.3.0
+KUSTOMIZE=../bin/kustomize
+CONTROLLER_GEN ?= go run sigs.k8s.io/controller-tools/cmd/controller-gen@v0.16.5
 
 # enable multi-versions feature for CRDs
 CRD_OPTIONS ?= "crd"
@@ -56,7 +57,7 @@ ensure-channels:
 # Generate manifests e.g. CRD, RBAC etc.
 .PHONY: manifests
 manifests: ensure-channels
-	go run sigs.k8s.io/controller-tools/cmd/controller-gen@v0.16.5 $(CRD_OPTIONS) paths="./pkg/apis/..." output:crd:artifacts:config=config/crd/bases
+	$(CONTROLLER_GEN) $(CRD_OPTIONS) paths="./pkg/apis/..." output:crd:artifacts:config=config/crd/bases
 	@if [ -f "${CHANNEL_MANIFEST}" ]; then \
 		go run scripts/generate-image-configmap/main.go; \
 	else \
@@ -76,7 +77,7 @@ vet:
 # Generate code
 .PHONY: generate
 generate:
-	go run sigs.k8s.io/controller-tools/cmd/controller-gen@v0.16.5 object paths="./..."
+	$(CONTROLLER_GEN) object paths="./..."
 
 # Install CRDs into a cluster
 .PHONY: install

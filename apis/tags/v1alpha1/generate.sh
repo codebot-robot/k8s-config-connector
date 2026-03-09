@@ -30,4 +30,4 @@ cd ${REPO_ROOT}/dev/tools/controllerbuilder
 cd ${REPO_ROOT}
 dev/tasks/generate-crds
 
-# go run -mod=readonly golang.org/x/tools/cmd/goimports@${GOLANG_X_TOOLS_VERSION} -w  pkg/controller/direct/tags/
+${GOIMPORTS:-go run -mod=readonly golang.org/x/tools/cmd/goimports@${GOLANG_X_TOOLS_VERSION}} -w  pkg/controller/direct/tags/

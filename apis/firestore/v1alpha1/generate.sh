@@ -23,14 +23,14 @@ cd ${REPO_ROOT}/dev/tools/controllerbuilder
 
 ./generate-proto.sh
 
-go run . generate-types \
+${CONTROLLERBUILDER:-go run .} generate-types \
   --service google.firestore.admin.v1 \
   --api-version firestore.cnrm.cloud.google.com/v1alpha1  \
   --resource FirestoreDocument:google.firestore.v1.Document \
   --resource FirestoreField:Field \
   --resource FirestoreBackupSchedule:BackupSchedule
 
-go run . generate-mapper \
+${CONTROLLERBUILDER:-go run .} generate-mapper \
   --multiversion \
   --service google.firestore.admin.v1 \
   --service google.firestore.v1 \
@@ -39,4 +39,4 @@ go run . generate-mapper \
 cd ${REPO_ROOT}
 dev/tasks/generate-crds
 
-go run -mod=readonly golang.org/x/tools/cmd/goimports@${GOLANG_X_TOOLS_VERSION} -w pkg/controller/direct/firestore/
+${GOIMPORTS:-go run -mod=readonly golang.org/x/tools/cmd/goimports@${GOLANG_X_TOOLS_VERSION}} -w  pkg/controller/direct/firestore/

@@ -21,4 +21,6 @@ REPO_ROOT="$(git rev-parse --show-toplevel)"
 source "${REPO_ROOT}/dev/tools/goimports.sh"
 cd ${REPO_ROOT}
 
-go run -mod=readonly golang.org/x/tools/cmd/goimports@${GOLANG_X_TOOLS_VERSION} -w apis pkg cmd scripts tests config/tests
+DIRS="apis pkg cmd scripts tests config/tests"
+echo "Running goimports on ${DIRS} in parallel..."
+echo ${DIRS} | xargs -n 1 -P $(nproc) ${GOIMPORTS:-go run -mod=readonly golang.org/x/tools/cmd/goimports@${GOLANG_X_TOOLS_VERSION}} -w

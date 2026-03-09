@@ -24,12 +24,12 @@ cd ${REPO_ROOT}/dev/tools/controllerbuilder
 
 ./generate-proto.sh
 
-go run . generate-types \
+${CONTROLLERBUILDER:-go run .} generate-types \
   --service google.cloud.gkehub.v1beta --api-version gkehub.cnrm.cloud.google.com/v1beta1 \
   --resource GKEHubFeatureMembership:MembershipFeatureSpec
 
 # NOTYET - not yet using proto
-# go run . generate-mapper \
+# ${CONTROLLERBUILDER:-go run .} generate-mapper \
 #   --service google.cloud.gkehub.v1beta --api-version gkehub.cnrm.cloud.google.com/v1beta1
 
 # NOTYET - not yet following full pattern
@@ -38,4 +38,4 @@ rm ${REPO_ROOT}/apis/gkehub/v1beta1/membershipfeaturespec_types.go
 cd ${REPO_ROOT}
 dev/tasks/generate-crds
 
-go run -mod=readonly golang.org/x/tools/cmd/goimports@${GOLANG_X_TOOLS_VERSION} -w  pkg/controller/direct/gkehub/
+${GOIMPORTS:-go run -mod=readonly golang.org/x/tools/cmd/goimports@${GOLANG_X_TOOLS_VERSION}} -w  pkg/controller/direct/gkehub/

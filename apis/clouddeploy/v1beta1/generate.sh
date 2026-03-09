@@ -24,12 +24,12 @@ cd ${REPO_ROOT}/dev/tools/controllerbuilder
 
 ./generate-proto.sh
 
-go run . generate-types \
+${CONTROLLERBUILDER:-go run .} generate-types \
   --service google.cloud.deploy.v1 \
   --api-version clouddeploy.cnrm.cloud.google.com/v1beta1  \
   --resource CloudDeployDeliveryPipeline:DeliveryPipeline
 
-go run . generate-mapper \
+${CONTROLLERBUILDER:-go run .} generate-mapper \
   --service google.cloud.deploy.v1 \
   --api-version clouddeploy.cnrm.cloud.google.com/v1beta1 \
   --multiversion
@@ -37,4 +37,4 @@ go run . generate-mapper \
 cd ${REPO_ROOT}
 dev/tasks/generate-crds
 
-go run -mod=readonly golang.org/x/tools/cmd/goimports@${GOLANG_X_TOOLS_VERSION} -w  pkg/controller/direct/clouddeploy/
+${GOIMPORTS:-go run -mod=readonly golang.org/x/tools/cmd/goimports@${GOLANG_X_TOOLS_VERSION}} -w  pkg/controller/direct/clouddeploy/

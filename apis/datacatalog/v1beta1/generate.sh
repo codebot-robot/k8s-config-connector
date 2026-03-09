@@ -21,14 +21,14 @@ REPO_ROOT="$(git rev-parse --show-toplevel)"
 source "${REPO_ROOT}/dev/tools/goimports.sh"
 cd ${REPO_ROOT}/dev/tools/controllerbuilder
 
-go run . generate-types \
+${CONTROLLERBUILDER:-go run .} generate-types \
   --service google.cloud.datacatalog.v1 \
   --api-version datacatalog.cnrm.cloud.google.com/v1beta1 \
   --resource DataCatalogPolicyTag:PolicyTag \
   --resource DataCatalogTaxonomy:Taxonomy \
   --include-skipped-output
 
-go run . generate-mapper \
+${CONTROLLERBUILDER:-go run .} generate-mapper \
   --service google.cloud.datacatalog.v1 \
   --api-version datacatalog.cnrm.cloud.google.com/v1beta1 \
   --multiversion \

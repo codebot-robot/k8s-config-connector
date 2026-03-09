@@ -23,13 +23,13 @@ cd ${REPO_ROOT}/dev/tools/controllerbuilder
 
 ./generate-proto.sh
 
-go run . generate-types \
+${CONTROLLERBUILDER:-go run .} generate-types \
     --service google.cloud.networksecurity.v1beta1 \
     --api-version networksecurity.cnrm.cloud.google.com/v1beta1 \
     --resource NetworkSecurityAuthorizationPolicy:AuthorizationPolicy \
     --resource NetworkSecurityClientTLSPolicy:ClientTlsPolicy
 
-go run . generate-mapper \
+${CONTROLLERBUILDER:-go run .} generate-mapper \
     --service google.cloud.networksecurity.v1beta1 \
     --api-version networksecurity.cnrm.cloud.google.com/v1beta1
 

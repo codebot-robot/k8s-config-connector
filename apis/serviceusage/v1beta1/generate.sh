@@ -24,15 +24,14 @@ cd ${REPO_ROOT}/dev/tools/controllerbuilder
 
 ./generate-proto.sh
 
-# Generate KRM types for both ServiceIdentity and Service.
-go run . generate-types \
+${GOIMPORTS:-go run -mod=readonly golang.org/x/tools/cmd/goimports@${GOLANG_X_TOOLS_VERSION}} -w  pkg/controller/direct/serviceusage/
   --service google.api.serviceusage.v1beta1 \
   --api-version serviceusage.cnrm.cloud.google.com/v1beta1  \
   --resource ServiceIdentity:ServiceIdentity \
   --resource Service:Service \
   --include-skipped-output
 
-go run . generate-mapper \
+${CONTROLLERBUILDER:-go run .} generate-mapper \
   --service google.api.serviceusage.v1beta1 \
   --api-version serviceusage.cnrm.cloud.google.com/v1beta1 \
   --include-skipped-output
@@ -40,4 +39,4 @@ go run . generate-mapper \
 cd ${REPO_ROOT}
 dev/tasks/generate-crds
 
-go run -mod=readonly golang.org/x/tools/cmd/goimports@${GOLANG_X_TOOLS_VERSION} -w  pkg/controller/direct/serviceusage/
+${GOIMPORTS:-go run -mod=readonly golang.org/x/tools/cmd/goimports@${GOLANG_X_TOOLS_VERSION}} -w  pkg/controller/direct/serviceusage/

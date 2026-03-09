@@ -23,10 +23,9 @@ cd ${REPO_ROOT}/dev/tools/controllerbuilder
 
 ./generate-proto.sh
 
-go run . generate-types --config ${REPO_ROOT}/apis/bigquerydatatransfer/v1beta1/generatetypes.yaml
-go run . generate-mapper --config ${REPO_ROOT}/apis/bigquerydatatransfer/v1beta1/generatetypes.yaml
+${GOIMPORTS:-go run -mod=readonly golang.org/x/tools/cmd/goimports@${GOLANG_X_TOOLS_VERSION}} -w  pkg/controller/direct/bigquerydatatransfer/
 
 cd ${REPO_ROOT}
 dev/tasks/generate-crds
 
-go run -mod=readonly golang.org/x/tools/cmd/goimports@${GOLANG_X_TOOLS_VERSION} -w  pkg/controller/direct/bigquerydatatransfer/
+${GOIMPORTS:-go run -mod=readonly golang.org/x/tools/cmd/goimports@${GOLANG_X_TOOLS_VERSION}} -w  pkg/controller/direct/bigquerydatatransfer/

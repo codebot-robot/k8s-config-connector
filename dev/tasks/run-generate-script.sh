@@ -1,6 +1,6 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # Copyright 2026 Google LLC
-#
+
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -17,10 +17,6 @@ set -o errexit
 set -o nounset
 set -o pipefail
 
-REPO_ROOT="$(git rev-parse --show-toplevel)"
-source "${REPO_ROOT}/dev/tools/goimports.sh"
-cd ${REPO_ROOT}/dev/tools/controllerbuilder
-
-./generate-proto.sh
-
-${GOIMPORTS:-go run -mod=readonly golang.org/x/tools/cmd/goimports@${GOLANG_X_TOOLS_VERSION}} -w  pkg/controller/direct/managedkafka/
+script=$1
+echo "running ${script}"
+./${script}

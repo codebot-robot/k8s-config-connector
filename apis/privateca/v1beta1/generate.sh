@@ -24,12 +24,12 @@ cd ${REPO_ROOT}/dev/tools/controllerbuilder
 
 ./generate-proto.sh
 
-go run . generate-types \
+${CONTROLLERBUILDER:-go run .} generate-types \
   --service google.cloud.security.privateca.v1 \
   --api-version privateca.cnrm.cloud.google.com/v1beta1  \
   --resource PrivateCACAPool:CaPool
 
-go run . generate-mapper \
+${CONTROLLERBUILDER:-go run .} generate-mapper \
   --service google.cloud.security.privateca.v1 \
   --api-version privateca.cnrm.cloud.google.com/v1beta1
 
@@ -49,5 +49,4 @@ sed -i '/ZeroMaxIssuerPathLength/d' pkg/controller/direct/privateca/mapper.gener
 dev/tasks/generate-crds
 
 # Format files
-go run -mod=readonly golang.org/x/tools/cmd/goimports@${GOLANG_X_TOOLS_VERSION} -w  pkg/controller/direct/privateca/
-go run -mod=readonly golang.org/x/tools/cmd/goimports@${GOLANG_X_TOOLS_VERSION} -w  apis/privateca/v1beta1/
+${GOIMPORTS:-go run -mod=readonly golang.org/x/tools/cmd/goimports@${GOLANG_X_TOOLS_VERSION}} -w  pkg/controller/direct/privateca/

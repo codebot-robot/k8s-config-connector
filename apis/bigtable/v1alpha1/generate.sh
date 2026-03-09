@@ -24,7 +24,7 @@ cd ${REPO_ROOT}/dev/tools/controllerbuilder
 
 ./generate-proto.sh
 
-go run . generate-types \
+${CONTROLLERBUILDER:-go run .} generate-types \
   --service google.bigtable.admin.v2 \
   --api-version bigtable.cnrm.cloud.google.com/v1alpha1  \
   --resource BigtableAuthorizedView:AuthorizedView \
@@ -33,7 +33,7 @@ go run . generate-types \
   --resource BigtableLogicalView:LogicalView \
   --resource BigtableMaterializedView:MaterializedView
 
-go run . generate-mapper \
+${CONTROLLERBUILDER:-go run .} generate-mapper \
   --service google.bigtable.admin.v2 \
   --api-version bigtable.cnrm.cloud.google.com/v1alpha1
 
@@ -41,4 +41,4 @@ go run . generate-mapper \
 cd ${REPO_ROOT}
 dev/tasks/generate-crds
 
-go run -mod=readonly golang.org/x/tools/cmd/goimports@${GOLANG_X_TOOLS_VERSION} -w  pkg/controller/direct/bigtable/
+${GOIMPORTS:-go run -mod=readonly golang.org/x/tools/cmd/goimports@${GOLANG_X_TOOLS_VERSION}} -w  pkg/controller/direct/bigtable/

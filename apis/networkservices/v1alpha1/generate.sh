@@ -23,7 +23,7 @@ cd ${REPO_ROOT}/dev/tools/controllerbuilder
 
 ./generate-proto.sh
 
-go run . generate-types \
+${CONTROLLERBUILDER:-go run .} generate-types \
     --service google.cloud.networkservices.v1 \
     --api-version "networkservices.cnrm.cloud.google.com/v1alpha1" \
     --resource NetworkServicesServiceBinding:ServiceBinding \
@@ -31,12 +31,11 @@ go run . generate-types \
     --resource NetworkServicesWasmPlugin:WasmPlugin
 
 
-go run . generate-mapper \
+${CONTROLLERBUILDER:-go run .} generate-mapper \
     --service google.cloud.networkservices.v1 \
     --api-version "networkservices.cnrm.cloud.google.com/v1alpha1"
 
 cd ${REPO_ROOT}
 dev/tasks/generate-crds
 
-go run -mod=readonly golang.org/x/tools/cmd/goimports@${GOLANG_X_TOOLS_VERSION} -w pkg/controller/direct/networkservices/
-go run -mod=readonly golang.org/x/tools/cmd/goimports@${GOLANG_X_TOOLS_VERSION} -w apis/networkservices/v1alpha1/
+${GOIMPORTS:-go run -mod=readonly golang.org/x/tools/cmd/goimports@${GOLANG_X_TOOLS_VERSION}} -w  pkg/controller/direct/networkservices/
