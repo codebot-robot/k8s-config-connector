@@ -251,6 +251,31 @@ spec:
 		t.Fatalf("StorageBucket CRD not established: %v", err)
 	}
 
+	t.Logf("Waiting for controller-manager to be ready")
+	if err := runCommand(ctx, t, root, "kubectl", "wait", "-n", "cnrm-system", "--for=jsonpath={.status.readyReplicas}=1", "statefulset/cnrm-controller-manager", "--timeout=5m"); err != nil {
+		t.Fatalf("controller-manager failed to become ready: %v", err)
+	}
+
+	t.Logf("Waiting for webhook-manager to be ready")
+	if err := runCommand(ctx, t, root, "kubectl", "wait", "-n", "cnrm-system", "--for=condition=Available", "deployment/cnrm-webhook-manager", "--timeout=5m"); err != nil {
+		t.Fatalf("webhook-manager failed to become ready: %v", err)
+	}
+
+	t.Logf("Waiting for resource-stats-recorder to be ready")
+	if err := runCommand(ctx, t, root, "kubectl", "wait", "-n", "cnrm-system", "--for=condition=Available", "deployment/cnrm-resource-stats-recorder", "--timeout=5m"); err != nil {
+		t.Fatalf("resource-stats-recorder failed to become ready: %v", err)
+	}
+
+	t.Logf("Waiting for deletion-defender to be ready")
+	if err := runCommand(ctx, t, root, "kubectl", "wait", "-n", "cnrm-system", "--for=jsonpath={.status.readyReplicas}=1", "statefulset/cnrm-deletiondefender", "--timeout=5m"); err != nil {
+		t.Fatalf("deletion-defender failed to become ready: %v", err)
+	}
+
+	t.Logf("Waiting for unmanaged-detector to be ready")
+	if err := runCommand(ctx, t, root, "kubectl", "wait", "-n", "cnrm-system", "--for=jsonpath={.status.readyReplicas}=1", "statefulset/cnrm-unmanaged-detector", "--timeout=5m"); err != nil {
+		t.Fatalf("unmanaged-detector failed to become ready: %v", err)
+	}
+
 	t.Logf("Creating namespace and StorageBucket")
 	ns := "config-control"
 	if err := runCommand(ctx, t, root, "kubectl", "create", "ns", ns); err != nil && !strings.Contains(err.Error(), "already exists") {
