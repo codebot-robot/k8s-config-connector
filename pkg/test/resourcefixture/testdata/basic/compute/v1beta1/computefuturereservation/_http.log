@@ -1,7 +1,7 @@
 GET https://compute.googleapis.com/compute/v1/projects/${projectId}/zones/us-central1-a/futureReservations/${futureReservationID}
 Content-Type: application/json
 User-Agent: kcc/${kccVersion} (+https://github.com/GoogleCloudPlatform/k8s-config-connector) kcc/controller-manager/${kccVersion}
-X-Goog-Request-Params: project=${projectId}&zone=us-central1-a&future_reservation=computefuturereservation-${uniqueId}
+X-Goog-Request-Params: project=${projectId}&zone=us-central1-a&future_reservation=${futureReservationID}
 
 404 Not Found
 Content-Type: application/json; charset=UTF-8
@@ -115,7 +115,7 @@ X-Xss-Protection: 0
 GET https://compute.googleapis.com/compute/v1/projects/${projectId}/zones/us-central1-a/futureReservations/${futureReservationID}
 Content-Type: application/json
 User-Agent: kcc/${kccVersion} (+https://github.com/GoogleCloudPlatform/k8s-config-connector) kcc/controller-manager/${kccVersion}
-X-Goog-Request-Params: project=${projectId}&zone=us-central1-a&future_reservation=computefuturereservation-${uniqueId}
+X-Goog-Request-Params: project=${projectId}&zone=us-central1-a&future_reservation=${futureReservationID}
 
 200 OK
 Content-Type: application/json; charset=UTF-8
@@ -159,7 +159,7 @@ X-Xss-Protection: 0
 PATCH https://compute.googleapis.com/compute/v1/projects/${projectId}/zones/us-central1-a/futureReservations/${futureReservationID}?updateMask=specific_sku_properties.total_count
 Content-Type: application/json
 User-Agent: kcc/${kccVersion} (+https://github.com/GoogleCloudPlatform/k8s-config-connector) kcc/controller-manager/${kccVersion}
-X-Goog-Request-Params: project=${projectId}&zone=us-central1-a&future_reservation=computefuturereservation-${uniqueId}
+X-Goog-Request-Params: project=${projectId}&zone=us-central1-a&future_reservation=${futureReservationID}
 
 {
   "autoDeleteAutoCreatedReservations": true,
@@ -251,7 +251,7 @@ X-Xss-Protection: 0
 GET https://compute.googleapis.com/compute/v1/projects/${projectId}/zones/us-central1-a/futureReservations/${futureReservationID}
 Content-Type: application/json
 User-Agent: kcc/${kccVersion} (+https://github.com/GoogleCloudPlatform/k8s-config-connector) kcc/controller-manager/${kccVersion}
-X-Goog-Request-Params: project=${projectId}&zone=us-central1-a&future_reservation=computefuturereservation-${uniqueId}
+X-Goog-Request-Params: project=${projectId}&zone=us-central1-a&future_reservation=${futureReservationID}
 
 200 OK
 Content-Type: application/json; charset=UTF-8
@@ -300,7 +300,7 @@ X-Xss-Protection: 0
 DELETE https://compute.googleapis.com/compute/v1/projects/${projectId}/zones/us-central1-a/futureReservations/${futureReservationID}
 Content-Type: application/json
 User-Agent: kcc/${kccVersion} (+https://github.com/GoogleCloudPlatform/k8s-config-connector) kcc/controller-manager/${kccVersion}
-X-Goog-Request-Params: project=${projectId}&zone=us-central1-a&future_reservation=computefuturereservation-${uniqueId}
+X-Goog-Request-Params: project=${projectId}&zone=us-central1-a&future_reservation=${futureReservationID}
 
 200 OK
 Content-Type: application/json; charset=UTF-8
