@@ -19,7 +19,7 @@
 package compute
 
 import (
-	pb "cloud.google.com/go/compute/apiv1/computepb"
+	computepbv1 "cloud.google.com/go/compute/apiv1/computepb"
 	"github.com/GoogleCloudPlatform/k8s-config-connector/pkg/fuzztesting"
 )
 
@@ -28,7 +28,7 @@ func init() {
 }
 
 func computeTargetTCPProxyFuzzer() fuzztesting.KRMFuzzer {
-	f := fuzztesting.NewKRMTypedFuzzer(&pb.TargetTcpProxy{},
+	f := fuzztesting.NewKRMTypedFuzzer(&computepbv1.TargetTcpProxy{},
 		ComputeTargetTCPProxySpec_v1beta1_FromProto, ComputeTargetTCPProxySpec_v1beta1_ToProto,
 		ComputeTargetTCPProxyStatus_v1beta1_FromProto, ComputeTargetTCPProxyStatus_v1beta1_ToProto,
 	)

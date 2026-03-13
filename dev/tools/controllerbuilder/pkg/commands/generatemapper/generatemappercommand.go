@@ -147,12 +147,16 @@ func RunGenerateMapper(ctx context.Context, o *GenerateMapperOptions) error {
 	mapperGenerator := codegen.NewMapperGenerator(pathForMessage, o.OutputMapperDirectory, generatedFileAnnotation, o.Multiversion)
 	mapperGenerator.WithIncludeSkippedOutput(o.GenerateOptions.IncludeSkippedOutput)
 
-	// Ensure that our first proto package is always imported with the "pb" alias.
+	// Ensure that our first proto package is always imported with a standard alias.
 	firstService, err := api.GetFileDescriptorByPackage(o.ServiceNames[0])
 	if err != nil {
 		return err
 	}
-	mapperGenerator.AddGoImportAlias(codegen.GoPackageForProto(firstService[0]), "pb")
+	importAlias := "pb"
+	if strings.HasPrefix(o.ServiceNames[0], "google.cloud.compute.") {
+		importAlias = strings.ReplaceAll(o.ServiceNames[0], "google.cloud.compute.", "computepb")
+	}
+	mapperGenerator.AddGoImportAlias(codegen.GoPackageForProto(firstService[0]), importAlias)
 
 	if err := mapperGenerator.VisitGoCode(o.APIGoPackagePath, o.APIDirectory); err != nil {
 		return err

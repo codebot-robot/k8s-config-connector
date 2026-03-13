@@ -20,12 +20,12 @@
 package compute
 
 import (
-	pb "cloud.google.com/go/compute/apiv1/computepb"
+	computepbv1 "cloud.google.com/go/compute/apiv1/computepb"
 	krm "github.com/GoogleCloudPlatform/k8s-config-connector/apis/compute/v1alpha1"
 	"github.com/GoogleCloudPlatform/k8s-config-connector/pkg/controller/direct"
 )
 
-func ComputeInterconnectObservedState_v1alpha1_FromProto(mapCtx *direct.MapContext, in *pb.Interconnect) *krm.ComputeInterconnectObservedState {
+func ComputeInterconnectObservedState_v1alpha1_FromProto(mapCtx *direct.MapContext, in *computepbv1.Interconnect) *krm.ComputeInterconnectObservedState {
 	if in == nil {
 		return nil
 	}
@@ -48,11 +48,11 @@ func ComputeInterconnectObservedState_v1alpha1_FromProto(mapCtx *direct.MapConte
 	out.State = in.State
 	return out
 }
-func ComputeInterconnectObservedState_v1alpha1_ToProto(mapCtx *direct.MapContext, in *krm.ComputeInterconnectObservedState) *pb.Interconnect {
+func ComputeInterconnectObservedState_v1alpha1_ToProto(mapCtx *direct.MapContext, in *krm.ComputeInterconnectObservedState) *computepbv1.Interconnect {
 	if in == nil {
 		return nil
 	}
-	out := &pb.Interconnect{}
+	out := &computepbv1.Interconnect{}
 	out.AvailableFeatures = in.AvailableFeatures
 	out.CircuitInfos = direct.Slice_ToProto(mapCtx, in.CircuitInfos, InterconnectCircuitInfo_v1alpha1_ToProto)
 	out.CreationTimestamp = in.CreationTimestamp
@@ -71,7 +71,7 @@ func ComputeInterconnectObservedState_v1alpha1_ToProto(mapCtx *direct.MapContext
 	out.State = in.State
 	return out
 }
-func ComputeInterconnectSpec_v1alpha1_FromProto(mapCtx *direct.MapContext, in *pb.Interconnect) *krm.ComputeInterconnectSpec {
+func ComputeInterconnectSpec_v1alpha1_FromProto(mapCtx *direct.MapContext, in *computepbv1.Interconnect) *krm.ComputeInterconnectSpec {
 	if in == nil {
 		return nil
 	}
@@ -93,11 +93,11 @@ func ComputeInterconnectSpec_v1alpha1_FromProto(mapCtx *direct.MapContext, in *p
 	out.RequestedLinkCount = in.RequestedLinkCount
 	return out
 }
-func ComputeInterconnectSpec_v1alpha1_ToProto(mapCtx *direct.MapContext, in *krm.ComputeInterconnectSpec) *pb.Interconnect {
+func ComputeInterconnectSpec_v1alpha1_ToProto(mapCtx *direct.MapContext, in *krm.ComputeInterconnectSpec) *computepbv1.Interconnect {
 	if in == nil {
 		return nil
 	}
-	out := &pb.Interconnect{}
+	out := &computepbv1.Interconnect{}
 	out.AdminEnabled = in.AdminEnabled
 	out.CustomerName = in.CustomerName
 	out.Description = in.Description
@@ -107,7 +107,7 @@ func ComputeInterconnectSpec_v1alpha1_ToProto(mapCtx *direct.MapContext, in *krm
 	out.LinkType = in.LinkType
 	out.Location = in.Location
 	if oneof := InterconnectMacsec_v1alpha1_ToProto(mapCtx, in.Macsec); oneof != nil {
-		out.Macsec = &pb.InterconnectMacsec{FailOpen: oneof.FailOpen, PreSharedKeys: oneof.PreSharedKeys}
+		out.Macsec = &computepbv1.InterconnectMacsec{FailOpen: oneof.FailOpen, PreSharedKeys: oneof.PreSharedKeys}
 	}
 	out.MacsecEnabled = in.MacsecEnabled
 	// MISSING: Name
@@ -117,11 +117,11 @@ func ComputeInterconnectSpec_v1alpha1_ToProto(mapCtx *direct.MapContext, in *krm
 	out.RequestedLinkCount = in.RequestedLinkCount
 	return out
 }
-func InterconnectMacsecPreSharedKey_ToProto(mapCtx *direct.MapContext, in *krm.InterconnectMacsecPreSharedKey) *pb.InterconnectMacsecPreSharedKey {
+func InterconnectMacsecPreSharedKey_ToProto(mapCtx *direct.MapContext, in *krm.InterconnectMacsecPreSharedKey) *computepbv1.InterconnectMacsecPreSharedKey {
 	if in == nil {
 		return nil
 	}
-	out := &pb.InterconnectMacsecPreSharedKey{}
+	out := &computepbv1.InterconnectMacsecPreSharedKey{}
 	out.Name = in.Name
 	out.StartTime = in.StartTime
 	return out

@@ -19,7 +19,7 @@
 package compute
 
 import (
-	pb "cloud.google.com/go/compute/apiv1/computepb"
+	computepbv1 "cloud.google.com/go/compute/apiv1/computepb"
 	"github.com/GoogleCloudPlatform/k8s-config-connector/pkg/fuzztesting"
 )
 
@@ -28,7 +28,7 @@ func init() {
 }
 
 func computeForwardingRuleFuzzer() fuzztesting.KRMFuzzer {
-	f := fuzztesting.NewKRMTypedFuzzer(&pb.ForwardingRule{},
+	f := fuzztesting.NewKRMTypedFuzzer(&computepbv1.ForwardingRule{},
 		ComputeForwardingRuleSpec_v1beta1_FromProto, ComputeForwardingRuleSpec_v1beta1_ToProto,
 		ComputeForwardingRuleStatus_v1beta1_FromProto, ComputeForwardingRuleStatus_v1beta1_ToProto,
 	)

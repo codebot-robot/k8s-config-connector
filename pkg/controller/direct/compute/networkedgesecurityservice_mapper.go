@@ -20,13 +20,13 @@
 package compute
 
 import (
-	pb "cloud.google.com/go/compute/apiv1/computepb"
+	computepbv1 "cloud.google.com/go/compute/apiv1/computepb"
 	krm "github.com/GoogleCloudPlatform/k8s-config-connector/apis/compute/v1alpha1"
 	refs "github.com/GoogleCloudPlatform/k8s-config-connector/apis/compute/v1beta1"
 	"github.com/GoogleCloudPlatform/k8s-config-connector/pkg/controller/direct"
 )
 
-func ComputeNetworkEdgeSecurityServiceObservedState_v1alpha1_FromProto(mapCtx *direct.MapContext, in *pb.NetworkEdgeSecurityService) *krm.ComputeNetworkEdgeSecurityServiceObservedState {
+func ComputeNetworkEdgeSecurityServiceObservedState_v1alpha1_FromProto(mapCtx *direct.MapContext, in *computepbv1.NetworkEdgeSecurityService) *krm.ComputeNetworkEdgeSecurityServiceObservedState {
 	if in == nil {
 		return nil
 	}
@@ -40,11 +40,11 @@ func ComputeNetworkEdgeSecurityServiceObservedState_v1alpha1_FromProto(mapCtx *d
 	out.SelfLinkWithID = in.SelfLinkWithId
 	return out
 }
-func ComputeNetworkEdgeSecurityServiceObservedState_v1alpha1_ToProto(mapCtx *direct.MapContext, in *krm.ComputeNetworkEdgeSecurityServiceObservedState) *pb.NetworkEdgeSecurityService {
+func ComputeNetworkEdgeSecurityServiceObservedState_v1alpha1_ToProto(mapCtx *direct.MapContext, in *krm.ComputeNetworkEdgeSecurityServiceObservedState) *computepbv1.NetworkEdgeSecurityService {
 	if in == nil {
 		return nil
 	}
-	out := &pb.NetworkEdgeSecurityService{}
+	out := &computepbv1.NetworkEdgeSecurityService{}
 	out.CreationTimestamp = in.CreationTimestamp
 	out.Id = in.ID
 	out.Kind = in.Kind
@@ -54,7 +54,7 @@ func ComputeNetworkEdgeSecurityServiceObservedState_v1alpha1_ToProto(mapCtx *dir
 	out.SelfLinkWithId = in.SelfLinkWithID
 	return out
 }
-func ComputeNetworkEdgeSecurityServiceSpec_v1alpha1_FromProto(mapCtx *direct.MapContext, in *pb.NetworkEdgeSecurityService) *krm.ComputeNetworkEdgeSecurityServiceSpec {
+func ComputeNetworkEdgeSecurityServiceSpec_v1alpha1_FromProto(mapCtx *direct.MapContext, in *computepbv1.NetworkEdgeSecurityService) *krm.ComputeNetworkEdgeSecurityServiceSpec {
 	if in == nil {
 		return nil
 	}
@@ -67,11 +67,11 @@ func ComputeNetworkEdgeSecurityServiceSpec_v1alpha1_FromProto(mapCtx *direct.Map
 	}
 	return out
 }
-func ComputeNetworkEdgeSecurityServiceSpec_v1alpha1_ToProto(mapCtx *direct.MapContext, in *krm.ComputeNetworkEdgeSecurityServiceSpec) *pb.NetworkEdgeSecurityService {
+func ComputeNetworkEdgeSecurityServiceSpec_v1alpha1_ToProto(mapCtx *direct.MapContext, in *krm.ComputeNetworkEdgeSecurityServiceSpec) *computepbv1.NetworkEdgeSecurityService {
 	if in == nil {
 		return nil
 	}
-	out := &pb.NetworkEdgeSecurityService{}
+	out := &computepbv1.NetworkEdgeSecurityService{}
 	out.Description = in.Description
 	out.Fingerprint = in.Fingerprint
 	// MISSING: Name

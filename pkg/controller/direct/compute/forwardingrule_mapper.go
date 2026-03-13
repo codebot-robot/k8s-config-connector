@@ -18,13 +18,13 @@ import (
 	"strconv"
 	"strings"
 
-	pb "cloud.google.com/go/compute/apiv1/computepb"
+	computepbv1 "cloud.google.com/go/compute/apiv1/computepb"
 	krm "github.com/GoogleCloudPlatform/k8s-config-connector/apis/compute/v1beta1"
 	refs "github.com/GoogleCloudPlatform/k8s-config-connector/apis/refs/v1beta1"
 	"github.com/GoogleCloudPlatform/k8s-config-connector/pkg/controller/direct"
 )
 
-func ComputeForwardingRuleSpec_v1beta1_FromProto(mapCtx *direct.MapContext, in *pb.ForwardingRule) *krm.ComputeForwardingRuleSpec {
+func ComputeForwardingRuleSpec_v1beta1_FromProto(mapCtx *direct.MapContext, in *computepbv1.ForwardingRule) *krm.ComputeForwardingRuleSpec {
 	if in == nil {
 		return nil
 	}
@@ -66,11 +66,11 @@ func ComputeForwardingRuleSpec_v1beta1_FromProto(mapCtx *direct.MapContext, in *
 	out.Target = ComputeForwardingRuleSpec_Target_FromProto(mapCtx, in.GetTarget())
 	return out
 }
-func ComputeForwardingRuleSpec_v1beta1_ToProto(mapCtx *direct.MapContext, in *krm.ComputeForwardingRuleSpec) *pb.ForwardingRule {
+func ComputeForwardingRuleSpec_v1beta1_ToProto(mapCtx *direct.MapContext, in *krm.ComputeForwardingRuleSpec) *computepbv1.ForwardingRule {
 	if in == nil {
 		return nil
 	}
-	out := &pb.ForwardingRule{}
+	out := &computepbv1.ForwardingRule{}
 	out.IPAddress = ComputeForwardingRuleSpec_IpAddress_ToProto(mapCtx, in.IpAddress)
 	out.IPProtocol = in.IpProtocol
 	out.AllPorts = in.AllPorts
@@ -108,7 +108,7 @@ func ComputeForwardingRuleSpec_v1beta1_ToProto(mapCtx *direct.MapContext, in *kr
 	out.Target = ComputeForwardingRuleSpec_Target_ToProto(mapCtx, in.Target)
 	return out
 }
-func ComputeForwardingRuleStatus_v1beta1_FromProto(mapCtx *direct.MapContext, in *pb.ForwardingRule) *krm.ComputeForwardingRuleStatus {
+func ComputeForwardingRuleStatus_v1beta1_FromProto(mapCtx *direct.MapContext, in *computepbv1.ForwardingRule) *krm.ComputeForwardingRuleStatus {
 	if in == nil {
 		return nil
 	}
@@ -122,11 +122,11 @@ func ComputeForwardingRuleStatus_v1beta1_FromProto(mapCtx *direct.MapContext, in
 	out.ServiceName = in.ServiceName
 	return out
 }
-func ComputeForwardingRuleStatus_v1beta1_ToProto(mapCtx *direct.MapContext, in *krm.ComputeForwardingRuleStatus) *pb.ForwardingRule {
+func ComputeForwardingRuleStatus_v1beta1_ToProto(mapCtx *direct.MapContext, in *krm.ComputeForwardingRuleStatus) *computepbv1.ForwardingRule {
 	if in == nil {
 		return nil
 	}
-	out := &pb.ForwardingRule{}
+	out := &computepbv1.ForwardingRule{}
 	out.BaseForwardingRule = in.BaseForwardingRule
 	out.CreationTimestamp = in.CreationTimestamp
 	out.LabelFingerprint = in.LabelFingerprint

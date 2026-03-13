@@ -15,12 +15,12 @@
 package compute
 
 import (
-	pb "cloud.google.com/go/compute/apiv1/computepb"
+	computepbv1 "cloud.google.com/go/compute/apiv1/computepb"
 	krm "github.com/GoogleCloudPlatform/k8s-config-connector/apis/compute/v1beta1"
 	"github.com/GoogleCloudPlatform/k8s-config-connector/pkg/controller/direct"
 )
 
-func ComputeTargetTCPProxySpec_v1beta1_FromProto(mapCtx *direct.MapContext, in *pb.TargetTcpProxy) *krm.ComputeTargetTCPProxySpec {
+func ComputeTargetTCPProxySpec_v1beta1_FromProto(mapCtx *direct.MapContext, in *computepbv1.TargetTcpProxy) *krm.ComputeTargetTCPProxySpec {
 	if in == nil {
 		return nil
 	}
@@ -34,11 +34,11 @@ func ComputeTargetTCPProxySpec_v1beta1_FromProto(mapCtx *direct.MapContext, in *
 	}
 	return out
 }
-func ComputeTargetTCPProxySpec_v1beta1_ToProto(mapCtx *direct.MapContext, in *krm.ComputeTargetTCPProxySpec) *pb.TargetTcpProxy {
+func ComputeTargetTCPProxySpec_v1beta1_ToProto(mapCtx *direct.MapContext, in *krm.ComputeTargetTCPProxySpec) *computepbv1.TargetTcpProxy {
 	if in == nil {
 		return nil
 	}
-	out := &pb.TargetTcpProxy{}
+	out := &computepbv1.TargetTcpProxy{}
 	out.Description = in.Description
 	out.ProxyBind = in.ProxyBind
 	out.ProxyHeader = in.ProxyHeader
@@ -48,7 +48,7 @@ func ComputeTargetTCPProxySpec_v1beta1_ToProto(mapCtx *direct.MapContext, in *kr
 	}
 	return out
 }
-func ComputeTargetTCPProxyStatus_v1beta1_FromProto(mapCtx *direct.MapContext, in *pb.TargetTcpProxy) *krm.ComputeTargetTCPProxyStatus {
+func ComputeTargetTCPProxyStatus_v1beta1_FromProto(mapCtx *direct.MapContext, in *computepbv1.TargetTcpProxy) *krm.ComputeTargetTCPProxyStatus {
 	if in == nil {
 		return nil
 	}
@@ -59,11 +59,11 @@ func ComputeTargetTCPProxyStatus_v1beta1_FromProto(mapCtx *direct.MapContext, in
 	out.SelfLink = in.SelfLink
 	return out
 }
-func ComputeTargetTCPProxyStatus_v1beta1_ToProto(mapCtx *direct.MapContext, in *krm.ComputeTargetTCPProxyStatus) *pb.TargetTcpProxy {
+func ComputeTargetTCPProxyStatus_v1beta1_ToProto(mapCtx *direct.MapContext, in *krm.ComputeTargetTCPProxyStatus) *computepbv1.TargetTcpProxy {
 	if in == nil {
 		return nil
 	}
-	out := &pb.TargetTcpProxy{}
+	out := &computepbv1.TargetTcpProxy{}
 	out.CreationTimestamp = in.CreationTimestamp
 	out.Id = direct.PtrInt64ToPtrUint64(in.ProxyId)
 	// Kind

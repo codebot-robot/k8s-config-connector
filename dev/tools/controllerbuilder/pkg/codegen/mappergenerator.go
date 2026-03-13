@@ -1229,6 +1229,17 @@ func (o *MapperGenerator) goPackageForProto(parentFile protoreflect.FileDescript
 	}
 
 	importAlias := strings.TrimSuffix(lastComponent(protoGoPackage), "pb") + "pb"
+	if strings.Contains(protoGoPackage, "cloud.google.com/go/compute/") {
+		// Extract version from path, e.g., "apiv1beta"
+		parts := strings.Split(protoGoPackage, "/")
+		for _, part := range parts {
+			if strings.HasPrefix(part, "api") {
+				version := strings.TrimPrefix(part, "api")
+				importAlias = "computepb" + version
+				break
+			}
+		}
+	}
 
 	o.AddGoImportAlias(protoGoPackage, importAlias)
 	return importAlias

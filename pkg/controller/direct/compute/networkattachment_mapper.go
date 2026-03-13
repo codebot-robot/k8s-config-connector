@@ -19,13 +19,13 @@
 package compute
 
 import (
-	pb "cloud.google.com/go/compute/apiv1/computepb"
+	computepbv1 "cloud.google.com/go/compute/apiv1/computepb"
 	krm "github.com/GoogleCloudPlatform/k8s-config-connector/apis/compute/v1alpha1"
 	refs "github.com/GoogleCloudPlatform/k8s-config-connector/apis/refs/v1beta1"
 	"github.com/GoogleCloudPlatform/k8s-config-connector/pkg/controller/direct"
 )
 
-func ComputeNetworkAttachmentObservedState_v1alpha1_FromProto(mapCtx *direct.MapContext, in *pb.NetworkAttachment) *krm.ComputeNetworkAttachmentObservedState {
+func ComputeNetworkAttachmentObservedState_v1alpha1_FromProto(mapCtx *direct.MapContext, in *computepbv1.NetworkAttachment) *krm.ComputeNetworkAttachmentObservedState {
 	if in == nil {
 		return nil
 	}
@@ -41,11 +41,11 @@ func ComputeNetworkAttachmentObservedState_v1alpha1_FromProto(mapCtx *direct.Map
 	out.SelfLinkWithID = in.SelfLinkWithId
 	return out
 }
-func ComputeNetworkAttachmentObservedState_v1alpha1_ToProto(mapCtx *direct.MapContext, in *krm.ComputeNetworkAttachmentObservedState) *pb.NetworkAttachment {
+func ComputeNetworkAttachmentObservedState_v1alpha1_ToProto(mapCtx *direct.MapContext, in *krm.ComputeNetworkAttachmentObservedState) *computepbv1.NetworkAttachment {
 	if in == nil {
 		return nil
 	}
-	out := &pb.NetworkAttachment{}
+	out := &computepbv1.NetworkAttachment{}
 	out.ConnectionEndpoints = direct.Slice_ToProto(mapCtx, in.ConnectionEndpoints, NetworkAttachmentConnectedEndpoint_v1alpha1_ToProto)
 	out.CreationTimestamp = in.CreationTimestamp
 	out.Id = in.ID
@@ -57,7 +57,7 @@ func ComputeNetworkAttachmentObservedState_v1alpha1_ToProto(mapCtx *direct.MapCo
 	out.SelfLinkWithId = in.SelfLinkWithID
 	return out
 }
-func ComputeNetworkAttachmentSpec_v1alpha1_FromProto(mapCtx *direct.MapContext, in *pb.NetworkAttachment) *krm.ComputeNetworkAttachmentSpec {
+func ComputeNetworkAttachmentSpec_v1alpha1_FromProto(mapCtx *direct.MapContext, in *computepbv1.NetworkAttachment) *krm.ComputeNetworkAttachmentSpec {
 	if in == nil {
 		return nil
 	}
@@ -71,11 +71,11 @@ func ComputeNetworkAttachmentSpec_v1alpha1_FromProto(mapCtx *direct.MapContext, 
 	out.SubnetworkRefs = SubnetworkList_FromProto(mapCtx, in.Subnetworks)
 	return out
 }
-func ComputeNetworkAttachmentSpec_v1alpha1_ToProto(mapCtx *direct.MapContext, in *krm.ComputeNetworkAttachmentSpec) *pb.NetworkAttachment {
+func ComputeNetworkAttachmentSpec_v1alpha1_ToProto(mapCtx *direct.MapContext, in *krm.ComputeNetworkAttachmentSpec) *computepbv1.NetworkAttachment {
 	if in == nil {
 		return nil
 	}
-	out := &pb.NetworkAttachment{}
+	out := &computepbv1.NetworkAttachment{}
 	out.ConnectionPreference = in.ConnectionPreference
 	out.Description = in.Description
 	out.Fingerprint = in.Fingerprint

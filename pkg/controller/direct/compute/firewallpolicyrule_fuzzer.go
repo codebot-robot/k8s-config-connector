@@ -19,7 +19,7 @@
 package compute
 
 import (
-	pb "cloud.google.com/go/compute/apiv1/computepb"
+	computepbv1 "cloud.google.com/go/compute/apiv1/computepb"
 	"github.com/GoogleCloudPlatform/k8s-config-connector/pkg/fuzztesting"
 )
 
@@ -28,7 +28,7 @@ func init() {
 }
 
 func computeFirewallPolicyRuleFuzzer() fuzztesting.KRMFuzzer {
-	f := fuzztesting.NewKRMTypedFuzzer(&pb.FirewallPolicyRule{},
+	f := fuzztesting.NewKRMTypedFuzzer(&computepbv1.FirewallPolicyRule{},
 		ComputeFirewallPolicyRuleSpec_v1beta1_FromProto, ComputeFirewallPolicyRuleSpec_v1beta1_ToProto,
 		ComputeFirewallPolicyRuleStatus_v1beta1_FromProto, ComputeFirewallPolicyRuleStatus_v1beta1_ToProto,
 	)

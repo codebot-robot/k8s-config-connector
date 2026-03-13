@@ -15,7 +15,7 @@
 package compute
 
 import (
-	pb "cloud.google.com/go/compute/apiv1/computepb"
+	computepbv1 "cloud.google.com/go/compute/apiv1/computepb"
 	computev1beta1 "github.com/GoogleCloudPlatform/k8s-config-connector/apis/compute/v1beta1"
 	krm "github.com/GoogleCloudPlatform/k8s-config-connector/apis/compute/v1beta1"
 	refs "github.com/GoogleCloudPlatform/k8s-config-connector/apis/refs/v1beta1"
@@ -23,7 +23,7 @@ import (
 	"github.com/GoogleCloudPlatform/k8s-config-connector/pkg/controller/direct"
 )
 
-func ComputeFirewallPolicyRuleSpec_v1beta1_FromProto(mapCtx *direct.MapContext, in *pb.FirewallPolicyRule) *krm.ComputeFirewallPolicyRuleSpec {
+func ComputeFirewallPolicyRuleSpec_v1beta1_FromProto(mapCtx *direct.MapContext, in *computepbv1.FirewallPolicyRule) *krm.ComputeFirewallPolicyRuleSpec {
 	if in == nil {
 		return nil
 	}
@@ -43,11 +43,11 @@ func ComputeFirewallPolicyRuleSpec_v1beta1_FromProto(mapCtx *direct.MapContext, 
 	// MISSING: TlsInspect
 	return out
 }
-func ComputeFirewallPolicyRuleSpec_v1beta1_ToProto(mapCtx *direct.MapContext, in *krm.ComputeFirewallPolicyRuleSpec) *pb.FirewallPolicyRule {
+func ComputeFirewallPolicyRuleSpec_v1beta1_ToProto(mapCtx *direct.MapContext, in *krm.ComputeFirewallPolicyRuleSpec) *computepbv1.FirewallPolicyRule {
 	if in == nil {
 		return nil
 	}
-	out := &pb.FirewallPolicyRule{}
+	out := &computepbv1.FirewallPolicyRule{}
 	out.Action = direct.LazyPtr(in.Action)
 	out.Description = in.Description
 	out.Direction = direct.LazyPtr(in.Direction)
@@ -63,7 +63,7 @@ func ComputeFirewallPolicyRuleSpec_v1beta1_ToProto(mapCtx *direct.MapContext, in
 	return out
 }
 
-func FirewallPolicyRuleMatcherLayer4Config_v1beta1_FromProto(mapCtx *direct.MapContext, in *pb.FirewallPolicyRuleMatcherLayer4Config) *krm.FirewallPolicyRuleMatcherLayer4Config {
+func FirewallPolicyRuleMatcherLayer4Config_v1beta1_FromProto(mapCtx *direct.MapContext, in *computepbv1.FirewallPolicyRuleMatcherLayer4Config) *krm.FirewallPolicyRuleMatcherLayer4Config {
 	if in == nil {
 		return nil
 	}
@@ -72,11 +72,11 @@ func FirewallPolicyRuleMatcherLayer4Config_v1beta1_FromProto(mapCtx *direct.MapC
 	out.Ports = in.Ports
 	return out
 }
-func FirewallPolicyRuleMatcherLayer4Config_v1beta1_ToProto(mapCtx *direct.MapContext, in *krm.FirewallPolicyRuleMatcherLayer4Config) *pb.FirewallPolicyRuleMatcherLayer4Config {
+func FirewallPolicyRuleMatcherLayer4Config_v1beta1_ToProto(mapCtx *direct.MapContext, in *krm.FirewallPolicyRuleMatcherLayer4Config) *computepbv1.FirewallPolicyRuleMatcherLayer4Config {
 	if in == nil {
 		return nil
 	}
-	out := &pb.FirewallPolicyRuleMatcherLayer4Config{}
+	out := &computepbv1.FirewallPolicyRuleMatcherLayer4Config{}
 	out.IpProtocol = direct.LazyPtr(in.IPProtocol)
 	out.Ports = in.Ports
 	return out
@@ -142,18 +142,18 @@ func ComputeFirewallPolicyRuleSpec_TargetServiceAccounts_v1beta1_FromProto(mapCt
 	return out
 }
 
-func ComputeFirewallPolicyRuleStatus_v1beta1_ToProto(mapCtx *direct.MapContext, in *krm.ComputeFirewallPolicyRuleStatus) *pb.FirewallPolicyRule {
+func ComputeFirewallPolicyRuleStatus_v1beta1_ToProto(mapCtx *direct.MapContext, in *krm.ComputeFirewallPolicyRuleStatus) *computepbv1.FirewallPolicyRule {
 	if in == nil {
 		return nil
 	}
-	out := &pb.FirewallPolicyRule{}
+	out := &computepbv1.FirewallPolicyRule{}
 	out.Kind = in.Kind
 	out.RuleTupleCount = direct.LazyPtr(int32(direct.ValueOf(in.RuleTupleCount)))
 	// MISSING: TargetSecureTags
 	return out
 }
 
-func ComputeFirewallPolicyRuleStatus_v1beta1_FromProto(mapCtx *direct.MapContext, in *pb.FirewallPolicyRule) *krm.ComputeFirewallPolicyRuleStatus {
+func ComputeFirewallPolicyRuleStatus_v1beta1_FromProto(mapCtx *direct.MapContext, in *computepbv1.FirewallPolicyRule) *krm.ComputeFirewallPolicyRuleStatus {
 	if in == nil {
 		return nil
 	}

@@ -19,7 +19,7 @@
 package compute
 
 import (
-	pb "cloud.google.com/go/compute/apiv1/computepb"
+	computepbv1 "cloud.google.com/go/compute/apiv1/computepb"
 	"github.com/GoogleCloudPlatform/k8s-config-connector/pkg/fuzztesting"
 )
 
@@ -28,7 +28,7 @@ func init() {
 }
 
 func computeNetworkEdgeSecurityServiceFuzzer() fuzztesting.KRMFuzzer {
-	f := fuzztesting.NewKRMTypedFuzzer(&pb.NetworkEdgeSecurityService{},
+	f := fuzztesting.NewKRMTypedFuzzer(&computepbv1.NetworkEdgeSecurityService{},
 		ComputeNetworkEdgeSecurityServiceSpec_v1alpha1_FromProto, ComputeNetworkEdgeSecurityServiceSpec_v1alpha1_ToProto,
 		ComputeNetworkEdgeSecurityServiceObservedState_v1alpha1_FromProto, ComputeNetworkEdgeSecurityServiceObservedState_v1alpha1_ToProto,
 	)

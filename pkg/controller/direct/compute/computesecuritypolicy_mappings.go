@@ -15,23 +15,23 @@
 package compute
 
 import (
-	pb "cloud.google.com/go/compute/apiv1/computepb"
+	computepbv1 "cloud.google.com/go/compute/apiv1/computepb"
 	krm "github.com/GoogleCloudPlatform/k8s-config-connector/apis/compute/v1beta1"
 	"github.com/GoogleCloudPlatform/k8s-config-connector/pkg/controller/direct"
 )
 
-func SecurityPolicyRecaptchaOptionsConfig_v1beta1_ToProto(mapCtx *direct.MapContext, in *krm.SecurityPolicyRecaptchaOptionsConfig) *pb.SecurityPolicyRecaptchaOptionsConfig {
+func SecurityPolicyRecaptchaOptionsConfig_v1beta1_ToProto(mapCtx *direct.MapContext, in *krm.SecurityPolicyRecaptchaOptionsConfig) *computepbv1.SecurityPolicyRecaptchaOptionsConfig {
 	if in == nil {
 		return nil
 	}
-	out := &pb.SecurityPolicyRecaptchaOptionsConfig{}
+	out := &computepbv1.SecurityPolicyRecaptchaOptionsConfig{}
 	if in.RedirectSiteKeyRef != nil {
 		out.RedirectSiteKey = &in.RedirectSiteKeyRef.External
 	}
 	return out
 }
 
-func SecurityPolicyRecaptchaOptionsConfig_v1beta1_FromProto(mapCtx *direct.MapContext, in *pb.SecurityPolicyRecaptchaOptionsConfig) *krm.SecurityPolicyRecaptchaOptionsConfig {
+func SecurityPolicyRecaptchaOptionsConfig_v1beta1_FromProto(mapCtx *direct.MapContext, in *computepbv1.SecurityPolicyRecaptchaOptionsConfig) *krm.SecurityPolicyRecaptchaOptionsConfig {
 	if in == nil {
 		return nil
 	}
@@ -42,13 +42,13 @@ func SecurityPolicyRecaptchaOptionsConfig_v1beta1_FromProto(mapCtx *direct.MapCo
 	return out
 }
 
-func SecurityPolicyAdaptiveProtectionConfig_v1beta1_ToProto(mapCtx *direct.MapContext, in *krm.SecurityPolicyAdaptiveProtectionConfig) *pb.SecurityPolicyAdaptiveProtectionConfig {
+func SecurityPolicyAdaptiveProtectionConfig_v1beta1_ToProto(mapCtx *direct.MapContext, in *krm.SecurityPolicyAdaptiveProtectionConfig) *computepbv1.SecurityPolicyAdaptiveProtectionConfig {
 	if in == nil {
 		return nil
 	}
-	out := &pb.SecurityPolicyAdaptiveProtectionConfig{}
+	out := &computepbv1.SecurityPolicyAdaptiveProtectionConfig{}
 	if in.Layer7DdosDefenseConfig != nil {
-		out.Layer7DdosDefenseConfig = &pb.SecurityPolicyAdaptiveProtectionConfigLayer7DdosDefenseConfig{
+		out.Layer7DdosDefenseConfig = &computepbv1.SecurityPolicyAdaptiveProtectionConfigLayer7DdosDefenseConfig{
 			Enable:         in.Layer7DdosDefenseConfig.Enable,
 			RuleVisibility: in.Layer7DdosDefenseConfig.RuleVisibility,
 		}
@@ -60,7 +60,7 @@ func SecurityPolicyAdaptiveProtectionConfig_v1beta1_ToProto(mapCtx *direct.MapCo
 		// Note: The Name field is required for ThresholdConfig in proto but AutoDeployConfig in Terraform doesn't have it.
 		// The API might expect a specific name or allow empty?
 		// We will try leaving it empty or using a sentinel if needed.
-		thresholdConfig := &pb.SecurityPolicyAdaptiveProtectionConfigLayer7DdosDefenseConfigThresholdConfig{
+		thresholdConfig := &computepbv1.SecurityPolicyAdaptiveProtectionConfigLayer7DdosDefenseConfigThresholdConfig{
 			AutoDeployLoadThreshold:             in.AutoDeployConfig.LoadThreshold,
 			AutoDeployConfidenceThreshold:       in.AutoDeployConfig.ConfidenceThreshold,
 			AutoDeployImpactedBaselineThreshold: in.AutoDeployConfig.ImpactedBaselineThreshold,
@@ -68,7 +68,7 @@ func SecurityPolicyAdaptiveProtectionConfig_v1beta1_ToProto(mapCtx *direct.MapCo
 		}
 
 		if out.Layer7DdosDefenseConfig == nil {
-			out.Layer7DdosDefenseConfig = &pb.SecurityPolicyAdaptiveProtectionConfigLayer7DdosDefenseConfig{}
+			out.Layer7DdosDefenseConfig = &computepbv1.SecurityPolicyAdaptiveProtectionConfigLayer7DdosDefenseConfig{}
 		}
 		out.Layer7DdosDefenseConfig.ThresholdConfigs = append(out.Layer7DdosDefenseConfig.ThresholdConfigs, thresholdConfig)
 	}
@@ -76,7 +76,7 @@ func SecurityPolicyAdaptiveProtectionConfig_v1beta1_ToProto(mapCtx *direct.MapCo
 	return out
 }
 
-func SecurityPolicyAdaptiveProtectionConfig_v1beta1_FromProto(mapCtx *direct.MapContext, in *pb.SecurityPolicyAdaptiveProtectionConfig) *krm.SecurityPolicyAdaptiveProtectionConfig {
+func SecurityPolicyAdaptiveProtectionConfig_v1beta1_FromProto(mapCtx *direct.MapContext, in *computepbv1.SecurityPolicyAdaptiveProtectionConfig) *krm.SecurityPolicyAdaptiveProtectionConfig {
 	if in == nil {
 		return nil
 	}
@@ -105,16 +105,16 @@ func SecurityPolicyAdaptiveProtectionConfig_v1beta1_FromProto(mapCtx *direct.Map
 	return out
 }
 
-func SecurityPolicyRulePreconfiguredWafConfig_v1beta1_ToProto(mapCtx *direct.MapContext, in *krm.SecurityPolicyRulePreconfiguredWafConfig) *pb.SecurityPolicyRulePreconfiguredWafConfig {
+func SecurityPolicyRulePreconfiguredWafConfig_v1beta1_ToProto(mapCtx *direct.MapContext, in *krm.SecurityPolicyRulePreconfiguredWafConfig) *computepbv1.SecurityPolicyRulePreconfiguredWafConfig {
 	if in == nil {
 		return nil
 	}
-	out := &pb.SecurityPolicyRulePreconfiguredWafConfig{}
+	out := &computepbv1.SecurityPolicyRulePreconfiguredWafConfig{}
 	out.Exclusions = direct.Slice_ToProto(mapCtx, in.Exclusion, SecurityPolicyRulePreconfiguredWafConfigExclusion_v1beta1_ToProto)
 	return out
 }
 
-func SecurityPolicyRulePreconfiguredWafConfig_v1beta1_FromProto(mapCtx *direct.MapContext, in *pb.SecurityPolicyRulePreconfiguredWafConfig) *krm.SecurityPolicyRulePreconfiguredWafConfig {
+func SecurityPolicyRulePreconfiguredWafConfig_v1beta1_FromProto(mapCtx *direct.MapContext, in *computepbv1.SecurityPolicyRulePreconfiguredWafConfig) *krm.SecurityPolicyRulePreconfiguredWafConfig {
 	if in == nil {
 		return nil
 	}
@@ -123,11 +123,11 @@ func SecurityPolicyRulePreconfiguredWafConfig_v1beta1_FromProto(mapCtx *direct.M
 	return out
 }
 
-func SecurityPolicyRulePreconfiguredWafConfigExclusion_v1beta1_ToProto(mapCtx *direct.MapContext, in *krm.SecurityPolicyRulePreconfiguredWafConfigExclusion) *pb.SecurityPolicyRulePreconfiguredWafConfigExclusion {
+func SecurityPolicyRulePreconfiguredWafConfigExclusion_v1beta1_ToProto(mapCtx *direct.MapContext, in *krm.SecurityPolicyRulePreconfiguredWafConfigExclusion) *computepbv1.SecurityPolicyRulePreconfiguredWafConfigExclusion {
 	if in == nil {
 		return nil
 	}
-	out := &pb.SecurityPolicyRulePreconfiguredWafConfigExclusion{}
+	out := &computepbv1.SecurityPolicyRulePreconfiguredWafConfigExclusion{}
 	out.RequestCookiesToExclude = direct.Slice_ToProto(mapCtx, in.RequestCookie, SecurityPolicyRulePreconfiguredWafConfigExclusionFieldParams_v1beta1_ToProto)
 	out.RequestHeadersToExclude = direct.Slice_ToProto(mapCtx, in.RequestHeader, SecurityPolicyRulePreconfiguredWafConfigExclusionFieldParams_v1beta1_ToProto)
 	out.RequestQueryParamsToExclude = direct.Slice_ToProto(mapCtx, in.RequestQueryParam, SecurityPolicyRulePreconfiguredWafConfigExclusionFieldParams_v1beta1_ToProto)
@@ -137,7 +137,7 @@ func SecurityPolicyRulePreconfiguredWafConfigExclusion_v1beta1_ToProto(mapCtx *d
 	return out
 }
 
-func SecurityPolicyRulePreconfiguredWafConfigExclusion_v1beta1_FromProto(mapCtx *direct.MapContext, in *pb.SecurityPolicyRulePreconfiguredWafConfigExclusion) *krm.SecurityPolicyRulePreconfiguredWafConfigExclusion {
+func SecurityPolicyRulePreconfiguredWafConfigExclusion_v1beta1_FromProto(mapCtx *direct.MapContext, in *computepbv1.SecurityPolicyRulePreconfiguredWafConfigExclusion) *krm.SecurityPolicyRulePreconfiguredWafConfigExclusion {
 	if in == nil {
 		return nil
 	}
@@ -151,17 +151,17 @@ func SecurityPolicyRulePreconfiguredWafConfigExclusion_v1beta1_FromProto(mapCtx 
 	return out
 }
 
-func SecurityPolicyRulePreconfiguredWafConfigExclusionFieldParams_v1beta1_ToProto(mapCtx *direct.MapContext, in *krm.SecurityPolicyRulePreconfiguredWafConfigExclusionFieldParams) *pb.SecurityPolicyRulePreconfiguredWafConfigExclusionFieldParams {
+func SecurityPolicyRulePreconfiguredWafConfigExclusionFieldParams_v1beta1_ToProto(mapCtx *direct.MapContext, in *krm.SecurityPolicyRulePreconfiguredWafConfigExclusionFieldParams) *computepbv1.SecurityPolicyRulePreconfiguredWafConfigExclusionFieldParams {
 	if in == nil {
 		return nil
 	}
-	out := &pb.SecurityPolicyRulePreconfiguredWafConfigExclusionFieldParams{}
+	out := &computepbv1.SecurityPolicyRulePreconfiguredWafConfigExclusionFieldParams{}
 	out.Op = in.Operator
 	out.Val = in.Value
 	return out
 }
 
-func SecurityPolicyRulePreconfiguredWafConfigExclusionFieldParams_v1beta1_FromProto(mapCtx *direct.MapContext, in *pb.SecurityPolicyRulePreconfiguredWafConfigExclusionFieldParams) *krm.SecurityPolicyRulePreconfiguredWafConfigExclusionFieldParams {
+func SecurityPolicyRulePreconfiguredWafConfigExclusionFieldParams_v1beta1_FromProto(mapCtx *direct.MapContext, in *computepbv1.SecurityPolicyRulePreconfiguredWafConfigExclusionFieldParams) *krm.SecurityPolicyRulePreconfiguredWafConfigExclusionFieldParams {
 	if in == nil {
 		return nil
 	}
@@ -171,16 +171,16 @@ func SecurityPolicyRulePreconfiguredWafConfigExclusionFieldParams_v1beta1_FromPr
 	return out
 }
 
-func SecurityPolicyRuleMatcherExpr_v1beta1_ToProto(mapCtx *direct.MapContext, in *krm.SecurityPolicyRuleMatcherExpr) *pb.Expr {
+func SecurityPolicyRuleMatcherExpr_v1beta1_ToProto(mapCtx *direct.MapContext, in *krm.SecurityPolicyRuleMatcherExpr) *computepbv1.Expr {
 	if in == nil {
 		return nil
 	}
-	out := &pb.Expr{}
+	out := &computepbv1.Expr{}
 	out.Expression = in.Expression
 	return out
 }
 
-func SecurityPolicyRuleMatcherExpr_v1beta1_FromProto(mapCtx *direct.MapContext, in *pb.Expr) *krm.SecurityPolicyRuleMatcherExpr {
+func SecurityPolicyRuleMatcherExpr_v1beta1_FromProto(mapCtx *direct.MapContext, in *computepbv1.Expr) *krm.SecurityPolicyRuleMatcherExpr {
 	if in == nil {
 		return nil
 	}

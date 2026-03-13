@@ -19,7 +19,7 @@
 package compute
 
 import (
-	pb "cloud.google.com/go/compute/apiv1beta/computepb"
+	computepbv1beta "cloud.google.com/go/compute/apiv1beta/computepb"
 	"github.com/GoogleCloudPlatform/k8s-config-connector/pkg/fuzztesting"
 )
 
@@ -28,7 +28,7 @@ func init() {
 }
 
 func computeFutureReservationFuzzer() fuzztesting.KRMFuzzer {
-	f := fuzztesting.NewKRMTypedFuzzer(&pb.FutureReservation{},
+	f := fuzztesting.NewKRMTypedFuzzer(&computepbv1beta.FutureReservation{},
 		ComputeFutureReservationSpec_v1beta1_FromProto, ComputeFutureReservationSpec_v1beta1_ToProto,
 		ComputeFutureReservationObservedState_v1beta1_FromProto, ComputeFutureReservationObservedState_v1beta1_ToProto,
 	)

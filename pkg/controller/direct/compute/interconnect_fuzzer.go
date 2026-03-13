@@ -19,7 +19,7 @@
 package compute
 
 import (
-	pb "cloud.google.com/go/compute/apiv1/computepb"
+	computepbv1 "cloud.google.com/go/compute/apiv1/computepb"
 	"github.com/GoogleCloudPlatform/k8s-config-connector/pkg/fuzztesting"
 )
 
@@ -28,7 +28,7 @@ func init() {
 }
 
 func computeInterconnectFuzzer() fuzztesting.KRMFuzzer {
-	f := fuzztesting.NewKRMTypedFuzzer(&pb.Interconnect{},
+	f := fuzztesting.NewKRMTypedFuzzer(&computepbv1.Interconnect{},
 		ComputeInterconnectSpec_v1alpha1_FromProto, ComputeInterconnectSpec_v1alpha1_ToProto,
 		ComputeInterconnectObservedState_v1alpha1_FromProto, ComputeInterconnectObservedState_v1alpha1_ToProto,
 	)
