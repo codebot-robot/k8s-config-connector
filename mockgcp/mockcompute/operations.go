@@ -22,6 +22,7 @@ import (
 	pb "github.com/GoogleCloudPlatform/k8s-config-connector/mockgcp/generated/mockgcp/cloud/compute/v1"
 	pbv1beta "github.com/GoogleCloudPlatform/k8s-config-connector/mockgcp/generated/mockgcp/cloud/compute/v1beta"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/proto"
 	"k8s.io/apimachinery/pkg/util/uuid"
 	"k8s.io/klog/v2"
@@ -222,6 +223,15 @@ func (s *computeOperations) getOperation(ctx context.Context, fqn string) (*pb.O
 	return op, nil
 }
 
+func (s *computeOperations) getOperationV1Beta(ctx context.Context, fqn string) (*pbv1beta.Operation, error) {
+	op := &pb.Operation{}
+	if err := s.storage.Get(ctx, fqn, op); err != nil {
+		return nil, err
+	}
+
+	return convertOperationV1ToV1Beta(op), nil
+}
+
 func (s *computeOperations) startZonalLRO(ctx context.Context, projectID string, zone string, op *pbv1beta.Operation, callback func() (proto.Message, error)) (*pbv1beta.Operation, error) {
 	now := time.Now()
 	millis := now.UnixMilli()
@@ -235,72 +245,46 @@ func (s *computeOperations) startZonalLRO(ctx context.Context, projectID string,
 	return s.startZonalLRO0(ctx, op, fqn, callback)
 }
 
-func (s *computeOperations) startZonalLRO0(ctx context.Context, op *pbv1beta.Operation, fqn string, callback func() (proto.Message, error)) (*pbv1beta.Operation, error) {
-	log := klog.FromContext(ctx)
+func (s *computeOperations) startZonalLRO0(ctx context.Context, opv1beta *pbv1beta.Operation, fqn string, callback func() (proto.Message, error)) (*pbv1beta.Operation, error) {
+	op := convertOperationV1BetaToV1(opv1beta)
 
-	now := time.Now()
-	nanos := now.UnixNano()
-
-	if op == nil {
-		op = &pbv1beta.Operation{}
-	}
-
-	op.StartTime = PtrTo(formatTime(now))
-	op.InsertTime = PtrTo(formatTime(now))
-	op.Id = PtrTo(uint64(nanos))
-
-	if op.Progress == nil {
-		op.Progress = PtrTo(int32(0))
-	}
-
-	if op.Status == nil {
-		op.Status = PtrTo(pbv1beta.Operation_RUNNING)
-	}
-
-	op.Kind = PtrTo("compute#operation")
-	op.SelfLink = PtrTo(buildComputeSelfLink(ctx, fqn))
-
-	log.Info("storing v1beta operation", "fqn", fqn)
-	if err := s.storage.Create(ctx, fqn, op); err != nil {
+	res, err := s.startLRO0(ctx, op, fqn, callback)
+	if err != nil {
 		return nil, err
 	}
+	return convertOperationV1ToV1Beta(res), nil
+}
 
-	go func() {
-		result, err := callback()
-		finished := &pbv1beta.Operation{}
-		if err2 := s.storage.Get(ctx, fqn, finished); err2 != nil {
-			klog.Warningf("error getting LRO: %v", err2)
-			return
-		}
+func convertOperationV1ToV1Beta(in *pb.Operation) *pbv1beta.Operation {
+	if in == nil {
+		return nil
+	}
+	out := &pbv1beta.Operation{}
+	// Use protojson to convert between types with same JSON tags
+	b, err := protojson.Marshal(in)
+	if err != nil {
+		panic(fmt.Sprintf("failed to marshal operation: %v", err))
+	}
+	if err := protojson.Unmarshal(b, out); err != nil {
+		panic(fmt.Sprintf("failed to unmarshal operation: %v", err))
+	}
+	return out
+}
 
-		finished.Progress = PtrTo(int32(100))
-		finished.Status = PtrTo(pbv1beta.Operation_DONE)
-		finished.EndTime = PtrTo(formatTime(time.Now()))
-
-		if err != nil {
-			code := status.Code(err)
-			message := err.Error()
-
-			finished.Error = &pbv1beta.Error{
-				Errors: []*pbv1beta.Errors{
-					{
-						Code:    PtrTo(code.String()),
-						Message: PtrTo(message),
-					},
-				},
-			}
-			klog.Warningf("TODO: more fully handle LRO error %v", err)
-		} else {
-			// The LRO result does not appear to be returned in the operation
-			klog.V(4).Infof("LRO result: %+v", result)
-		}
-		if err := s.storage.Update(ctx, fqn, finished); err != nil {
-			klog.Warningf("error updating LRO: %v", err)
-			return
-		}
-	}()
-
-	return op, nil
+func convertOperationV1BetaToV1(in *pbv1beta.Operation) *pb.Operation {
+	if in == nil {
+		return nil
+	}
+	out := &pb.Operation{}
+	// Use protojson to convert between types with same JSON tags
+	b, err := protojson.Marshal(in)
+	if err != nil {
+		panic(fmt.Sprintf("failed to marshal operation: %v", err))
+	}
+	if err := protojson.Unmarshal(b, out); err != nil {
+		panic(fmt.Sprintf("failed to unmarshal operation: %v", err))
+	}
+	return out
 }
 
 func formatTime(t time.Time) string {

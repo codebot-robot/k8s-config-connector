@@ -68,7 +68,16 @@ func ComputeFutureReservationObservedState_v1beta1_ToProto(mapCtx *direct.MapCon
 	status.LockTime = in.LockTime
 	status.ProcurementStatus = in.ProcurementStatus
 	status.SpecificSkuProperties = FutureReservationStatusSpecificSkuProperties_v1beta1_ToProto(mapCtx, in.SpecificSkuProperties)
-	out.Status = status
+	if status.AmendmentStatus != nil ||
+		status.AutoCreatedReservations != nil ||
+		status.ExistingMatchingUsageInfo != nil ||
+		status.FulfilledCount != nil ||
+		status.LastKnownGoodState != nil ||
+		status.LockTime != nil ||
+		status.ProcurementStatus != nil ||
+		status.SpecificSkuProperties != nil {
+		out.Status = status
+	}
 
 	return out
 }

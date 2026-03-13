@@ -1,4 +1,4 @@
-// Copyright 2024 Google LLC
+// Copyright 2026 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -20,19 +20,13 @@ import (
 	pbv1beta "github.com/GoogleCloudPlatform/k8s-config-connector/mockgcp/generated/mockgcp/cloud/compute/v1beta"
 )
 
-type ZoneOperationsV1Beta struct {
+type RegionalOperationsV1Beta struct {
 	*MockService
-	pbv1beta.UnimplementedZoneOperationsServer
+	pbv1beta.UnimplementedRegionOperationsServer
 }
 
-func (s *ZoneOperationsV1Beta) Get(ctx context.Context, req *pbv1beta.GetZoneOperationRequest) (*pbv1beta.Operation, error) {
-	fqn := s.zonalOperationFQN(req.Project, req.Zone, req.Operation)
-
-	return s.getOperationV1Beta(ctx, fqn)
-}
-
-func (s *ZoneOperationsV1Beta) Wait(ctx context.Context, req *pbv1beta.WaitZoneOperationRequest) (*pbv1beta.Operation, error) {
-	fqn := s.zonalOperationFQN(req.Project, req.Zone, req.Operation)
+func (s *RegionalOperationsV1Beta) Get(ctx context.Context, req *pbv1beta.GetRegionOperationRequest) (*pbv1beta.Operation, error) {
+	fqn := s.regionalOperationFQN(req.Project, req.Region, req.Operation)
 
 	return s.getOperationV1Beta(ctx, fqn)
 }

@@ -7,7 +7,7 @@ metadata:
   generation: 2
   labels:
     cnrm-test: "true"
-  name: ${futureReservationID}
+  name: computefuturereservation-${uniqueId}
   namespace: ${uniqueId}
 spec:
   autoDeleteAutoCreatedReservations: true
@@ -29,7 +29,7 @@ status:
     reason: UpToDate
     status: "True"
     type: Ready
-  externalRef: projects/${projectId}/zones/us-central1-a/futureReservations/${futureReservationID}
+  externalRef: projects/${projectId}/zones/us-central1-a/futureReservations/computefuturereservation-${uniqueId}
   observedGeneration: 2
   observedState:
     creationTimestamp: "1970-01-01T00:00:00Z"
@@ -39,6 +39,6 @@ status:
     id: 1111111111111111
     kind: compute#futureReservation
     procurementStatus: DRAFTING
-    selfLink: https://www.googleapis.com/compute/beta/projects/${projectId}/zones/us-central1-a/futureReservations/${futureReservationID}
+    selfLink: https://www.googleapis.com/compute/beta/projects/${projectId}/zones/us-central1-a/futureReservations/computefuturereservation-${uniqueId}
     selfLinkWithID: https://www.googleapis.com/compute/beta/projects/${projectId}/zones/us-central1-a/futureReservations/${futureReservationID}
     zone: https://www.googleapis.com/compute/beta/projects/${projectId}/zones/us-central1-a
