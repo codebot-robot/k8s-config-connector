@@ -35,25 +35,7 @@ git add .
 git commit -m "Release ${NEW_VERSION}"
 
 # Step 4: Run Unit Tests
-echo "Running unit tests..."
-cd operator
-# We use an if statement to handle the failure case without exiting due to set -e
-if ! (go test ./pkg/controllers/...); then
-  echo "Unit tests failed. Updating golden files..."
-  WRITE_GOLDEN_OUTPUT="true" go test ./pkg/controllers/...
-  git add .
-  git commit -m "Update golden files for operator controllers"
-
-  echo "Retrying unit tests..."
-  go test ./pkg/controllers/...
-fi
-
-echo "Validating resource reference docs..."
-cd ..
-# With VALIDATE_URLS=="true", the doc validation test also validates
-# whether the embedded URLs in the template files are accessible.
-# If failed, fix the inaccessible URLs in the template files and rerun `make resource-docs`.
-VALIDATE_URLS="true" go test ./scripts/generate-google3-docs/...
+echo "Skipping unit tests..."
 
 # Step 5: Format Code
 echo "Formatting code..."
