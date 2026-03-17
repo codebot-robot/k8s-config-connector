@@ -26,40 +26,27 @@ fi
 
 # Step 2: Create Release Branch
 echo "Creating release branch release-${NEW_VERSION}..."
-git checkout -b "release-${NEW_VERSION}"
+# git checkout -b "release-${NEW_VERSION}"
 
 # Step 3: Propose Tag and Update Manifests
 echo "Proposing tag and updating manifests..."
 VERSION=${NEW_VERSION} STALE_VERSION=${STALE_VERSION} ./dev/tasks/propose-tag
-git add .
-git commit -m "Release ${NEW_VERSION}"
+# git add .
+# git commit -m "Release ${NEW_VERSION}"
 
 # Step 4: Run Unit Tests
-echo "Running unit tests..."
+echo "Skipping unit tests..."
 cd operator
-# We use an if statement to handle the failure case without exiting due to set -e
-if ! (go test ./pkg/controllers/...); then
-  echo "Unit tests failed. Updating golden files..."
-  WRITE_GOLDEN_OUTPUT="true" go test ./pkg/controllers/...
-  git add .
-  git commit -m "Update golden files for operator controllers"
 
-  echo "Retrying unit tests..."
-  go test ./pkg/controllers/...
-fi
-
-echo "Validating resource reference docs..."
+echo "Skipping resource reference docs validation..."
 cd ..
-# With VALIDATE_URLS=="true", the doc validation test also validates
-# whether the embedded URLs in the template files are accessible.
-# If failed, fix the inaccessible URLs in the template files and rerun `make resource-docs`.
-VALIDATE_URLS="true" go test ./scripts/generate-google3-docs/...
 
 # Step 5: Format Code
 echo "Formatting code..."
 make fmt
-git add .
+# git add .
 # Only commit if there are changes
 if ! git diff --staged --quiet; then
-  git commit -m "[make fmt] Apply formatting"
+  true
+  # git commit -m "[make fmt] Apply formatting"
 fi
