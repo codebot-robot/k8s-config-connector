@@ -1,40 +1,22 @@
 import yaml
-import glob
 import os
+import glob
 
-candidate_files = []
-# Just iterate over all files in config/crds/resources
-for root, _, files in os.walk('config/crds/resources'):
-    for file in files:
-        if file.endswith('.yaml'):
-            candidate_files.append(os.path.join(root, file))
-
-for path in candidate_files:
+files = glob.glob('config/crds/resources/*.yaml')
+for f in files:
     try:
-        with open(path, 'r') as f:
-            content = f.read()
-            if 'cnrm.cloud.google.com/dcl2crd: "true"' not in content:
-                continue
-            
-            # parse yaml
-            docs = list(yaml.safe_load_all(content))
-            for doc in docs:
-                if not doc:
-                    continue
-                metadata = doc.get('metadata', {})
-                labels = metadata.get('labels', {})
-                if labels.get('cnrm.cloud.google.com/dcl2crd') != "true":
-                    continue
-                
-                spec = doc.get('spec', {})
-                group = spec.get('group', '').split('.')[0]
-                kind = spec.get('names', {}).get('kind', '')
-                versions = spec.get('versions', [])
-                
-                has_beta = any('v1beta1' in v.get('name', '') for v in versions)
+        with open(f, 'r') as fp:
+            data = yaml.safe_load(fp)
+            labels = data.get('metadata', {}).get('labels', {})
+            if labels.get('cnrm.cloud.google.com/dcl2crd') == 'true':
+                versions = data.get('spec', {}).get('versions', [])
+                has_beta = any(v.get('name') == 'v1beta1' for v in versions)
                 if has_beta:
-                    types_pattern = f"apis/{group}/v1beta1/*_types.go"
-                    if not glob.glob(types_pattern):
-                        print(f"Candidate: {group} {kind}")
+                    group = data.get('spec', {}).get('group', '').split('.')[0]
+                    kind = data.get('spec', {}).get('names', {}).get('kind', '')
+                    
+                    types_glob = f'apis/{group}/v1beta1/*_types.go'
+                    if not glob.glob(types_glob):
+                        print(f"{group} {kind}")
     except Exception as e:
         pass
