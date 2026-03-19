@@ -93,7 +93,10 @@ func (r *ComputeNodeGroupRef) Normalize(ctx context.Context, reader client.Reade
 	}
 
 	fallback := func(u *unstructured.Unstructured) string {
-		selfLink, _, _ := unstructured.NestedString(u.Object, "status", "selfLink")
+		selfLink, _, err := unstructured.NestedString(u.Object, "status", "selfLink")
+		if err != nil {
+			return ""
+		}
 		if selfLink != "" {
 			return common.FixStaleComputeExternalFormat(selfLink)
 		}
