@@ -1,70 +1,62 @@
 import json
-import os
 import subprocess
-import yaml
+import sys
+import re
 
+# Load all issues
 with open("all_issues.json") as f:
     issues = json.load(f)
 
+# Parse candidates
+candidates = []
+with open("candidates.txt") as f:
+    for line in f:
+        line = line.strip()
+        if line:
+            parts = line.split(" ")
+            if len(parts) == 2:
+                candidates.append((parts[0], parts[1]))
+
+# Create a map of issues
 issue_map = {}
+open_count = 0
 for issue in issues:
     title = issue["title"]
-    if "Create generate.sh and types.go files for " in title:
-        parts = title.replace("Create generate.sh and types.go files for ", "").strip().split(" ")
-        if len(parts) >= 2:
-            group = parts[0]
-            kind = parts[1]
-            issue_map[f"{group} {kind}"] = issue
+    labels = [lbl["name"] for lbl in issue.get("labels", [])]
+    number = issue["number"]
+    
+    # Check if open
+    # Note: the all_issues.json might not have state, wait, I didn't query state in the JSON fields.
+    # Actually I used `gh issue list --search "Create generate.sh and types.go files for in:title" --state all --json title,number,labels,state`? No, I forgot `state`.
+    
+    match = re.search(r'Create generate.sh and types.go files for (\w+) (\w+)', title, re.IGNORECASE)
+    if match:
+        group = match.group(1).lower()
+        kind = match.group(2).lower()
+        issue_map[(group, kind)] = {
+            "number": number,
+            "labels": labels,
+            "title": title
+        }
 
-crd_dir = "config/crds/resources"
-candidates = []
+print(f"Found {len(candidates)} candidates.")
 
-for filename in os.listdir(crd_dir):
-    if not filename.endswith(".yaml"): continue
-    filepath = os.path.join(crd_dir, filename)
-    with open(filepath, "r") as f:
-        try:
-            doc = yaml.safe_load(f)
-            labels = doc.get("metadata", {}).get("labels", {})
-            if str(labels.get("cnrm.cloud.google.com/dcl2crd")).lower() == "true":
-                group = doc["spec"]["group"].split(".")[0]
-                kind = doc["spec"]["names"]["kind"]
-                versions = doc.get("spec", {}).get("versions", [])
-                for v in versions:
-                    if "beta" in v["name"]:
-                        version = v["name"]
-                        api_dir = f"apis/{group}/{version}"
-                        types_exist = False
-                        if os.path.exists(api_dir):
-                            for f_name in os.listdir(api_dir):
-                                if f_name.endswith("_types.go"):
-                                    types_exist = True
-                                    break
-                        if not types_exist:
-                            candidates.append((group, kind, version))
-                        break
-        except Exception as e:
-            pass
-
-required_labels = ["overseer", "area/direct", "priority/medium"]
-new_issues_needed = []
-
-for group, kind, version in candidates:
-    key = f"{group} {kind}"
+for group, kind in candidates:
+    key = (group.lower(), kind.lower())
     if key in issue_map:
         issue = issue_map[key]
-        labels = [l["name"] for l in issue["labels"]]
-        needs_update = False
-        for rl in required_labels:
-            if rl not in labels:
-                needs_update = True
-        if needs_update:
-            num = issue["number"]
-            print(f"Injecting labels for existing issue #{num} for {group} {kind}")
-            subprocess.run(["gh", "issue", "edit", str(num), "--add-label", ",".join(required_labels)])
+        number = issue["number"]
+        labels = issue["labels"]
+        missing_labels = []
+        for required_label in ["overseer", "area/direct", "priority/medium"]:
+            if required_label not in labels:
+                missing_labels.append(required_label)
+        
+        if missing_labels:
+            print(f"Adding labels {missing_labels} to issue #{number} for {group} {kind}")
+            subprocess.run(["gh", "issue", "edit", str(number), "--add-label", ",".join(missing_labels)], check=True)
+        else:
+            print(f"Issue #{number} for {group} {kind} already has all labels.")
     else:
-        new_issues_needed.append((group, kind, version))
+        print(f"No issue found for {group} {kind}. Needs creation.")
 
-print(f"Total new issues that would be created: {len(new_issues_needed)}")
-with open("new_issues_needed.json", "w") as f:
-    json.dump(new_issues_needed, f)
