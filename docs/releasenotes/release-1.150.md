@@ -1,6 +1,5 @@
-# Release 1.150.0
-
-## This version has not yet been released, this document is to prepare release notes for the upcoming release
+** This version is not yet released; this document is gathering release notes
+for the future release **
 
 *   Special shout-outs to anhdle-sso, app/dependabot, barney-s, cheftako, codebot-robot, gurusai-voleti, justinsb, katrielt, maqiuyujoyce, and xiaoweim for their contributions to this release.
 
