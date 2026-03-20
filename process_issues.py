@@ -1,118 +1,86 @@
+import os
+import glob
+import re
 import json
 import subprocess
+import sys
 
-# Candidates list from previous step
-candidates = [
-("apigee", "ApigeeEnvironment"),
-("apigee", "ApigeeOrganization"),
-("billingbudgets", "BillingBudgetsBudget"),
-("binaryauthorization", "BinaryAuthorizationAttestor"),
-("binaryauthorization", "BinaryAuthorizationPolicy"),
-("cloudfunctions", "CloudFunctionsFunction"),
-("cloudscheduler", "CloudSchedulerJob"),
-("compute", "ComputeFirewallPolicy"),
-("compute", "ComputeFirewallPolicyAssociation"),
-("compute", "ComputeInstanceGroupManager"),
-("compute", "ComputePacketMirroring"),
-("compute", "ComputeServiceAttachment"),
-("configcontroller", "ConfigControllerInstance"),
-("containeranalysis", "ContainerAnalysisNote"),
-("datafusion", "DataFusionInstance"),
-("dataproc", "DataprocAutoscalingPolicy"),
-("dataproc", "DataprocCluster"),
-("dataproc", "DataprocWorkflowTemplate"),
-("dlp", "DLPDeidentifyTemplate"),
-("dlp", "DLPInspectTemplate"),
-("dlp", "DLPJobTrigger"),
-("dlp", "DLPStoredInfoType"),
-("eventarc", "EventarcTrigger"),
-("filestore", "FilestoreBackup"),
-("filestore", "FilestoreInstance"),
-("gkehub", "GKEHubFeature"),
-("gkehub", "GKEHubMembership"),
-("iam", "IAMWorkforcePool"),
-("iam", "IAMWorkforcePoolProvider"),
-("iam", "IAMWorkloadIdentityPool"),
-("iam", "IAMWorkloadIdentityPoolProvider"),
-("iap", "IAPBrand"),
-("iap", "IAPIdentityAwareProxyClient"),
-("identityplatform", "IdentityPlatformConfig"),
-("identityplatform", "IdentityPlatformOAuthIDPConfig"),
-("identityplatform", "IdentityPlatformTenant"),
-("identityplatform", "IdentityPlatformTenantOAuthIDPConfig"),
-("logging", "LoggingLogBucket"),
-("logging", "LoggingLogExclusion"),
-("logging", "LoggingLogView"),
-("monitoring", "MonitoringGroup"),
-("monitoring", "MonitoringMetricDescriptor"),
-("monitoring", "MonitoringMonitoredProject"),
-("monitoring", "MonitoringService"),
-("monitoring", "MonitoringServiceLevelObjective"),
-("monitoring", "MonitoringUptimeCheckConfig"),
-("networkconnectivity", "NetworkConnectivityHub"),
-("networkconnectivity", "NetworkConnectivitySpoke"),
-("networksecurity", "NetworkSecurityAuthorizationPolicy"),
-("networksecurity", "NetworkSecurityClientTLSPolicy"),
-("networksecurity", "NetworkSecurityServerTLSPolicy"),
-("networkservices", "NetworkServicesEndpointPolicy"),
-("networkservices", "NetworkServicesGRPCRoute"),
-("networkservices", "NetworkServicesGateway"),
-("networkservices", "NetworkServicesHTTPRoute"),
-("networkservices", "NetworkServicesMesh"),
-("networkservices", "NetworkServicesTCPRoute"),
-("networkservices", "NetworkServicesTLSRoute"),
-("osconfig", "OSConfigGuestPolicy"),
-("osconfig", "OSConfigOSPolicyAssignment"),
-("privateca", "PrivateCACAPool"),
-("privateca", "PrivateCACertificate"),
-("privateca", "PrivateCACertificateAuthority"),
-("privateca", "PrivateCACertificateTemplate"),
-("recaptchaenterprise", "RecaptchaEnterpriseKey")
-]
+def run_cmd(cmd):
+    return subprocess.check_output(cmd, shell=True).decode('utf-8')
 
-# Get all issues with the matching title pattern
-result = subprocess.run(
-    ["gh", "issue", "list", "--search", "Create generate.sh and types.go files for in:title", "--state", "all", "--json", "number,title,state,labels", "--limit", "1000"],
-    capture_output=True, text=True
-)
-if result.returncode != 0:
-    print("Error fetching issues:", result.stderr)
-    exit(1)
+def find_candidates():
+    crd_dir = 'config/crds/resources'
+    crd_files = glob.glob(os.path.join(crd_dir, '*.yaml'))
+    candidates = []
 
-issues = json.loads(result.stdout)
-open_count = sum(1 for i in issues if i["state"].upper() == "OPEN")
-
-issue_map = {}
-for i in issues:
-    issue_map[i["title"]] = i
-
-created_issue = False
-
-for group, kind in candidates:
-    title = f"Create generate.sh and types.go files for {group} {kind}"
-    
-    if title in issue_map:
-        # Issue exists, check labels
-        issue = issue_map[title]
-        existing_labels = {l["name"] for l in issue["labels"]}
-        required_labels = {"overseer", "area/direct", "priority/medium"}
+    for f in crd_files:
+        with open(f, 'r') as fp:
+            content = fp.read()
         
-        missing = required_labels - existing_labels
-        if missing:
-            print(f"Adding labels {missing} to issue #{issue['number']}")
-            subprocess.run(["gh", "issue", "edit", str(issue['number']), "--add-label", ",".join(missing)])
-        continue
-    
-    if not created_issue:
-        if open_count > 10:
-            print("There are already more than 10 pending issues for this task. Skipping creating new ones until some of the existing issues are resolved.")
-            created_issue = True # Stop checking for creation
+        # Check for dcl2crd
+        if 'cnrm.cloud.google.com/dcl2crd: "true"' not in content:
+            continue
+            
+        group_match = re.search(r'\bgroup:\s*([^\n]+)', content)
+        
+        # Kind is in spec.names.kind
+        kind_match = re.search(r'names:\n(?:.*\n)*?\s*kind:\s*([^\n]+)', content)
+        if not kind_match:
+            kind_match = re.search(r'kind:\s*([^\n]+)', content[content.find('names:'):])
+        
+        if not group_match or not kind_match:
             continue
         
-        # Create the issue
-        print(f"Creating issue for {group} {kind}")
+        group = group_match.group(1).strip().split('.')[0]
+        kind = kind_match.group(1).strip()
         
-        body = f"""As part of moving resources from terraform controllers to direct controllers (Epic #5954), we need to create the Go types for `{kind}`.
+        if 'name: v1beta1' not in content and '- name: v1beta1' not in content:
+            continue
+            
+        type_files = glob.glob(f'apis/{group}/v1beta1/*_types.go')
+        if type_files:
+            continue
+            
+        candidates.append((group, kind))
+    return candidates
+
+def main():
+    candidates = find_candidates()
+    
+    # Get all issues with the matching title prefix
+    issues_json = run_cmd('gh issue list --search "in:title Create generate.sh and types.go files for" --state all --json number,title,state,labels -L 100')
+    issues = json.loads(issues_json)
+
+    pending_count = sum(1 for issue in issues if issue['state'] == 'OPEN')
+
+    for group, kind in candidates:
+        target_title_lower = f"Create generate.sh and types.go files for {group} {kind}".lower()
+        
+        existing_issue = None
+        for issue in issues:
+            if issue['title'].lower() == target_title_lower:
+                existing_issue = issue
+                break
+                
+        if existing_issue:
+            # Check labels
+            current_labels = [l['name'] for l in existing_issue['labels']]
+            required_labels = ["overseer", "area/direct", "priority/medium"]
+            missing_labels = [l for l in required_labels if l not in current_labels]
+            if missing_labels:
+                print(f"Injecting missing labels {missing_labels} for issue #{existing_issue['number']}")
+                run_cmd(f'gh issue edit {existing_issue["number"]} --add-label {",".join(missing_labels)}')
+            continue
+        else:
+            if pending_count >= 10:
+                print("There are already more than 10 pending issues for this task. Skipping creating new ones until some of the existing issues are resolved.")
+                sys.exit(0)
+            
+            # We would create an issue here if pending_count < 10
+            # Wait, the instruction says to create AT MOST ONE.
+            
+            issue_title = f"Create generate.sh and types.go files for {group} {kind}"
+            issue_body = f"""As part of moving resources from terraform controllers to direct controllers (Epic #5954), we need to create the Go types for `{kind}`.
 
 Currently, `{kind}` is managed by the Terraform controller (marked with `tf2crd=true`). The goal is to create the Go types in `apis/{group}/v1beta1/` so that we can eventually migrate the controller implementation to the "direct" approach.
 
@@ -126,7 +94,7 @@ Currently, `{kind}` is managed by the Terraform controller (marked with `tf2crd=
     go run . generate-types \\
       --service google.cloud.{group}.v1 \\
       --api-version {group}.cnrm.cloud.google.com/v1beta1 \\
-      --resource {kind}:PolicyTag \\
+      --resource {kind}:{kind} \\
       --include-skipped-output
 
     go run . generate-mapper \\
@@ -175,19 +143,16 @@ Currently, `{kind}` is managed by the Terraform controller (marked with `tf2crd=
 
 This issue is part of Epic #5954.
 """
-        with open("issue_body.md", "w") as f:
-            f.write(body)
             
-        subprocess.run([
-            "gh", "issue", "create",
-            "--title", title,
-            "--body-file", "issue_body.md",
-            "--label", "overseer,area/direct,priority/medium",
-            "--milestone", "", # Epic is linked via milestone or body? The prompt says "The issue should be marked as a subtask of the main epic... Make sure to link the issue as a subtask to the main epic for tracking purposes."
-            # Actually, standard way in github is either typing the issue number in body or using gh cli. The body already has `Epic #5954`. But let's see if there's a specific flag for epic?
-            # Gh doesn't have an explicit subtask flag without project fields. So including Epic #5954 is enough for github to track.
-        ])
-        
-        created_issue = True
-        open_count += 1
+            with open("issue_body.txt", "w") as f:
+                f.write(issue_body)
+                
+            cmd = f'gh issue create --title "{issue_title}" --body-file issue_body.txt --label "overseer,area/direct,priority/medium"'
+            # Ensure it is a subtask by adding it to the project or mentioning epic
+            # We already have "This issue is part of Epic #5954." in the body, but let's also pass milestone/project if needed.
+            print(f"Creating issue: {issue_title}")
+            run_cmd(cmd)
+            sys.exit(0)
 
+if __name__ == "__main__":
+    main()

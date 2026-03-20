@@ -1,45 +1,84 @@
-import os
 import json
 import subprocess
+import sys
 
-# get candidates from find_resources.py
-output = subprocess.check_output(['python3', 'find_resources.py'])
-candidates_text = output.decode('utf-8').strip().split('\n')
-candidates = [line.split(' ') for line in candidates_text if line]
+def run_cmd(cmd):
+    return subprocess.check_output(cmd, shell=True).decode('utf-8')
 
-# get all existing issues
-output = subprocess.check_output(['gh', 'issue', 'list', '--search', 'Create generate.sh and types.go files for in:title', '--state', 'all', '--json', 'number,title,state,labels', '--limit', '200'])
-issues = json.loads(output.decode('utf-8'))
+candidates_output = """
+FOUND: Group=networkservices, Kind=NetworkServicesGRPCRoute
+FOUND: Group=networkservices, Kind=NetworkServicesTCPRoute
+FOUND: Group=identityplatform, Kind=IdentityPlatformConfig
+FOUND: Group=binaryauthorization, Kind=BinaryAuthorizationPolicy
+FOUND: Group=identityplatform, Kind=IdentityPlatformTenant
+FOUND: Group=recaptchaenterprise, Kind=RecaptchaEnterpriseKey
+FOUND: Group=dlp, Kind=DLPInspectTemplate
+FOUND: Group=osconfig, Kind=OSConfigOSPolicyAssignment
+FOUND: Group=networkservices, Kind=NetworkServicesMesh
+FOUND: Group=networkservices, Kind=NetworkServicesTLSRoute
+FOUND: Group=osconfig, Kind=OSConfigGuestPolicy
+FOUND: Group=identityplatform, Kind=IdentityPlatformTenantOAuthIDPConfig
+FOUND: Group=dataproc, Kind=DataprocCluster
+FOUND: Group=binaryauthorization, Kind=BinaryAuthorizationAttestor
+FOUND: Group=networkconnectivity, Kind=NetworkConnectivitySpoke
+FOUND: Group=networkconnectivity, Kind=NetworkConnectivityHub
+FOUND: Group=billingbudgets, Kind=BillingBudgetsBudget
+FOUND: Group=dlp, Kind=DLPJobTrigger
+FOUND: Group=containeranalysis, Kind=ContainerAnalysisNote
+FOUND: Group=dataproc, Kind=DataprocAutoscalingPolicy
+FOUND: Group=networkservices, Kind=NetworkServicesGateway
+FOUND: Group=dataproc, Kind=DataprocWorkflowTemplate
+FOUND: Group=filestore, Kind=FilestoreBackup
+FOUND: Group=identityplatform, Kind=IdentityPlatformOAuthIDPConfig
+FOUND: Group=dlp, Kind=DLPDeidentifyTemplate
+FOUND: Group=eventarc, Kind=EventarcTrigger
+FOUND: Group=dlp, Kind=DLPStoredInfoType
+FOUND: Group=datafusion, Kind=DataFusionInstance
+FOUND: Group=networkservices, Kind=NetworkServicesHTTPRoute
+FOUND: Group=networkservices, Kind=NetworkServicesEndpointPolicy
+FOUND: Group=cloudfunctions, Kind=CloudFunctionsFunction
+FOUND: Group=configcontroller, Kind=ConfigControllerInstance
+FOUND: Group=cloudscheduler, Kind=CloudSchedulerJob
+FOUND: Group=filestore, Kind=FilestoreInstance
+"""
 
-# count open issues for this task
-open_issues_count = len([i for i in issues if i['state'] == 'OPEN'])
+candidates = []
+for line in candidates_output.strip().split('\n'):
+    parts = line.split(', ')
+    group = parts[0].split('=')[1]
+    kind = parts[1].split('=')[1]
+    candidates.append((group, kind))
 
-issues_by_title = {i['title'].lower(): i for i in issues}
+# Get all issues with the matching title prefix
+issues_json = run_cmd('gh issue list --search "in:title Create generate.sh and types.go files for" --state all --json number,title,state,labels -L 100')
+issues = json.loads(issues_json)
 
-target_labels = {"overseer", "area/direct", "priority/medium"}
-
-issue_created = False
-printed_skip_msg = False
+pending_count = sum(1 for issue in issues if issue['state'] == 'OPEN')
 
 for group, kind in candidates:
-    title = f"Create generate.sh and types.go files for {group} {kind}"
-    lower_title = title.lower()
+    target_title_lower = f"Create generate.sh and types.go files for {group} {kind}".lower()
     
-    if lower_title in issues_by_title:
-        issue = issues_by_title[lower_title]
-        existing_labels = {l['name'] for l in issue['labels']}
-        missing_labels = target_labels - existing_labels
+    existing_issue = None
+    for issue in issues:
+        if target_title_lower in issue['title'].lower():
+            existing_issue = issue
+            break
+            
+    if existing_issue:
+        # Check labels
+        current_labels = [l['name'] for l in existing_issue['labels']]
+        required_labels = ["overseer", "area/direct", "priority/medium"]
+        missing_labels = [l for l in required_labels if l not in current_labels]
         if missing_labels:
-            print(f"Injecting labels {missing_labels} into issue #{issue['number']} for {group} {kind}")
-            subprocess.call(['gh', 'issue', 'edit', str(issue['number']), '--add-label', ','.join(missing_labels)])
+            print(f"Injecting missing labels {missing_labels} for issue #{existing_issue['number']}")
+            run_cmd(f'gh issue edit {existing_issue["number"]} --add-label {",".join(missing_labels)}')
         continue
-    
-    if not issue_created:
-        if open_issues_count >= 10:
-            if not printed_skip_msg:
-                print(f"There are already 10 pending issues ({open_issues_count} actually). Skipping creating new ones until some of the existing issues are resolved.")
-                printed_skip_msg = True
-        else:
-            print(f"Creating issue for {group} {kind}...")
-            # Here we would normally create it
-            issue_created = True
+    else:
+        if pending_count >= 10:
+            print("There are already more than 10 pending issues (open). Skipping creating new ones to avoid overwhelming the team.")
+            sys.exit(0)
+        
+        # We would create an issue here if pending_count < 10
+        print(f"Would create issue for {group} {kind}")
+        sys.exit(0)
+
