@@ -644,7 +644,6 @@ X-Xss-Protection: 0
               "forwardingRule": "https://www.googleapis.com/compute/v1/projects/${projectId}/regions/us-central1/forwardingRules/sca-auto-fr-112210f47de98116",
               "ipAddress": "10.128.0.22",
               "network": "projects/${projectId}/global/networks/${networkID}",
-              "port": 6379,
               "projectId": "${projectId}",
               "pscConnectionId": "1234567890123456790",
               "serviceAttachment": "projects/tp-memorystore-${uniqueId}/regions/us-central1/serviceAttachments/sa-memorystore-${uniqueId}-2"
@@ -739,7 +738,6 @@ X-Xss-Protection: 0
             "forwardingRule": "https://www.googleapis.com/compute/v1/projects/${projectId}/regions/us-central1/forwardingRules/sca-auto-fr-112210f47de98116",
             "ipAddress": "10.128.0.22",
             "network": "projects/${projectId}/global/networks/${networkID}",
-            "port": 6379,
             "projectId": "${projectId}",
             "pscConnectionId": "1234567890123456790",
             "serviceAttachment": "projects/tp-memorystore-${uniqueId}/regions/us-central1/serviceAttachments/sa-memorystore-${uniqueId}-2"
@@ -917,7 +915,6 @@ X-Xss-Protection: 0
               "forwardingRule": "https://www.googleapis.com/compute/v1/projects/${projectId}/regions/us-central1/forwardingRules/sca-auto-fr-112210f47de98116",
               "ipAddress": "10.128.0.22",
               "network": "projects/${projectId}/global/networks/${networkID}",
-              "port": 6379,
               "projectId": "${projectId}",
               "pscConnectionId": "1234567890123456790",
               "serviceAttachment": "projects/tp-memorystore-${uniqueId}/regions/us-central1/serviceAttachments/sa-memorystore-${uniqueId}-2"
@@ -1096,7 +1093,6 @@ X-Xss-Protection: 0
               "forwardingRule": "https://www.googleapis.com/compute/v1/projects/${projectId}/regions/us-central1/forwardingRules/sca-auto-fr-112210f47de98116",
               "ipAddress": "10.128.0.22",
               "network": "projects/${projectId}/global/networks/${networkID}",
-              "port": 6379,
               "projectId": "${projectId}",
               "pscConnectionId": "1234567890123456790",
               "serviceAttachment": "projects/tp-memorystore-${uniqueId}/regions/us-central1/serviceAttachments/sa-memorystore-${uniqueId}-2"
@@ -1275,7 +1271,6 @@ X-Xss-Protection: 0
               "forwardingRule": "https://www.googleapis.com/compute/v1/projects/${projectId}/regions/us-central1/forwardingRules/sca-auto-fr-112210f47de98116",
               "ipAddress": "10.128.0.22",
               "network": "projects/${projectId}/global/networks/${networkID}",
-              "port": 6379,
               "projectId": "${projectId}",
               "pscConnectionId": "1234567890123456790",
               "serviceAttachment": "projects/tp-memorystore-${uniqueId}/regions/us-central1/serviceAttachments/sa-memorystore-${uniqueId}-2"
@@ -1454,7 +1449,6 @@ X-Xss-Protection: 0
               "forwardingRule": "https://www.googleapis.com/compute/v1/projects/${projectId}/regions/us-central1/forwardingRules/sca-auto-fr-112210f47de98116",
               "ipAddress": "10.128.0.22",
               "network": "projects/${projectId}/global/networks/${networkID}",
-              "port": 6379,
               "projectId": "${projectId}",
               "pscConnectionId": "1234567890123456790",
               "serviceAttachment": "projects/tp-memorystore-${uniqueId}/regions/us-central1/serviceAttachments/sa-memorystore-${uniqueId}-2"
@@ -1634,7 +1628,6 @@ X-Xss-Protection: 0
               "forwardingRule": "https://www.googleapis.com/compute/v1/projects/${projectId}/regions/us-central1/forwardingRules/sca-auto-fr-112210f47de98116",
               "ipAddress": "10.128.0.22",
               "network": "projects/${projectId}/global/networks/${networkID}",
-              "port": 6379,
               "projectId": "${projectId}",
               "pscConnectionId": "1234567890123456790",
               "serviceAttachment": "projects/tp-memorystore-${uniqueId}/regions/us-central1/serviceAttachments/sa-memorystore-${uniqueId}-2"
@@ -1815,7 +1808,6 @@ X-Xss-Protection: 0
               "forwardingRule": "https://www.googleapis.com/compute/v1/projects/${projectId}/regions/us-central1/forwardingRules/sca-auto-fr-112210f47de98116",
               "ipAddress": "10.128.0.22",
               "network": "projects/${projectId}/global/networks/${networkID}",
-              "port": 6379,
               "projectId": "${projectId}",
               "pscConnectionId": "1234567890123456790",
               "serviceAttachment": "projects/tp-memorystore-${uniqueId}/regions/us-central1/serviceAttachments/sa-memorystore-${uniqueId}-2"
@@ -1996,7 +1988,6 @@ X-Xss-Protection: 0
               "forwardingRule": "https://www.googleapis.com/compute/v1/projects/${projectId}/regions/us-central1/forwardingRules/sca-auto-fr-112210f47de98116",
               "ipAddress": "10.128.0.22",
               "network": "projects/${projectId}/global/networks/${networkID}",
-              "port": 6379,
               "projectId": "${projectId}",
               "pscConnectionId": "1234567890123456790",
               "serviceAttachment": "projects/tp-memorystore-${uniqueId}/regions/us-central1/serviceAttachments/sa-memorystore-${uniqueId}-2"
@@ -2094,7 +2085,6 @@ X-Xss-Protection: 0
             "forwardingRule": "https://www.googleapis.com/compute/v1/projects/${projectId}/regions/us-central1/forwardingRules/sca-auto-fr-112210f47de98116",
             "ipAddress": "10.128.0.22",
             "network": "projects/${projectId}/global/networks/${networkID}",
-            "port": 6379,
             "projectId": "${projectId}",
             "pscConnectionId": "1234567890123456790",
             "serviceAttachment": "projects/tp-memorystore-${uniqueId}/regions/us-central1/serviceAttachments/sa-memorystore-${uniqueId}-2"

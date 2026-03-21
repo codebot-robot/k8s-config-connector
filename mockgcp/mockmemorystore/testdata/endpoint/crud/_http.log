@@ -219,6 +219,7 @@ X-Xss-Protection: 0
               "forwardingRule": "projects/${projectId}/regions/us-central1/forwardingRules/test-fwdrule-1-${uniqueId}",
               "ipAddress": "8.8.8.8",
               "network": "projects/${projectId}/global/networks/test-network-${uniqueId}",
+              "port": 6379,
               "projectId": "${projectId}",
               "pscConnectionStatus": "ACTIVE",
               "serviceAttachment": "projects/tp-test-instance-${uniqueId}/regions/us-central1/serviceAttachments/sa-test-instance-${uniqueId}"
@@ -230,6 +231,7 @@ X-Xss-Protection: 0
               "forwardingRule": "projects/${projectId}/regions/us-central1/forwardingRules/test-fwdrule-2-${uniqueId}",
               "ipAddress": "8.8.8.8",
               "network": "projects/${projectId}/global/networks/test-network-${uniqueId}",
+              "port": 6379,
               "projectId": "${projectId}",
               "pscConnectionStatus": "ACTIVE",
               "serviceAttachment": "projects/tp-test-instance-${uniqueId}/regions/us-central1/serviceAttachments/sa-test-instance-${uniqueId}-2"
@@ -304,6 +306,7 @@ X-Xss-Protection: 0
             "forwardingRule": "projects/${projectId}/regions/us-central1/forwardingRules/test-fwdrule-1-${uniqueId}",
             "ipAddress": "8.8.8.8",
             "network": "projects/${projectId}/global/networks/test-network-${uniqueId}",
+            "port": 6379,
             "projectId": "${projectId}",
             "pscConnectionStatus": "ACTIVE",
             "serviceAttachment": "projects/tp-test-instance-${uniqueId}/regions/us-central1/serviceAttachments/sa-test-instance-${uniqueId}"
@@ -315,6 +318,7 @@ X-Xss-Protection: 0
             "forwardingRule": "projects/${projectId}/regions/us-central1/forwardingRules/test-fwdrule-2-${uniqueId}",
             "ipAddress": "8.8.8.8",
             "network": "projects/${projectId}/global/networks/test-network-${uniqueId}",
+            "port": 6379,
             "projectId": "${projectId}",
             "pscConnectionStatus": "ACTIVE",
             "serviceAttachment": "projects/tp-test-instance-${uniqueId}/regions/us-central1/serviceAttachments/sa-test-instance-${uniqueId}-2"
