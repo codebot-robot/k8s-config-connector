@@ -53,7 +53,7 @@ func (s *MockService) ConfigureVisitor(url string, visitor mockgcpregistry.Norma
 
 	visitor.ReplacePath(".caCertificateDescriptions[].certFingerprint.sha256Hash", "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef")
 	visitor.ReplacePath(".caCertificateDescriptions[].tbsCertificateDigest", "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef")
-	visitor.ReplacePath(".caCertificateDescriptions[].publicKey.format", nil)
+	visitor.RemovePath(".caCertificateDescriptions[].publicKey.format")
 	visitor.ReplacePath(".accessUrls.caCertificateAccessUrl", "http://privateca-content-00000000-0000-0000-0000-000000000000.storage.googleapis.com/ca.crt")
 	visitor.ReplacePath(".accessUrls.crlAccessUrls[]", "http://privateca-content-00000000-0000-0000-0000-000000000000.storage.googleapis.com/crl")
 
@@ -64,20 +64,10 @@ func (s *MockService) ConfigureVisitor(url string, visitor mockgcpregistry.Norma
 	visitor.ReplacePath(".response.caCertificateDescriptions[].subjectKeyId.keyId", "0123456789abcdef")
 	visitor.ReplacePath(".response.caCertificateDescriptions[].certFingerprint.sha256Hash", "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef")
 	visitor.ReplacePath(".response.caCertificateDescriptions[].tbsCertificateDigest", "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef")
-	visitor.ReplacePath(".response.caCertificateDescriptions[].publicKey.format", nil)
+	visitor.RemovePath(".response.caCertificateDescriptions[].publicKey.format")
 	visitor.ReplacePath(".response.accessUrls.caCertificateAccessUrl", "http://privateca-content-00000000-0000-0000-0000-000000000000.storage.googleapis.com/ca.crt")
 	visitor.ReplacePath(".response.accessUrls.crlAccessUrls[]", "http://privateca-content-00000000-0000-0000-0000-000000000000.storage.googleapis.com/crl")
 
-	visitor.ReplacePath(".status.caCertificateDescriptions[].subjectDescription.notBeforeTime", NormalizedTimestamp)
-	visitor.ReplacePath(".status.caCertificateDescriptions[].subjectDescription.notAfterTime", NormalizedTimestamp)
-	visitor.ReplacePath(".status.caCertificateDescriptions[].subjectDescription.hexSerialNumber", "0123456789abcdef")
-	visitor.ReplacePath(".status.caCertificateDescriptions[].authorityKeyId.keyId", "0123456789abcdef")
-	visitor.ReplacePath(".status.caCertificateDescriptions[].subjectKeyId.keyId", "0123456789abcdef")
-	visitor.ReplacePath(".status.caCertificateDescriptions[].certFingerprint.sha256Hash", "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef")
-	visitor.ReplacePath(".status.caCertificateDescriptions[].tbsCertificateDigest", "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef")
-	visitor.ReplacePath(".status.caCertificateDescriptions[].publicKey.format", nil)
-	visitor.ReplacePath(".status.accessUrls.caCertificateAccessUrl", "http://privateca-content-00000000-0000-0000-0000-000000000000.storage.googleapis.com/ca.crt")
-	visitor.ReplacePath(".status.accessUrls.crlAccessUrls[]", "http://privateca-content-00000000-0000-0000-0000-000000000000.storage.googleapis.com/crl")
 }
 
 func (s *MockService) Previsit(event mockgcpregistry.Event, replacements mockgcpregistry.NormalizingVisitor) {

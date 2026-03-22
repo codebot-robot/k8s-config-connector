@@ -98,7 +98,9 @@ func (s *PrivateCAV1) CreateCaPool(ctx context.Context, req *pb.CreateCaPoolRequ
 	opPrefix := fmt.Sprintf("projects/%s/locations/%s", name.Project.ID, name.Location)
 	return s.operations.StartLRO(ctx, opPrefix, opMetadata, func() (proto.Message, error) {
 		opMetadata.EndTime = timestamppb.Now()
-		return obj, nil
+		result := proto.Clone(obj).(*pb.CaPool)
+		result.Labels = nil
+		return result, nil
 	})
 }
 
@@ -149,7 +151,9 @@ func (s *PrivateCAV1) UpdateCaPool(ctx context.Context, req *pb.UpdateCaPoolRequ
 	opPrefix := fmt.Sprintf("projects/%s/locations/%s", name.Project.ID, name.Location)
 	return s.operations.StartLRO(ctx, opPrefix, opMetadata, func() (proto.Message, error) {
 		opMetadata.EndTime = timestamppb.Now()
-		return obj, nil
+		result := proto.Clone(obj).(*pb.CaPool)
+		result.Labels = nil
+		return result, nil
 	})
 }
 

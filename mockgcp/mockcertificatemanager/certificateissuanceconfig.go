@@ -84,10 +84,10 @@ func (s *CertificateManagerV1) CreateCertificateIssuanceConfig(ctx context.Conte
 	}
 
 	return s.operations.StartLRO(ctx, req.Parent, lroMetadata, func() (proto.Message, error) {
-		result := proto.Clone(obj).(*pb.CertificateIssuanceConfig)
-		return result, nil
-	})
-}
+	        lroMetadata.EndTime = timestamppb.Now()
+	        result := proto.Clone(obj).(*pb.CertificateIssuanceConfig)
+	        return result, nil
+	})}
 
 func (s *CertificateManagerV1) ListCertificateIssuanceConfigs(ctx context.Context, req *pb.ListCertificateIssuanceConfigsRequest) (*pb.ListCertificateIssuanceConfigsResponse, error) {
 	objs := []*pb.CertificateIssuanceConfig{}
@@ -174,9 +174,9 @@ func (s *CertificateManagerV1) DeleteCertificateIssuanceConfig(ctx context.Conte
 		Verb:       "delete",
 	}
 	return s.operations.StartLRO(ctx, lroPrefix, lroMetadata, func() (proto.Message, error) {
-		return &emptypb.Empty{}, nil
-	})
-}
+	        lroMetadata.EndTime = timestamppb.Now()
+	        return &emptypb.Empty{}, nil
+	})}
 
 func (s *CertificateManagerV1) normalizeCAPoolName(ctx context.Context, name string) (string, error) {
 	tokens := strings.Split(name, "/")

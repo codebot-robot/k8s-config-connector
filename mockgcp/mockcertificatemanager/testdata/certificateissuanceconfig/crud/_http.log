@@ -496,6 +496,7 @@ X-Xss-Protection: 0
     "@type": "type.googleapis.com/google.cloud.certificatemanager.v1.OperationMetadata",
     "apiVersion": "v1",
     "createTime": "2024-04-01T12:34:56.123456Z",
+    "endTime": "2024-04-01T12:34:56.123456Z",
     "target": "projects/${projectId}/locations/us-central1/certificateIssuanceConfigs/test-${uniqueId}",
     "verb": "create"
   },
@@ -525,6 +526,7 @@ X-Xss-Protection: 0
     "@type": "type.googleapis.com/google.cloud.certificatemanager.v1.OperationMetadata",
     "apiVersion": "v1",
     "createTime": "2024-04-01T12:34:56.123456Z",
+    "endTime": "2024-04-01T12:34:56.123456Z",
     "target": "projects/${projectId}/locations/us-central1/certificateIssuanceConfigs/test-${uniqueId}",
     "verb": "create"
   },
@@ -645,6 +647,7 @@ X-Xss-Protection: 0
     "@type": "type.googleapis.com/google.cloud.certificatemanager.v1.OperationMetadata",
     "apiVersion": "v1",
     "createTime": "2024-04-01T12:34:56.123456Z",
+    "endTime": "2024-04-01T12:34:56.123456Z",
     "target": "projects/${projectId}/locations/us-central1/certificateIssuanceConfigs/test-${uniqueId}",
     "verb": "delete"
   },
@@ -674,6 +677,7 @@ X-Xss-Protection: 0
     "@type": "type.googleapis.com/google.cloud.certificatemanager.v1.OperationMetadata",
     "apiVersion": "v1",
     "createTime": "2024-04-01T12:34:56.123456Z",
+    "endTime": "2024-04-01T12:34:56.123456Z",
     "target": "projects/${projectId}/locations/us-central1/certificateIssuanceConfigs/test-${uniqueId}",
     "verb": "delete"
   },
