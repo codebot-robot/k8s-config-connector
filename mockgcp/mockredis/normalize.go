@@ -15,16 +15,17 @@
 package mockredis
 
 import (
+	"strings"
+
 	"github.com/GoogleCloudPlatform/k8s-config-connector/mockgcp/mockgcpregistry"
 )
 
 var _ mockgcpregistry.SupportsNormalization = &MockService{}
 
 func (s *MockService) ConfigureVisitor(url string, replacements mockgcpregistry.NormalizingVisitor) {
-	replacements.ReplacePath(".status.observedState.uid", "0123456789abcdef")
-	replacements.ReplacePath(".status.observedState.pscConnections[].pscConnectionID", "${pscConnectionID}")
-	replacements.ReplacePath(".status.observedState.pscConnections[].address", "10.11.12.13")
-	replacements.ReplacePath(".status.observedState.discoveryEndpoints[].address", "10.11.12.13")
+	if !strings.Contains(url, "redis.googleapis.com") {
+		return
+	}
 	replacements.ReplacePath(".pscConnections[].address", "10.11.12.13")
 	replacements.ReplacePath(".response.pscConnections[].address", "10.11.12.13")
 	replacements.ReplacePath(".discoveryEndpoints[].address", "10.11.12.13")
