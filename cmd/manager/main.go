@@ -190,18 +190,17 @@ func main() {
 
 func newManager(ctx context.Context, restCfg *rest.Config, scopedNamespace string, userProjectOverride bool, billingProject string, multiclusterlease bool, syncingMode bool) (manager.Manager, error) {
 	krmtotf.SetUserAgentForTerraformProvider()
-	
-	opts := manager.Options{}
-	if scopedNamespace != "" {
-		opts.Cache = cache.Options{
+
+	opts := manager.Options{
+		Cache: cache.Options{
 			DefaultNamespaces: map[string]cache.Config{
 				scopedNamespace: {},
 			},
-		}
+		},
 	}
 
 	controllersCfg := kccmanager.Config{
-		ManagerOptions: opts,
+		ManagerOptions:    opts,
 		MultiClusterLease: multiclusterlease,
 		SyncerIntegration: syncingMode,
 	}

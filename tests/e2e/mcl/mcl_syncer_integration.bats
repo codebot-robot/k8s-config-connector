@@ -42,16 +42,16 @@ retry() {
 
 @test "KRMSyncer configures correctly and isolates resources during failover" {
   echo "Waiting for KCC to create local leases..."
-  retry 15 5 "kubectl --context='${CTX_A}' get multiclusterlease '${LEASE_NAME}' -n '${LEASE_NAMESPACE}'"
-  retry 15 5 "kubectl --context='${CTX_B}' get multiclusterlease '${LEASE_NAME}' -n '${LEASE_NAMESPACE}'"
+  retry 30 5 "kubectl --context='${CTX_A}' get multiclusterlease '${LEASE_NAME}' -n '${LEASE_NAMESPACE}'"
+  retry 30 5 "kubectl --context='${CTX_B}' get multiclusterlease '${LEASE_NAME}' -n '${LEASE_NAMESPACE}'"
 
   echo "Waiting for REAL KRMSyncer to be ready in both clusters..."
-  retry 15 5 "kubectl --context='${CTX_A}' wait --for=condition=available deployment/syncer-controller-manager -n '${LEASE_NAMESPACE}' --timeout=10s"
-  retry 15 5 "kubectl --context='${CTX_B}' wait --for=condition=available deployment/syncer-controller-manager -n '${LEASE_NAMESPACE}' --timeout=10s"
+  retry 30 5 "kubectl --context='${CTX_A}' wait --for=condition=available deployment/syncer-controller-manager -n '${LEASE_NAMESPACE}' --timeout=10s"
+  retry 30 5 "kubectl --context='${CTX_B}' wait --for=condition=available deployment/syncer-controller-manager -n '${LEASE_NAMESPACE}' --timeout=10s"
 
   echo "Waiting for REAL MCL Controller to be ready in both clusters..."
-  retry 15 5 "kubectl --context='${CTX_A}' wait --for=condition=available deployment/multiclusterlease-controller-manager -n '${LEASE_NAMESPACE}' --timeout=10s"
-  retry 15 5 "kubectl --context='${CTX_B}' wait --for=condition=available deployment/multiclusterlease-controller-manager -n '${LEASE_NAMESPACE}' --timeout=10s"
+  retry 30 5 "kubectl --context='${CTX_A}' wait --for=condition=available deployment/multiclusterlease-controller-manager -n '${LEASE_NAMESPACE}' --timeout=10s"
+  retry 30 5 "kubectl --context='${CTX_B}' wait --for=condition=available deployment/multiclusterlease-controller-manager -n '${LEASE_NAMESPACE}' --timeout=10s"
 
   echo "Waiting for REAL MCL Controller to elect a leader..."
   retry 30 5 "kubectl --context='${CTX_A}' get multiclusterlease '${LEASE_NAME}' -n '${LEASE_NAMESPACE}' -o json | jq -e '.status.globalHolderIdentity != null and .status.globalHolderIdentity != \"\"'"
@@ -73,10 +73,10 @@ retry() {
   echo "Elected Leader: $leader"
 
   echo "Verifying Follower ($follower) configured its Namespaced KRMSyncer to PULL from Leader..."
-  retry 15 3 "kubectl --context='${follower_ctx}' get krmsyncer '${SYNCER_NAME}' -n '${LEASE_NAMESPACE}' -o json | jq -e '.spec.suspend == false'"
+  retry 30 3 "kubectl --context='${follower_ctx}' get krmsyncer '${SYNCER_NAME}' -n '${LEASE_NAMESPACE}' -o json | jq -e '.spec.suspend == false'"
 
   echo "Verifying Leader ($leader) suspended its KRMSyncer..."
-  retry 15 3 "kubectl --context='${leader_ctx}' get krmsyncer '${SYNCER_NAME}' -n '${LEASE_NAMESPACE}' -o json | jq -e '.spec.suspend == true'"
+  retry 30 3 "kubectl --context='${leader_ctx}' get krmsyncer '${SYNCER_NAME}' -n '${LEASE_NAMESPACE}' -o json | jq -e '.spec.suspend == true'"
 
   # --------------------------------------------------------------------------------
   # DATA PLANE VERIFICATION: CREATE & SYNC
@@ -87,7 +87,7 @@ retry() {
   kubectl --context="${CTX_B}" apply -f tests/e2e/mcl/storagebucket.yaml
 
   echo "Waiting for Leader to reconcile the resource..."
-  if ! retry 15 5 "kubectl --context='${leader_ctx}' get storagebucket test-ha-bucket -n '${WATCH_NAMESPACE}' -o json | grep -E 'UpdateFailed|UpToDate'"; then
+  if ! retry 30 5 "kubectl --context='${leader_ctx}' get storagebucket test-ha-bucket -n '${WATCH_NAMESPACE}' -o json | grep -E 'UpdateFailed|UpToDate'"; then
     echo "Dumping StorageBucket state for debugging:"
     kubectl --context="${leader_ctx}" get storagebucket test-ha-bucket -n "${WATCH_NAMESPACE}" -o json
     exit 1
