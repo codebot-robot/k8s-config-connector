@@ -159,3 +159,4 @@ Currently, \`${resource_group}${resource_name}\` is managed by the ${CONTROLLER_
 
 This issue is part of Epic #5954."
 fi
+
