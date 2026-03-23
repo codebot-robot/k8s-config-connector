@@ -1,13 +1,13 @@
 module github.com/GoogleCloudPlatform/k8s-config-connector/experiments/kubectl-plan
 
-go 1.24.0
+go 1.26
 
-toolchain go1.24.6
+toolchain go1.26.1
 
 require (
 	github.com/google/go-cmp v0.7.0
 	github.com/spf13/cobra v1.8.1
-	k8s.io/apimachinery v0.33.0
+	k8s.io/apimachinery v0.33.9
 	k8s.io/client-go v0.33.0
 	k8s.io/klog/v2 v2.130.1
 	sigs.k8s.io/controller-runtime v0.20.4

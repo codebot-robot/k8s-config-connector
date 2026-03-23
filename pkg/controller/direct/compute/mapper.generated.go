@@ -136,7 +136,6 @@ func ComputePublicAdvertisedPrefixObservedState_v1beta1_FromProto(mapCtx *direct
 	// MISSING: IPCIDRRange
 	// MISSING: Kind
 	// MISSING: Name
-	// MISSING: PdpScope
 	// MISSING: PublicDelegatedPrefixs
 	out.SelfLink = in.SelfLink
 	out.SharedSecret = in.SharedSecret
@@ -155,7 +154,6 @@ func ComputePublicAdvertisedPrefixObservedState_v1beta1_ToProto(mapCtx *direct.M
 	// MISSING: IPCIDRRange
 	// MISSING: Kind
 	// MISSING: Name
-	// MISSING: PdpScope
 	// MISSING: PublicDelegatedPrefixs
 	out.SelfLink = in.SelfLink
 	out.SharedSecret = in.SharedSecret
@@ -176,7 +174,7 @@ func ComputePublicAdvertisedPrefixSpec_v1beta1_FromProto(mapCtx *direct.MapConte
 	// (near miss): "IPCIDRRange" vs "IPCidrRange"
 	// MISSING: Kind
 	// MISSING: Name
-	// MISSING: PdpScope
+	out.PdpScope = in.PdpScope
 	// MISSING: PublicDelegatedPrefixs
 	return out
 }
@@ -194,7 +192,7 @@ func ComputePublicAdvertisedPrefixSpec_v1beta1_ToProto(mapCtx *direct.MapContext
 	// (near miss): "IPCIDRRange" vs "IPCidrRange"
 	// MISSING: Kind
 	// MISSING: Name
-	// MISSING: PdpScope
+	out.PdpScope = in.PdpScope
 	// MISSING: PublicDelegatedPrefixs
 	return out
 }
@@ -257,7 +255,9 @@ func ComputePublicDelegatedPrefixSpec_v1beta1_FromProto(mapCtx *direct.MapContex
 	// MISSING: Kind
 	// MISSING: Mode
 	// MISSING: Name
-	// MISSING: ParentPrefix
+	if in.GetParentPrefix() != "" {
+		out.ParentPrefixRef = &krm.ComputePublicDelegatedPrefixParentPrefixRef{External: in.GetParentPrefix()}
+	}
 	// MISSING: PublicDelegatedSubPrefixs
 	// MISSING: Region
 	// MISSING: SelfLink
@@ -281,7 +281,9 @@ func ComputePublicDelegatedPrefixSpec_v1beta1_ToProto(mapCtx *direct.MapContext,
 	// MISSING: Kind
 	// MISSING: Mode
 	// MISSING: Name
-	// MISSING: ParentPrefix
+	if in.ParentPrefixRef != nil {
+		out.ParentPrefix = &in.ParentPrefixRef.External
+	}
 	// MISSING: PublicDelegatedSubPrefixs
 	// MISSING: Region
 	// MISSING: SelfLink
@@ -808,6 +810,80 @@ func PublicDelegatedPrefixPublicDelegatedSubPrefix_v1beta1_ToProto(mapCtx *direc
 	out.Name = in.Name
 	out.Region = in.Region
 	out.Status = in.Status
+	return out
+}
+func ResourcePolicyResourceStatus_v1beta1_FromProto(mapCtx *direct.MapContext, in *pb.ResourcePolicyResourceStatus) *krm.ResourcePolicyResourceStatus {
+	if in == nil {
+		return nil
+	}
+	out := &krm.ResourcePolicyResourceStatus{}
+	out.InstanceSchedulePolicy = ResourcePolicyResourceStatusInstanceSchedulePolicyStatus_v1beta1_FromProto(mapCtx, in.GetInstanceSchedulePolicy())
+	return out
+}
+func ResourcePolicyResourceStatus_v1beta1_ToProto(mapCtx *direct.MapContext, in *krm.ResourcePolicyResourceStatus) *pb.ResourcePolicyResourceStatus {
+	if in == nil {
+		return nil
+	}
+	out := &pb.ResourcePolicyResourceStatus{}
+	out.InstanceSchedulePolicy = ResourcePolicyResourceStatusInstanceSchedulePolicyStatus_v1beta1_ToProto(mapCtx, in.InstanceSchedulePolicy)
+	return out
+}
+func ResourcePolicyResourceStatusInstanceSchedulePolicyStatus_v1beta1_FromProto(mapCtx *direct.MapContext, in *pb.ResourcePolicyResourceStatusInstanceSchedulePolicyStatus) *krm.ResourcePolicyResourceStatusInstanceSchedulePolicyStatus {
+	if in == nil {
+		return nil
+	}
+	out := &krm.ResourcePolicyResourceStatusInstanceSchedulePolicyStatus{}
+	out.LastRunStartTime = in.LastRunStartTime
+	out.NextRunStartTime = in.NextRunStartTime
+	return out
+}
+func ResourcePolicyResourceStatusInstanceSchedulePolicyStatus_v1beta1_ToProto(mapCtx *direct.MapContext, in *krm.ResourcePolicyResourceStatusInstanceSchedulePolicyStatus) *pb.ResourcePolicyResourceStatusInstanceSchedulePolicyStatus {
+	if in == nil {
+		return nil
+	}
+	out := &pb.ResourcePolicyResourceStatusInstanceSchedulePolicyStatus{}
+	out.LastRunStartTime = in.LastRunStartTime
+	out.NextRunStartTime = in.NextRunStartTime
+	return out
+}
+func ResourcePolicySnapshotSchedulePolicyScheduleWeeklyScheduleDayOfWeek_v1beta1_FromProto(mapCtx *direct.MapContext, in *pb.ResourcePolicyWeeklyCycleDayOfWeek) *krm.ResourcePolicySnapshotSchedulePolicyScheduleWeeklyScheduleDayOfWeek {
+	if in == nil {
+		return nil
+	}
+	out := &krm.ResourcePolicySnapshotSchedulePolicyScheduleWeeklyScheduleDayOfWeek{}
+	out.Day = in.Day
+	// MISSING: Duration
+	out.StartTime = in.StartTime
+	return out
+}
+func ResourcePolicySnapshotSchedulePolicyScheduleWeeklyScheduleDayOfWeek_v1beta1_ToProto(mapCtx *direct.MapContext, in *krm.ResourcePolicySnapshotSchedulePolicyScheduleWeeklyScheduleDayOfWeek) *pb.ResourcePolicyWeeklyCycleDayOfWeek {
+	if in == nil {
+		return nil
+	}
+	out := &pb.ResourcePolicyWeeklyCycleDayOfWeek{}
+	out.Day = in.Day
+	// MISSING: Duration
+	out.StartTime = in.StartTime
+	return out
+}
+func ResourcePolicyWorkloadPolicy_v1beta1_FromProto(mapCtx *direct.MapContext, in *pb.ResourcePolicyWorkloadPolicy) *krm.ResourcePolicyWorkloadPolicy {
+	if in == nil {
+		return nil
+	}
+	out := &krm.ResourcePolicyWorkloadPolicy{}
+	out.AcceleratorTopology = in.AcceleratorTopology
+	out.MaxTopologyDistance = in.MaxTopologyDistance
+	out.Type = in.Type
+	return out
+}
+func ResourcePolicyWorkloadPolicy_v1beta1_ToProto(mapCtx *direct.MapContext, in *krm.ResourcePolicyWorkloadPolicy) *pb.ResourcePolicyWorkloadPolicy {
+	if in == nil {
+		return nil
+	}
+	out := &pb.ResourcePolicyWorkloadPolicy{}
+	out.AcceleratorTopology = in.AcceleratorTopology
+	out.MaxTopologyDistance = in.MaxTopologyDistance
+	out.Type = in.Type
 	return out
 }
 func SecurityPolicyAdaptiveProtectionConfigLayer7DdosDefenseConfigThresholdConfig_v1beta1_FromProto(mapCtx *direct.MapContext, in *pb.SecurityPolicyAdaptiveProtectionConfigLayer7DdosDefenseConfigThresholdConfig) *krm.SecurityPolicyAdaptiveProtectionConfigLayer7DdosDefenseConfigThresholdConfig {

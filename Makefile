@@ -25,7 +25,7 @@ CONFIG_CONNECTOR_IMG ?= gcr.io/${PROJECT_ID}/cnrm/config-connector-cli:${SHORT_S
 GOLANGCI_LINT_CACHE := /tmp/golangci-lint
 # When updating this, make sure to update the corresponding action in
 # ./github/workflows/lint.yaml
-GOLANGCI_LINT_VERSION := v2.7.1
+GOLANGCI_LINT_VERSION := v2.9.0
 
 # Use Docker BuildKit when building images to allow usage of 'setcap' in
 # multi-stage builds (https://github.com/moby/moby/issues/38132)
@@ -128,7 +128,7 @@ lint:
 	docker run --rm -v $(shell pwd):/app \
 		-v ${GOLANGCI_LINT_CACHE}:/root/.cache/golangci-lint \
 		-w /app golangci/golangci-lint:${GOLANGCI_LINT_VERSION}-alpine \
-		golangci-lint run -v --timeout=10m
+		golangci-lint run -v --timeout=10m && echo "✅ Linting passed successfully!" || (echo "❌ Linting failed! Please fix the errors above."; exit 1)
 
 .PHONY: lint-custom
 lint-custom:
