@@ -35,9 +35,9 @@ Your task is to monitor the repo and either initiate a new version-bump release 
     - If no open version-bump PR exists for a milestone due tomorrow, proceed.
 
 2.  **Execution**:
-    - **Identify Versions**: Read `STALE_VERSION` from `version/VERSION`. Use the milestone title for `NEW_VERSION`.
+    - **Identify Versions**: Use the milestone title for `NEW_VERSION`.
     - **Preparation**: `git checkout master && git pull origin master`.
-    - **Generation**: Run `echo -e "${STALE_VERSION}\n${NEW_VERSION}" | ./dev/release/generate-release.sh`. 
+    - **Generation**: Run `./dev/release/generate-release.sh "${NEW_VERSION}"`. 
       - *Note: This script will automatically create a local branch named `release-{{NEW_VERSION}}` and create the initial commit.*
     - **Push & PR**:
         - `git push origin release-{{NEW_VERSION}}`
@@ -47,20 +47,20 @@ Your task is to monitor the repo and either initiate a new version-bump release 
 1.  **Check Trigger**:
     - **Identify Latest Release**: Fetch latest tags: `git fetch --tags --force`.
     - **Get Tags**:
-        - `CURRENT_TAG`: `git tag --sort=-v:refname | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | head -n 1` (e.g., `v1.147.0`).
-        - `PREVIOUS_TAG`: `git tag --sort=-v:refname | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | head -n 2 | tail -n 1` (e.g., `v1.146.0`).
+        - `CURRENT_TAG`: `git tag --sort=-creatordate | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | head -n 1` (e.g., `v1.147.0`).
+        - `PREVIOUS_TAG`: `git tag --sort=-creatordate | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | head -n 2 | tail -n 1` (e.g., `v1.146.0`).
     - **Verify Necessity**:
         - Extract version numbers from `CURRENT_TAG` (e.g., `VERSION=1.147.0`, `MAJOR_MINOR=1.147`).
         - Check if the release is already published on GitHub: `gh release view {{CURRENT_TAG}}`. If this succeeds, skip Scenario 2.
-        - Check if the release notes file exists in the repo: `ls docs/releasenotes/release-{{MAJOR_MINOR}}.md`.
+        - Check if the release notes file exists and contains the version: `grep -q "{{VERSION}}" docs/releasenotes/release-{{MAJOR_MINOR}}.md`.
         - Check if a pending PR exists for these notes: `gh pr list --state open --search "Release Notes {{VERSION}}"`.
-        - If the release is NOT published, the file is MISSING, and NO open PR exists, proceed to draft.
+        - If the release is NOT published, the file DOES NOT contain the version, and NO open PR exists, proceed to draft.
 
 2.  **Execution**:
     - **Draft PR**:
         - Create a temporary branch `draft-notes-{{VERSION}}`.
         - Create/Update the markdown file at `docs/releasenotes/release-{{MAJOR_MINOR}}.md` using `docs/releasenotes/template.md` as a base.
-        - **Generate Content**: Use the `git log {{PREVIOUS_TAG}}...{{CURRENT_TAG}}` command as referenced below to find contributors and identify changes (new resources, fields, fixes) between these tags.
+        - **Generate Content**: Use the `git log {{PREVIOUS_TAG}}..{{CURRENT_TAG}}` command as referenced below to find contributors and identify changes (new resources, fields, fixes) between these tags.
         - **Commit & Push**:
             - `git add . && git commit -m "Add release notes for {{VERSION}}"`
             - `git push origin draft-notes-{{VERSION}}`
@@ -71,4 +71,4 @@ Automate the initiation of KCC releases by monitoring GitHub milestones and ensu
 
 # Release Notes Generation Reference
 To extract contributors between tags:
-`git log {{PREVIOUS_TAG}}...{{CURRENT_TAG}} --merges --pretty=format:"%s" | grep -o "#[0-9]*" | tr -d "#" | xargs -I {} gh pr view {} --json author,reviews --jq '.author.login, .reviews[].author.login' | sort | uniq | grep -v "kcc-release-bot"`
+`git log {{PREVIOUS_TAG}}..{{CURRENT_TAG}} --merges --pretty=format:"%s" | grep -o "#[0-9]*" | tr -d "#" | xargs -I {} gh pr view {} --json author,reviews --jq '.author.login, .reviews[].author.login' | sort | uniq | grep -v "kcc-release-bot"`
