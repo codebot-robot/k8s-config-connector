@@ -715,13 +715,15 @@ func StorageAutoResizesMatch(desired *bool, actual *bool) bool {
 	if desired == nil && actual == nil {
 		return true
 	}
-	if !PointersMatch(desired, actual) {
-		return false
+	d := true
+	if desired != nil {
+		d = *desired
 	}
-	if *desired != *actual {
-		return false
+	a := true
+	if actual != nil {
+		a = *actual
 	}
-	return true
+	return d == a
 }
 
 func PointersMatch[T any](desired *T, actual *T) bool {
