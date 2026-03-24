@@ -112,8 +112,20 @@ func (m *modelParameterVersion) AdapterForObject(ctx context.Context, op *direct
 }
 
 func (m *modelParameterVersion) AdapterForURL(ctx context.Context, url string) (directbase.Adapter, error) {
-	// TODO: Support URLs
-	return nil, nil
+	id := &krm.ParameterVersionIdentity{}
+	if err := id.FromExternal(url); err != nil {
+		return nil, err
+	}
+	parameter := id.Parent()
+	location := parameter.Parent().Location
+	gcpClient, err := m.client(ctx, location)
+	if err != nil {
+		return nil, err
+	}
+	return &ParameterVersionAdapter{
+		id:        id,
+		gcpClient: gcpClient,
+	}, nil
 }
 
 type ParameterVersionAdapter struct {
