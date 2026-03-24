@@ -74,6 +74,9 @@ func (r *instanceServer) CreateInstance(ctx context.Context, req *pb.CreateInsta
 	obj.CreateTime = timestamppb.New(now)
 	obj.UpdateTime = timestamppb.New(now)
 	obj.State = pb.Instance_CREATING
+	if obj.CrossInstanceReplicationConfig != nil {
+		obj.CrossInstanceReplicationConfig.UpdateTime = timestamppb.New(now)
+	}
 
 	if err := r.populateDefaultsForInstance(name, obj); err != nil {
 		return nil, err
@@ -145,11 +148,7 @@ func (s *instanceServer) populateDefaultsForInstance(name *instanceName, obj *pb
 				if autoConnection != nil {
 					obj.Endpoints[0].Connections = append(obj.Endpoints[0].Connections, &pb.Instance_ConnectionDetail{
 						Connection: &pb.Instance_ConnectionDetail_PscAutoConnection{
-							PscAutoConnection: &pb.PscAutoConnection{
-								Ports:     autoConnection.Ports,
-								Network:   autoConnection.Network,
-								ProjectId: autoConnection.ProjectId,
-							},
+							PscAutoConnection: proto.Clone(autoConnection).(*pb.PscAutoConnection),
 						},
 					})
 				}
@@ -364,6 +363,9 @@ func (r *instanceServer) UpdateInstance(ctx context.Context, req *pb.UpdateInsta
 			obj.AutomatedBackupConfig = req.Instance.AutomatedBackupConfig
 		case "crossInstanceReplicationConfig":
 			obj.CrossInstanceReplicationConfig = req.Instance.CrossInstanceReplicationConfig
+			if obj.CrossInstanceReplicationConfig != nil {
+				obj.CrossInstanceReplicationConfig.UpdateTime = timestamppb.Now()
+			}
 		case "gcsSource":
 			if gcsSource := req.Instance.GetGcsSource(); gcsSource != nil {
 				obj.ImportSources = &pb.Instance_GcsSource{GcsSource: gcsSource}
