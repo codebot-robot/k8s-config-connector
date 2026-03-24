@@ -14,7 +14,7 @@ Example: `pkg/test/resourcefixture/testdata/basic/storage/v1beta1/storagebucket/
 Each fixture directory (e.g., `.../storage/v1beta1/storagebucket/`) directly corresponds to a CRD found in `config/crds/resources`.
 
 - **Coverage**: Every CRD should have at least one test fixture in this directory (the "basic" test) to verify core CRUD operations.
-- **Controller Validation**: These tests are the primary way to verify the underlying controller for a CRD, whether it is **Direct**, **Terraform (TF)**, or **DCL**.
+- **Controller Validation**: These tests are the primary way to verify the underlying controller for a CRD. The test fixtures in `basic/` are agnostic to the controller implementation. They test the resulting GCP resource regardless of the underlying controller architecture (**Direct**, **Terraform (TF)**, or **DCL**).
 - **Regressions**: When migrating a CRD from TF/DCL to **Direct**, these fixtures ensure that the behavior and the resulting GCP resources remain identical.
 - **Status Verification**: The `_generated_object_<test-name>.golden.yaml` file captures the `status` field, ensuring that `Ready` conditions and other status fields are correctly populated.
 
@@ -24,17 +24,30 @@ Each test directory contains:
 
 - `create.yaml` (Required): Initial Kubernetes manifest for the primary resource.
 - `update.yaml` (Optional): Modified manifest to test resource updates.
-- `dependencies.yaml` (Optional): Additional Kubernetes resources that must exist before the primary resource.
+- `dependencies.yaml` (Optional): Additional Kubernetes resources that must exist before the primary resource. Multiple resources can be defined, separated by `---`, and they are applied sequentially in the order they appear. They are automatically cleaned up (deleted) at the end of the test.
 - `_http.log`: Golden file containing the recorded HTTP/gRPC traffic between Config Connector and GCP APIs. This can be recorded from real GCP (standard) or MockGCP (for mock-only resources or when freezing mock behavior).
 - `_generated_object_<test-name>.golden.yaml`: Golden file containing the final state of the Kubernetes object.
+- `_final_object_old_controller.golden.yaml`: Golden file used for backward compatibility when migrating from TF/DCL to the Direct approach.
 
 ## Running Tests
 
 The primary test runner is `TestAllInSeries` in `tests/e2e/unified_test.go`.
 
+### Test Execution Lifecycle
+
+The `TestAllInSeries` runner executes each test following this lifecycle:
+1. Applies `dependencies.yaml` (if present).
+2. Applies `create.yaml`.
+3. Waits for the primary resource to be Ready.
+4. Applies `update.yaml` (if present).
+5. Waits for the primary resource to be Ready again.
+6. Cleans up by deleting the resources (in reverse order of creation).
+
 ### Using Hack Scripts (Recommended)
 
 The `hack` scripts streamline recording and comparing test output:
+
+> **Note:** `hack/record-gcp` automatically infers `GCP_PROJECT_ID` (via `gcloud config`) and `TEST_BILLING_ACCOUNT_ID`. Ensure your local `gcloud` environment is configured with an active project and billing account.
 
 ```bash
 # Record against real GCP (updates _http.log and object golden files)
@@ -61,7 +74,7 @@ RUN_E2E=1 E2E_GCP_TARGET=real E2E_KUBE_TARGET=envtest WRITE_GOLDEN_OUTPUT=1 GOLD
 
 ## Creating a New Test
 
-1. **Scaffold**: Create the directory structure `.../basic/<service>/<version>/<kind>/<test-name>/`.
+1. **Scaffold**: Create the directory structure `.../basic/<service>/<version>/<kind>/<test-name>/`. The `<test-name>` should be the lowercase resource name followed by an identifier like `basic` or `full` (e.g., `storagebucketbasic`).
 2. **Manifests**: Add `create.yaml` and optionally `dependencies.yaml` or `update.yaml`.
    - Ensure resources follow the order of their dependencies (dependencies first).
 3. **Record**: Run `hack/record-gcp <path>` to generate golden files. This requires real GCP credentials and an active project.
