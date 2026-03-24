@@ -39,5 +39,16 @@ func (s *MockService) ConfigureVisitor(url string, replacements mockgcpregistry.
 }
 
 func (s *MockService) Previsit(event mockgcpregistry.Event, replacements mockgcpregistry.NormalizingVisitor) {
-	// No-op for now
+	if !strings.HasPrefix(event.URL(), "https://memorystore.googleapis.com") {
+		return
+	}
+
+	event.VisitResponseStringValues(func(path string, value string) {
+		if path == ".backupCollection" || path == ".response.backupCollection" {
+			tokens := strings.Split(value, "/")
+			if len(tokens) == 6 && tokens[4] == "backupCollections" {
+				replacements.ReplaceStringValue(tokens[5], "${backupCollectionID}")
+			}
+		}
+	})
 }
