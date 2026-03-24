@@ -799,6 +799,8 @@ func populateDefaults(obj *pb.DatabaseInstance) {
 		}
 	}
 
+	// GCP completely omits the DataCacheConfig struct when DataCacheEnabled is false.
+	// We model that behavior here by setting the entire struct to nil.
 	if settings.DataCacheConfig != nil && !settings.DataCacheConfig.DataCacheEnabled {
 		settings.DataCacheConfig = nil
 	}

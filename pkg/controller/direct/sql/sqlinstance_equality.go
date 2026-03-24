@@ -351,18 +351,31 @@ func BackupRetentionSettingsMatch(desired *api.BackupRetentionSettings, actual *
 	return true
 }
 
+func isDataCacheEnabled(config *api.DataCacheConfig) bool {
+	return config != nil && config.DataCacheEnabled
+}
+
 func DataCacheConfigsMatch(desired *api.DataCacheConfig, actual *api.DataCacheConfig) bool {
 	// GCP omits DataCacheConfig when DataCacheEnabled is false.
 	// Treat nil and false as equivalent.
-	desiredEnabled := false
-	if desired != nil {
-		desiredEnabled = desired.DataCacheEnabled
+	desiredEnabled := isDataCacheEnabled(desired)
+	actualEnabled := isDataCacheEnabled(actual)
+
+	if desiredEnabled != actualEnabled {
+		return false
 	}
-	actualEnabled := false
-	if actual != nil {
-		actualEnabled = actual.DataCacheEnabled
+
+	// If both are disabled, treat them as equivalent.
+	if !desiredEnabled {
+		return true
 	}
-	return desiredEnabled == actualEnabled
+
+	// Both are enabled. Perform a field-by-field check.
+	// (Currently DataCacheEnabled is the only substantive property)
+
+	// Ignore ForceSendFields. Assume it is set correctly in desired.
+	// Ignore NullFields. Assume it is set correctly in desired.
+	return true
 }
 
 func DatabaseFlagListsMatch(desired []*api.DatabaseFlags, actual []*api.DatabaseFlags) bool {
