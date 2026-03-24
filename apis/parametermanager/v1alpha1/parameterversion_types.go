@@ -25,6 +25,7 @@ var ParameterManagerParameterVersionGVK = GroupVersion.WithKind("ParameterManage
 type ParameterVersionPayload struct {
 	// Required. bytes data for storing payload.
 	// +kcc:proto:field=google.cloud.parametermanager.v1.ParameterVersionPayload.data
+	// +kubebuilder:validation:Format=byte
 	// +required
 	Data []byte `json:"data,omitempty"`
 }

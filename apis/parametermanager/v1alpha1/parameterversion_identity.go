@@ -46,17 +46,20 @@ func (i *ParameterVersionIdentity) Parent() *ParameterIdentity {
 }
 
 func (i *ParameterVersionIdentity) FromExternal(ref string) error {
-	tokens := strings.Split(ref, "/versions/")
-	if len(tokens) != 2 {
+	idx := strings.LastIndex(ref, "/versions/")
+	if idx == -1 {
 		return fmt.Errorf("format of parameter versions external=%q was not known (use projects/{{projectID}}/locations/{{location}}/parameters/{{parameterID}}/versions/{{versionID}})", ref)
 	}
 	i.parent = &ParameterIdentity{}
-	if err := i.parent.FromExternal(tokens[0]); err != nil {
+	if err := i.parent.FromExternal(ref[:idx]); err != nil {
 		return err
 	}
-	i.id = tokens[1]
+	i.id = ref[idx+len("/versions/"):]
 	if i.id == "" {
 		return fmt.Errorf("versionID was empty in external=%q", ref)
+	}
+	if strings.Contains(i.id, "/") {
+		return fmt.Errorf("versionID contained invalid character '/' in external=%q", ref)
 	}
 	return nil
 }
@@ -70,6 +73,11 @@ func (obj *ParameterManagerParameterVersion) GetIdentity(ctx context.Context, re
 		return nil, err
 	}
 
+	parentIdentity, ok := parentID.(*ParameterIdentity)
+	if !ok {
+		return nil, fmt.Errorf("unexpected parent identity type: %T", parentID)
+	}
+
 	// Get resource ID
 	resourceID := common.ValueOf(obj.Spec.ResourceID)
 	if resourceID == "" {
@@ -80,10 +88,9 @@ func (obj *ParameterManagerParameterVersion) GetIdentity(ctx context.Context, re
 	}
 
 	parameterVersion := &ParameterVersionIdentity{
-		parent: parentID.(*ParameterIdentity),
+		parent: parentIdentity,
 		id:     resourceID,
 	}
-
 	// Validate against the ID stored in status.externalRef, if any
 	externalRef := common.ValueOf(obj.Status.ExternalRef)
 	if externalRef != "" {
@@ -100,6 +107,9 @@ func (obj *ParameterManagerParameterVersion) GetIdentity(ctx context.Context, re
 }
 
 func (obj *ParameterManagerParameterVersion) GetParentIdentity(ctx context.Context, reader client.Reader) (identity.Identity, error) {
+	if obj.Spec.ParameterRef == nil {
+		return nil, fmt.Errorf("spec.parameterRef is required")
+	}
 	// Normalize parent reference
 	if err := obj.Spec.ParameterRef.Normalize(ctx, reader, obj.GetNamespace()); err != nil {
 		return nil, err
