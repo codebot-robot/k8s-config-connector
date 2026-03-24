@@ -73,8 +73,11 @@ func DiskEncryptionConfigurationsMatch(desired *api.DiskEncryptionConfiguration,
 	if desired == nil && actual == nil {
 		return true
 	}
-	if !PointersMatch(desired, actual) {
-		return false
+	if desired == nil {
+		desired = &api.DiskEncryptionConfiguration{}
+	}
+	if actual == nil {
+		actual = &api.DiskEncryptionConfiguration{}
 	}
 	// Ignore Kind. It is sometimes not set in API responses.
 	if desired.KmsKeyName != actual.KmsKeyName {
@@ -89,8 +92,11 @@ func ReplicaConfigurationsMatch(desired *api.ReplicaConfiguration, actual *api.R
 	if desired == nil && actual == nil {
 		return true
 	}
-	if !PointersMatch(desired, actual) {
-		return false
+	if desired == nil {
+		desired = &api.ReplicaConfiguration{}
+	}
+	if actual == nil {
+		actual = &api.ReplicaConfiguration{}
 	}
 	// Ignore CascadableReplica. It is not supported in KRM API.
 	if desired.FailoverTarget != actual.FailoverTarget {
@@ -227,8 +233,11 @@ func MysqlReplicaConfigurationsMatch(desired *api.MySqlReplicaConfiguration, act
 	if desired == nil && actual == nil {
 		return true
 	}
-	if !PointersMatch(desired, actual) {
-		return false
+	if desired == nil {
+		desired = &api.MySqlReplicaConfiguration{}
+	}
+	if actual == nil {
+		actual = &api.MySqlReplicaConfiguration{}
 	}
 	if desired.CaCertificate != actual.CaCertificate {
 		return false
@@ -268,8 +277,11 @@ func ActiveDirectoryConfigsMatch(desired *api.SqlActiveDirectoryConfig, actual *
 	if desired == nil && actual == nil {
 		return true
 	}
-	if !PointersMatch(desired, actual) {
-		return false
+	if desired == nil {
+		desired = &api.SqlActiveDirectoryConfig{}
+	}
+	if actual == nil {
+		actual = &api.SqlActiveDirectoryConfig{}
 	}
 	if desired.Domain != actual.Domain {
 		return false
@@ -284,8 +296,11 @@ func AdvancedMachineFeaturesMatch(desired *api.AdvancedMachineFeatures, actual *
 	if desired == nil && actual == nil {
 		return true
 	}
-	if !PointersMatch(desired, actual) {
-		return false
+	if desired == nil {
+		desired = &api.AdvancedMachineFeatures{}
+	}
+	if actual == nil {
+		actual = &api.AdvancedMachineFeatures{}
 	}
 	if desired.ThreadsPerCore != actual.ThreadsPerCore {
 		return false
@@ -299,8 +314,11 @@ func BackupConfigurationsMatch(desired *api.BackupConfiguration, actual *api.Bac
 	if desired == nil && actual == nil {
 		return true
 	}
-	if !PointersMatch(desired, actual) {
-		return false
+	if desired == nil {
+		desired = &api.BackupConfiguration{}
+	}
+	if actual == nil {
+		actual = &api.BackupConfiguration{}
 	}
 	if !BackupRetentionSettingsMatch(desired.BackupRetentionSettings, actual.BackupRetentionSettings) {
 		return false
@@ -337,8 +355,11 @@ func BackupRetentionSettingsMatch(desired *api.BackupRetentionSettings, actual *
 	if desired == nil && actual == nil {
 		return true
 	}
-	if !PointersMatch(desired, actual) {
-		return false
+	if desired == nil {
+		desired = &api.BackupRetentionSettings{}
+	}
+	if actual == nil {
+		actual = &api.BackupRetentionSettings{}
 	}
 	if desired.RetainedBackups != actual.RetainedBackups {
 		return false
@@ -355,8 +376,11 @@ func DataCacheConfigsMatch(desired *api.DataCacheConfig, actual *api.DataCacheCo
 	if desired == nil && actual == nil {
 		return true
 	}
-	if !PointersMatch(desired, actual) {
-		return false
+	if desired == nil {
+		desired = &api.DataCacheConfig{}
+	}
+	if actual == nil {
+		actual = &api.DataCacheConfig{}
 	}
 	if desired.DataCacheEnabled != actual.DataCacheEnabled {
 		return false
@@ -382,8 +406,11 @@ func DatabaseFlagsMatch(desired *api.DatabaseFlags, actual *api.DatabaseFlags) b
 	if desired == nil && actual == nil {
 		return true
 	}
-	if !PointersMatch(desired, actual) {
-		return false
+	if desired == nil {
+		desired = &api.DatabaseFlags{}
+	}
+	if actual == nil {
+		actual = &api.DatabaseFlags{}
 	}
 	if desired.Name != actual.Name {
 		return false
@@ -412,8 +439,11 @@ func DenyMaintenancePeriodsMatch(desired *api.DenyMaintenancePeriod, actual *api
 	if desired == nil && actual == nil {
 		return true
 	}
-	if !PointersMatch(desired, actual) {
-		return false
+	if desired == nil {
+		desired = &api.DenyMaintenancePeriod{}
+	}
+	if actual == nil {
+		actual = &api.DenyMaintenancePeriod{}
 	}
 	if desired.EndDate != actual.EndDate {
 		return false
@@ -433,8 +463,11 @@ func InsightsConfigsMatch(desired *api.InsightsConfig, actual *api.InsightsConfi
 	if desired == nil && actual == nil {
 		return true
 	}
-	if !PointersMatch(desired, actual) {
-		return false
+	if desired == nil {
+		desired = &api.InsightsConfig{}
+	}
+	if actual == nil {
+		actual = &api.InsightsConfig{}
 	}
 	if desired.QueryInsightsEnabled != actual.QueryInsightsEnabled {
 		return false
@@ -460,8 +493,14 @@ func IpConfigurationsMatch(desired *api.IpConfiguration, actual *api.IpConfigura
 	if desired == nil && actual == nil {
 		return true
 	}
-	if !PointersMatch(desired, actual) {
-		return false
+	if desired == nil {
+		desired = &api.IpConfiguration{
+			Ipv4Enabled: true,
+			SslMode: "ALLOW_UNENCRYPTED_AND_ENCRYPTED",
+		}
+	}
+	if actual == nil {
+		actual = &api.IpConfiguration{}
 	}
 	if desired.AllocatedIpRange != actual.AllocatedIpRange {
 		return false
@@ -521,8 +560,11 @@ func AclEntriesMatch(desired *api.AclEntry, actual *api.AclEntry) bool {
 	if desired == nil && actual == nil {
 		return true
 	}
-	if !PointersMatch(desired, actual) {
-		return false
+	if desired == nil {
+		desired = &api.AclEntry{}
+	}
+	if actual == nil {
+		actual = &api.AclEntry{}
 	}
 	if desired.ExpirationTime != actual.ExpirationTime {
 		return false
@@ -543,8 +585,11 @@ func PscConfigsMatch(desired *api.PscConfig, actual *api.PscConfig) bool {
 	if desired == nil && actual == nil {
 		return true
 	}
-	if !PointersMatch(desired, actual) {
-		return false
+	if desired == nil {
+		desired = &api.PscConfig{}
+	}
+	if actual == nil {
+		actual = &api.PscConfig{}
 	}
 	if !reflect.DeepEqual(desired.AllowedConsumerProjects, actual.AllowedConsumerProjects) {
 		return false
@@ -561,8 +606,11 @@ func LocationPreferencesMatch(desired *api.LocationPreference, actual *api.Locat
 	if desired == nil && actual == nil {
 		return true
 	}
-	if !PointersMatch(desired, actual) {
-		return false
+	if desired == nil {
+		desired = &api.LocationPreference{}
+	}
+	if actual == nil {
+		actual = &api.LocationPreference{}
 	}
 	if desired.FollowGaeApplication != actual.FollowGaeApplication {
 		return false
@@ -583,8 +631,11 @@ func MaintenanceWindowsMatch(desired *api.MaintenanceWindow, actual *api.Mainten
 	if desired == nil && actual == nil {
 		return true
 	}
-	if !PointersMatch(desired, actual) {
-		return false
+	if desired == nil {
+		desired = &api.MaintenanceWindow{}
+	}
+	if actual == nil {
+		actual = &api.MaintenanceWindow{}
 	}
 	if desired.Day != actual.Day {
 		return false
@@ -605,8 +656,11 @@ func PasswordValidationPoliciesMatch(desired *api.PasswordValidationPolicy, actu
 	if desired == nil && actual == nil {
 		return true
 	}
-	if !PointersMatch(desired, actual) {
-		return false
+	if desired == nil {
+		desired = &api.PasswordValidationPolicy{}
+	}
+	if actual == nil {
+		actual = &api.PasswordValidationPolicy{}
 	}
 	if desired.Complexity != actual.Complexity {
 		return false
@@ -636,8 +690,11 @@ func SqlServerAuditConfigsMatch(desired *api.SqlServerAuditConfig, actual *api.S
 	if desired == nil && actual == nil {
 		return true
 	}
-	if !PointersMatch(desired, actual) {
-		return false
+	if desired == nil {
+		desired = &api.SqlServerAuditConfig{}
+	}
+	if actual == nil {
+		actual = &api.SqlServerAuditConfig{}
 	}
 	if desired.Bucket != actual.Bucket {
 		return false
@@ -680,8 +737,11 @@ func ReplicationClustersMatch(desired *api.ReplicationCluster, actual *api.Repli
 	if desired == nil && actual == nil {
 		return true
 	}
-	if !PointersMatch(desired, actual) {
-		return false
+	if desired == nil {
+		desired = &api.ReplicationCluster{}
+	}
+	if actual == nil {
+		actual = &api.ReplicationCluster{}
 	}
 	if desired.FailoverDrReplicaName != actual.FailoverDrReplicaName {
 		return false
