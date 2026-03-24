@@ -81,12 +81,14 @@ func (obj *ParameterManagerParameterVersion) GetIdentity(ctx context.Context, re
 	// Get resource ID
 	resourceID := common.ValueOf(obj.Spec.ResourceID)
 	if resourceID == "" {
-		resourceID = obj.GetName()
+	        resourceID = obj.GetName()
 	}
 	if resourceID == "" {
-		return nil, fmt.Errorf("cannot resolve resource ID")
+	        return nil, fmt.Errorf("cannot resolve resource ID")
 	}
-
+	if strings.Contains(resourceID, "/") {
+	        return nil, fmt.Errorf("resourceID %q contains invalid character '/'", resourceID)
+	}
 	parameterVersion := &ParameterVersionIdentity{
 		parent: parentIdentity,
 		id:     resourceID,
