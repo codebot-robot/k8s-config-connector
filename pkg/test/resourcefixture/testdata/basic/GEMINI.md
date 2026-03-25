@@ -47,11 +47,13 @@ hack/compare-mock pkg/test/resourcefixture/testdata/basic/storage/v1beta1/storag
 ```
 
 > **Important Note on Regex Substring Collisions:**
-> The `hack/record-gcp` and `hack/compare-mock` scripts leverage `go test -run` beneath the hood, which splits paths by forward slashes (`/`) and executes substring regex matches for each segment sequentially.
+> The `hack/record-gcp` and `hack/compare-mock` scripts leverage `go test -run` under the hood, which splits paths by forward slashes (`/`) and matches each path segment against the corresponding regex segment.
 > 
-> If you are running fixtures that share substring terminology with other distinct resources (e.g., `container` and `containercluster` vs. `edgecontainer` and `edgecontainercluster`), the test runner may accidentally launch the wrong test suites in parallel, leading to extremely long timeouts and transient API quota errors.
+> If you are running fixtures that share substrings with other distinct resource names (e.g., `container` and `containercluster` vs. `edgecontainer` and `edgecontainercluster`), the test runner may accidentally launch unintended test suites alongside the desired ones, leading to extremely long timeouts and transient API and quota errors.
 > 
-> To prevent unintentional test executions when dealing with colliding directories, wrap the specific components with standard regex anchors (`^` and `$`) and enclose the execution in single quotes:
+> To prevent unintentional test executions when dealing with colliding directories, wrap the colliding path segments with standard regex anchors (`^` and `$`) and enclose the path argument in single quotes:
+> 
+> *(Note: The final segment below does not strictly require a trailing `$` anchor. Both `hack/record-gcp` and `hack/compare-mock` automatically append a trailing `$` to the full string, so explicit anchoring is primarily needed for the intermediate directory segments.)*
 > ```bash
 > # Safe execution explicitly anchoring 'container' and 'containercluster'
 > hack/record-gcp 'pkg/test/resourcefixture/testdata/basic/^container$/v1beta1/^containercluster$/containercluster-datacache'
