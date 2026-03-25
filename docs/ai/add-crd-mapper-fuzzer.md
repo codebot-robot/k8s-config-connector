@@ -29,7 +29,10 @@ set -o nounset
 set -o pipefail
 
 REPO_ROOT="$(git rev-parse --show-toplevel)"
+source "${REPO_ROOT}/dev/tools/goimports.sh"
 cd ${REPO_ROOT}/dev/tools/controllerbuilder
+
+./generate-proto.sh
 
 # Generate the KCC type structs from the GCP proto definitions
 go run . generate-types \
@@ -49,7 +52,7 @@ cd ${REPO_ROOT}
 dev/tasks/generate-crds
 
 # Format the generated Go code
-go run -mod=readonly golang.org/x/tools/cmd/goimports@latest -w pkg/controller/direct/mynewservice/
+go run -mod=readonly golang.org/x/tools/cmd/goimports@${GOLANG_X_TOOLS_VERSION} -w pkg/controller/direct/mynewservice/
 ```
 
 **If `generate.sh` already exists**, do not overwrite it. Instead, add a new `--resource` flag to the `go run . generate-types` command for the resource you are adding. For example:
@@ -192,11 +195,10 @@ To fix this, you need to update the source protos from the `googleapis` reposito
     ```bash
     git ls-remote https://github.com/googleapis/googleapis.git HEAD
     ```
-2.  **Update `git.versions`:** Open the file `mockgcp/git.versions` and update the commit hash for the `https://github.com/googleapis/googleapis` entry with the new hash you found.
+2.  **Update `git.versions`:** Open the file `apis/git.versions` and update the commit hash for the `https://github.com/googleapis/googleapis` entry with the new hash you found.
 3.  **Regenerate the compiled protos:** Run the `make gen-proto` target. This command specifically executes the `dev/tools/controllerbuilder/generate-proto.sh` script, which will:
     *   Fetch the `googleapis` repository at the specific commit you defined in `git.versions` into the `.build/third_party/googleapis` directory.
     *   Re-compile all the necessary `.proto` files into the single descriptor file at `.build/googleapis.pb`.
     This process can take several minutes.
     *(Note: If `make gen-proto` is not available, running `make all` will also perform this step, but it will run many other tasks as well.)*
 4.  **Re-run `generate.sh`:** Once the `.build/googleapis.pb` file has been regenerated, you can re-run the `generate.sh` script for your service. It should now be able to find the proto message.
-

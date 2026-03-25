@@ -41,11 +41,15 @@ type interceptingKubeClient struct {
 	upstreamClient     *StreamingClient
 	upstreamRestMapper meta.RESTMapper
 
-	recorder *Recorder
+	objectTransformers []ObjectTransformer
+	recorder           *Recorder
 }
 
+// ObjectTransformer transforms a Kubernetes object.
+type ObjectTransformer func(ctx context.Context, obj client.Object) error
+
 // newInterceptingKubeClient creates a new interceptingKubeClient.
-func newInterceptingKubeClient(recorder *Recorder, upstreamRestConfig *rest.Config) (*interceptingKubeClient, error) {
+func newInterceptingKubeClient(recorder *Recorder, upstreamRestConfig *rest.Config, objectTransformers []ObjectTransformer) (*interceptingKubeClient, error) {
 	httpClient, err := rest.HTTPClientFor(upstreamRestConfig)
 	if err != nil {
 		return nil, fmt.Errorf("building http client: %w", err)
@@ -72,6 +76,7 @@ func newInterceptingKubeClient(recorder *Recorder, upstreamRestConfig *rest.Conf
 		upstreamClient:     upstreamClient,
 		upstreamRestMapper: upstreamRestMapper,
 		recorder:           recorder,
+		objectTransformers: slices.Clone(objectTransformers),
 	}, nil
 }
 
@@ -112,7 +117,13 @@ func (c *interceptingKubeClient) NewCache(restConfig *rest.Config, opts cache.Op
 		scheme:     opts.Scheme,
 	}
 
-	return newInterceptingControllerRuntimeCache(c.upstreamClient, typeStore)
+	var namespace string
+	for ns := range opts.DefaultNamespaces {
+		namespace = ns
+		break
+	}
+
+	return newInterceptingControllerRuntimeCache(c.upstreamClient, typeStore, namespace, c.objectTransformers)
 }
 
 // interceptingControllerRuntimeClient is a controller-runtime client that intercepts Kubernetes API calls.
@@ -282,20 +293,24 @@ func (c *interceptingControllerRuntimeClientSubResourceWriter) Patch(ctx context
 type interceptingControllerRuntimeCache struct {
 	streamingClient *StreamingClient
 	typeStore       *typeStore
+	namespace       string
 
 	mutex sync.Mutex
 
 	started atomic.Bool
 
-	informers map[schema.GroupVersionKind]*streamingInformer
+	informers          map[schema.GroupVersionKind]*streamingInformer
+	objectTransformers []ObjectTransformer
 }
 
 // newInterceptingControllerRuntimeCache creates a new interceptingControllerRuntimeCache.
-func newInterceptingControllerRuntimeCache(streamingClient *StreamingClient, typeStore *typeStore) (*interceptingControllerRuntimeCache, error) {
+func newInterceptingControllerRuntimeCache(streamingClient *StreamingClient, typeStore *typeStore, namespace string, objectTransformers []ObjectTransformer) (*interceptingControllerRuntimeCache, error) {
 	return &interceptingControllerRuntimeCache{
-		streamingClient: streamingClient,
-		informers:       make(map[schema.GroupVersionKind]*streamingInformer),
-		typeStore:       typeStore,
+		streamingClient:    streamingClient,
+		informers:          make(map[schema.GroupVersionKind]*streamingInformer),
+		typeStore:          typeStore,
+		namespace:          namespace,
+		objectTransformers: objectTransformers,
 	}, nil
 }
 
@@ -314,7 +329,7 @@ func (c *interceptingControllerRuntimeCache) Get(ctx context.Context, key client
 	if err != nil {
 		return err
 	}
-	informer, err := c.getOrCreateInformer(ctx, typeInfo)
+	informer, err := c.getOrCreateInformer(ctx, typeInfo, c.objectTransformers)
 	if err != nil {
 		return err
 	}
@@ -341,10 +356,10 @@ func (c *interceptingControllerRuntimeCache) GetInformer(ctx context.Context, ob
 		return nil, err
 	}
 
-	return c.getOrCreateInformer(ctx, typeInfo)
+	return c.getOrCreateInformer(ctx, typeInfo, c.objectTransformers)
 }
 
-func (c *interceptingControllerRuntimeCache) getOrCreateInformer(ctx context.Context, typeInfo *typeInfo) (*streamingInformer, error) {
+func (c *interceptingControllerRuntimeCache) getOrCreateInformer(ctx context.Context, typeInfo *typeInfo, objectTransformers []ObjectTransformer) (*streamingInformer, error) {
 	gvk := typeInfo.gvk
 
 	c.mutex.Lock()
@@ -355,7 +370,7 @@ func (c *interceptingControllerRuntimeCache) getOrCreateInformer(ctx context.Con
 		return existing, nil
 	}
 
-	informer, err := newStreamingInformer(c.streamingClient, typeInfo)
+	informer, err := newStreamingInformer(c.streamingClient, typeInfo, c.namespace, objectTransformers)
 	if err != nil {
 		return nil, err
 	}
@@ -383,7 +398,7 @@ func (c *interceptingControllerRuntimeCache) GetInformerForKind(ctx context.Cont
 		return nil, err
 	}
 
-	return c.getOrCreateInformer(ctx, typeInfo)
+	return c.getOrCreateInformer(ctx, typeInfo, c.objectTransformers)
 }
 
 // RemoveInformer removes an informer entry and stops it if it was running.

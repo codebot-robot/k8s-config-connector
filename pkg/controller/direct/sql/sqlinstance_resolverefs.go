@@ -25,6 +25,7 @@ import (
 
 	krm "github.com/GoogleCloudPlatform/k8s-config-connector/apis/sql/v1beta1"
 	"github.com/GoogleCloudPlatform/k8s-config-connector/pkg/controller/direct"
+	"github.com/GoogleCloudPlatform/k8s-config-connector/pkg/controller/direct/common"
 	"github.com/GoogleCloudPlatform/k8s-config-connector/pkg/k8s"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -52,6 +53,9 @@ func ResolveSQLInstanceRefs(ctx context.Context, kube client.Reader, obj *krm.SQ
 		return err
 	}
 	if err := resolveSourceSQLInstanceRef(ctx, kube, obj); err != nil {
+		return err
+	}
+	if err := common.NormalizeReferences(ctx, kube, obj, nil); err != nil {
 		return err
 	}
 	return nil
@@ -223,18 +227,10 @@ func resolvePrivateNetworkRef(ctx context.Context, kube client.Reader, obj *krm.
 		return nil
 	}
 
-	resRef := obj.Spec.Settings.IpConfiguration.PrivateNetworkRef
-	netRef := &refs.ComputeNetworkRef{
-		External:  resRef.External,
-		Name:      resRef.Name,
-		Namespace: resRef.Namespace,
-	}
-	if err := netRef.Normalize(ctx, kube, obj); err != nil {
+	netRef := obj.Spec.Settings.IpConfiguration.PrivateNetworkRef
+	if err := netRef.Normalize(ctx, kube, obj.GetNamespace()); err != nil {
 		return err
 	}
-
-	obj.Spec.Settings.IpConfiguration.PrivateNetworkRef.External = netRef.External
-
 	return nil
 }
 
@@ -248,10 +244,10 @@ func resolveAuditLogBucketRef(ctx context.Context, kube client.Reader, obj *krm.
 	}
 
 	ref := obj.Spec.Settings.SqlServerAuditConfig.BucketRef
-	external, err := ref.NormalizedExternal(ctx, kube, obj.GetNamespace())
-	if err != nil {
+	if err := ref.Normalize(ctx, kube, obj.GetNamespace()); err != nil {
 		return err
 	}
+	external := ref.External
 
 	// refine external to the API required format
 	tokens := strings.Split(external, "/")

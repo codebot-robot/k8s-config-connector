@@ -138,13 +138,13 @@ X-Xss-Protection: 0
   "geminiConfig": {
     "activeQueryEnabled": false,
     "entitled": false,
-    "flagRecommenderEnabled": false,
+    "flagRecommenderEnabled": true,
     "indexAdvisorEnabled": false
   },
   "instanceType": "CLOUD_SQL_INSTANCE",
   "ipAddresses": [
     {
-      "ipAddress": "10.1.2.3",
+      "ipAddress": "10.10.10.10",
       "type": "PRIMARY"
     }
   ],
@@ -153,6 +153,7 @@ X-Xss-Protection: 0
   "name": "sqlinstance-1-${uniqueId}",
   "project": "${projectId}",
   "region": "us-central1",
+  "satisfiesPzi": true,
   "selfLink": "https://sqladmin.googleapis.com/sql/v1beta4/projects/${projectId}/instances/sqlinstance-1-${uniqueId}",
   "serverCaCert": {
     "cert": "-----BEGIN CERTIFICATE-----\n-----END CERTIFICATE-----\n",
@@ -303,6 +304,7 @@ X-Xss-Protection: 0
     {
       "etag": "abcdef0123A=",
       "host": "",
+      "iamStatus": "IAM_STATUS_UNSPECIFIED",
       "instance": "sqlinstance-1-${uniqueId}",
       "kind": "sql#user",
       "name": "root",
@@ -487,13 +489,13 @@ X-Xss-Protection: 0
   "geminiConfig": {
     "activeQueryEnabled": false,
     "entitled": false,
-    "flagRecommenderEnabled": false,
+    "flagRecommenderEnabled": true,
     "indexAdvisorEnabled": false
   },
   "instanceType": "CLOUD_SQL_INSTANCE",
   "ipAddresses": [
     {
-      "ipAddress": "10.1.2.3",
+      "ipAddress": "10.10.10.10",
       "type": "PRIMARY"
     }
   ],
@@ -502,6 +504,7 @@ X-Xss-Protection: 0
   "name": "sqlinstance-2-${uniqueId}",
   "project": "${projectId}",
   "region": "us-central1",
+  "satisfiesPzi": true,
   "selfLink": "https://sqladmin.googleapis.com/sql/v1beta4/projects/${projectId}/instances/sqlinstance-2-${uniqueId}",
   "serverCaCert": {
     "cert": "-----BEGIN CERTIFICATE-----\n-----END CERTIFICATE-----\n",
@@ -652,6 +655,7 @@ X-Xss-Protection: 0
     {
       "etag": "abcdef0123A=",
       "host": "",
+      "iamStatus": "IAM_STATUS_UNSPECIFIED",
       "instance": "sqlinstance-2-${uniqueId}",
       "kind": "sql#user",
       "name": "root",
@@ -988,7 +992,7 @@ X-Xss-Protection: 0
   "createTime": "2024-04-01T12:34:56.123456Z",
   "creator": "${creatorID}",
   "etag": "abcdef0123A=",
-  "generation": "1",
+  "generation": "12345678901234",
   "labels": {
     "cnrm-test": "true",
     "managed-by-cnrm": "true"
@@ -1116,6 +1120,7 @@ X-Xss-Protection: 0
         "containers": [
           {
             "image": "us-docker.pkg.dev/cloudrun/container/hello",
+            "name": "container-name",
             "resources": {
               "limits": {
                 "cpu": "1000m",
@@ -1124,7 +1129,7 @@ X-Xss-Protection: 0
             },
             "volumeMounts": [
               {
-                "mountPath": "/cloudsql",
+                "mountPath": "/cloudsql-new-path",
                 "name": "cloudsql"
               }
             ]
@@ -1138,7 +1143,8 @@ X-Xss-Protection: 0
           {
             "cloudSqlInstance": {
               "instances": [
-                "${projectId}:us-central1:sqlinstance-1-${uniqueId}"
+                "${projectId}:us-central1:sqlinstance-1-${uniqueId}",
+                "${projectId}:us-central1:sqlinstance-2-${uniqueId}"
               ]
             },
             "name": "cloudsql"
@@ -1195,6 +1201,7 @@ X-Xss-Protection: 0
         "containers": [
           {
             "image": "us-docker.pkg.dev/cloudrun/container/hello",
+            "name": "container-name",
             "resources": {
               "limits": {
                 "cpu": "1000m",
@@ -1203,7 +1210,7 @@ X-Xss-Protection: 0
             },
             "volumeMounts": [
               {
-                "mountPath": "/cloudsql",
+                "mountPath": "/cloudsql-new-path",
                 "name": "cloudsql"
               }
             ]
@@ -1217,7 +1224,8 @@ X-Xss-Protection: 0
           {
             "cloudSqlInstance": {
               "instances": [
-                "${projectId}:us-central1:sqlinstance-1-${uniqueId}"
+                "${projectId}:us-central1:sqlinstance-1-${uniqueId}",
+                "${projectId}:us-central1:sqlinstance-2-${uniqueId}"
               ]
             },
             "name": "cloudsql"
@@ -1253,6 +1261,7 @@ X-Xss-Protection: 0
         "containers": [
           {
             "image": "us-docker.pkg.dev/cloudrun/container/hello",
+            "name": "container-name",
             "resources": {
               "limits": {
                 "cpu": "1000m",
@@ -1261,7 +1270,7 @@ X-Xss-Protection: 0
             },
             "volumeMounts": [
               {
-                "mountPath": "/cloudsql",
+                "mountPath": "/cloudsql-new-path",
                 "name": "cloudsql"
               }
             ]
@@ -1275,7 +1284,8 @@ X-Xss-Protection: 0
           {
             "cloudSqlInstance": {
               "instances": [
-                "${projectId}:us-central1:sqlinstance-1-${uniqueId}"
+                "${projectId}:us-central1:sqlinstance-1-${uniqueId}",
+                "${projectId}:us-central1:sqlinstance-2-${uniqueId}"
               ]
             },
             "name": "cloudsql"
@@ -1314,7 +1324,7 @@ X-Xss-Protection: 0
   "createTime": "2024-04-01T12:34:56.123456Z",
   "creator": "${creatorID}",
   "etag": "abcdef0123A=",
-  "generation": "1",
+  "generation": "12345678901234",
   "labels": {
     "cnrm-test": "true",
     "managed-by-cnrm": "true"
@@ -1329,6 +1339,7 @@ X-Xss-Protection: 0
       "containers": [
         {
           "image": "us-docker.pkg.dev/cloudrun/container/hello",
+          "name": "container-name",
           "resources": {
             "limits": {
               "cpu": "1000m",
@@ -1337,7 +1348,7 @@ X-Xss-Protection: 0
           },
           "volumeMounts": [
             {
-              "mountPath": "/cloudsql",
+              "mountPath": "/cloudsql-new-path",
               "name": "cloudsql"
             }
           ]
@@ -1351,7 +1362,8 @@ X-Xss-Protection: 0
         {
           "cloudSqlInstance": {
             "instances": [
-              "${projectId}:us-central1:sqlinstance-1-${uniqueId}"
+              "${projectId}:us-central1:sqlinstance-1-${uniqueId}",
+              "${projectId}:us-central1:sqlinstance-2-${uniqueId}"
             ]
           },
           "name": "cloudsql"
@@ -1406,6 +1418,7 @@ X-Xss-Protection: 0
         "containers": [
           {
             "image": "us-docker.pkg.dev/cloudrun/container/hello",
+            "name": "container-name",
             "resources": {
               "limits": {
                 "cpu": "1000m",
@@ -1414,7 +1427,7 @@ X-Xss-Protection: 0
             },
             "volumeMounts": [
               {
-                "mountPath": "/cloudsql",
+                "mountPath": "/cloudsql-new-path",
                 "name": "cloudsql"
               }
             ]
@@ -1428,7 +1441,8 @@ X-Xss-Protection: 0
           {
             "cloudSqlInstance": {
               "instances": [
-                "${projectId}:us-central1:sqlinstance-1-${uniqueId}"
+                "${projectId}:us-central1:sqlinstance-1-${uniqueId}",
+                "${projectId}:us-central1:sqlinstance-2-${uniqueId}"
               ]
             },
             "name": "cloudsql"
@@ -1485,6 +1499,7 @@ X-Xss-Protection: 0
         "containers": [
           {
             "image": "us-docker.pkg.dev/cloudrun/container/hello",
+            "name": "container-name",
             "resources": {
               "limits": {
                 "cpu": "1000m",
@@ -1493,7 +1508,7 @@ X-Xss-Protection: 0
             },
             "volumeMounts": [
               {
-                "mountPath": "/cloudsql",
+                "mountPath": "/cloudsql-new-path",
                 "name": "cloudsql"
               }
             ]
@@ -1507,7 +1522,8 @@ X-Xss-Protection: 0
           {
             "cloudSqlInstance": {
               "instances": [
-                "${projectId}:us-central1:sqlinstance-1-${uniqueId}"
+                "${projectId}:us-central1:sqlinstance-1-${uniqueId}",
+                "${projectId}:us-central1:sqlinstance-2-${uniqueId}"
               ]
             },
             "name": "cloudsql"
@@ -1543,6 +1559,7 @@ X-Xss-Protection: 0
         "containers": [
           {
             "image": "us-docker.pkg.dev/cloudrun/container/hello",
+            "name": "container-name",
             "resources": {
               "limits": {
                 "cpu": "1000m",
@@ -1551,7 +1568,7 @@ X-Xss-Protection: 0
             },
             "volumeMounts": [
               {
-                "mountPath": "/cloudsql",
+                "mountPath": "/cloudsql-new-path",
                 "name": "cloudsql"
               }
             ]
@@ -1565,7 +1582,8 @@ X-Xss-Protection: 0
           {
             "cloudSqlInstance": {
               "instances": [
-                "${projectId}:us-central1:sqlinstance-1-${uniqueId}"
+                "${projectId}:us-central1:sqlinstance-1-${uniqueId}",
+                "${projectId}:us-central1:sqlinstance-2-${uniqueId}"
               ]
             },
             "name": "cloudsql"
@@ -1609,13 +1627,13 @@ X-Xss-Protection: 0
   "geminiConfig": {
     "activeQueryEnabled": false,
     "entitled": false,
-    "flagRecommenderEnabled": false,
+    "flagRecommenderEnabled": true,
     "indexAdvisorEnabled": false
   },
   "instanceType": "CLOUD_SQL_INSTANCE",
   "ipAddresses": [
     {
-      "ipAddress": "10.1.2.3",
+      "ipAddress": "10.10.10.10",
       "type": "PRIMARY"
     }
   ],
@@ -1624,6 +1642,7 @@ X-Xss-Protection: 0
   "name": "sqlinstance-2-${uniqueId}",
   "project": "${projectId}",
   "region": "us-central1",
+  "satisfiesPzi": true,
   "selfLink": "https://sqladmin.googleapis.com/sql/v1beta4/projects/${projectId}/instances/sqlinstance-2-${uniqueId}",
   "serverCaCert": {
     "cert": "-----BEGIN CERTIFICATE-----\n-----END CERTIFICATE-----\n",
@@ -1838,13 +1857,13 @@ X-Xss-Protection: 0
   "geminiConfig": {
     "activeQueryEnabled": false,
     "entitled": false,
-    "flagRecommenderEnabled": false,
+    "flagRecommenderEnabled": true,
     "indexAdvisorEnabled": false
   },
   "instanceType": "CLOUD_SQL_INSTANCE",
   "ipAddresses": [
     {
-      "ipAddress": "10.1.2.3",
+      "ipAddress": "10.10.10.10",
       "type": "PRIMARY"
     }
   ],
@@ -1853,6 +1872,7 @@ X-Xss-Protection: 0
   "name": "sqlinstance-1-${uniqueId}",
   "project": "${projectId}",
   "region": "us-central1",
+  "satisfiesPzi": true,
   "selfLink": "https://sqladmin.googleapis.com/sql/v1beta4/projects/${projectId}/instances/sqlinstance-1-${uniqueId}",
   "serverCaCert": {
     "cert": "-----BEGIN CERTIFICATE-----\n-----END CERTIFICATE-----\n",

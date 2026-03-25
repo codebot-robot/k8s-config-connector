@@ -18,7 +18,10 @@ set -o nounset
 set -o pipefail
 
 REPO_ROOT="$(git rev-parse --show-toplevel)"
+source "${REPO_ROOT}/dev/tools/goimports.sh"
 cd ${REPO_ROOT}/dev/tools/controllerbuilder
+
+./generate-proto.sh
 
 go run . generate-types --service google.cloud.edgecontainer.v1 --api-version edgecontainer.cnrm.cloud.google.com/v1alpha1 --resource EdgeContainerMachine:Machine
 
@@ -27,4 +30,4 @@ go run . generate-mapper --service google.cloud.edgecontainer.v1 --api-version e
 cd ${REPO_ROOT}
 dev/tasks/generate-crds
 
-go run -mod=readonly golang.org/x/tools/cmd/goimports@latest -w  pkg/controller/direct/edgecontainer/
+go run -mod=readonly golang.org/x/tools/cmd/goimports@${GOLANG_X_TOOLS_VERSION} -w  pkg/controller/direct/edgecontainer/

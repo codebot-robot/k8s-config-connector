@@ -18,6 +18,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"time"
 
 	cloudresourcemanager "cloud.google.com/go/resourcemanager/apiv3"
 	"github.com/GoogleCloudPlatform/k8s-config-connector/apis/common/projects"
@@ -57,6 +58,9 @@ type ControllerConfig struct {
 
 	// ProjectMapper maps between project ids and numbers
 	ProjectMapper *projects.ProjectMapper
+
+	// SkipNameValidation bypasses the duplicate controller name check during registration
+	SkipNameValidation bool
 }
 
 func (c *ControllerConfig) Init(ctx context.Context) error {
@@ -70,15 +74,37 @@ func (c *ControllerConfig) Init(ctx context.Context) error {
 		if err != nil {
 			return fmt.Errorf("building cloudresourcemanager client: %w", err)
 		}
-		c.ProjectMapper = projects.NewProjectMapper(projectsClient)
+		projectCache := projects.NewProjectCache(projectsClient, 4*time.Hour)
+		c.ProjectMapper = projects.NewProjectMapper(projectCache)
 	}
 	return nil
 }
 
-func (c *ControllerConfig) RESTClientOptions() ([]option.ClientOption, error) {
+type RESTClientOption func(o *restClientOptions)
+
+type restClientOptions struct {
+	defaultQuotaProject string
+}
+
+func WithDefaultQuotaProject(project string) RESTClientOption {
+	return func(o *restClientOptions) {
+		o.defaultQuotaProject = project
+	}
+}
+
+func (c *ControllerConfig) RESTClientOptions(options ...RESTClientOption) ([]option.ClientOption, error) {
+	var restClientOptions restClientOptions
+	for _, option := range options {
+		option(&restClientOptions)
+	}
+
 	quotaProject := ""
 	if c.UserProjectOverride && c.BillingProject != "" {
 		quotaProject = c.BillingProject
+	}
+
+	if restClientOptions.defaultQuotaProject != "" && quotaProject == "" {
+		quotaProject = restClientOptions.defaultQuotaProject
 	}
 
 	var opts []option.ClientOption

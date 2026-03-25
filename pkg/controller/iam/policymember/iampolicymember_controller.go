@@ -51,6 +51,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/util/workqueue"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
@@ -83,7 +84,10 @@ func Add(mgr manager.Manager, deps *kontroller.Deps) error {
 	if err != nil {
 		return err
 	}
-	return add(mgr, reconciler)
+	opt := controller.Options{
+		SkipNameValidation: ptr.To(deps.SkipNameValidation),
+	}
+	return add(mgr, reconciler, opt)
 }
 
 // NewReconciler returns a new reconcile.Reconciler.
@@ -108,12 +112,19 @@ func NewReconciler(mgr manager.Manager, provider *tfschema.Provider, smLoader *s
 }
 
 // add adds a new Controller to mgr with r as the reconcile.Reconciler.
-func add(mgr manager.Manager, r *Reconciler) error {
+func add(mgr manager.Manager, r *Reconciler, opt controller.Options) error {
+	if opt.MaxConcurrentReconciles == 0 {
+		opt.MaxConcurrentReconciles = k8s.ControllerMaxConcurrentReconciles
+	}
+	if opt.RateLimiter == nil {
+		opt.RateLimiter = kccratelimiter.NewRateLimiter()
+	}
+
 	obj := &iamv1beta1.IAMPolicyMember{}
 	_, err := builder.
 		ControllerManagedBy(mgr).
 		Named(controllerName).
-		WithOptions(controller.Options{MaxConcurrentReconciles: k8s.ControllerMaxConcurrentReconciles, RateLimiter: kccratelimiter.NewRateLimiter()}).
+		WithOptions(opt).
 		WatchesRawSource(source.TypedChannel(r.immediateReconcileRequests, &handler.EnqueueRequestForObject{})).
 		For(obj, builder.OnlyMetadata, builder.WithPredicates(predicate.UnderlyingResourceOutOfSyncPredicate{})).
 		Build(r)
@@ -184,8 +195,8 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 	uObj.SetNamespace(memberPolicy.GetNamespace())
 	uObj.SetName(memberPolicy.GetName())
 	uObj.SetGroupVersionKind(iamv1beta1.IAMPolicyMemberGVK)
-	structuredreporting.ReportReconcileStart(ctx, uObj)
-	defer structuredreporting.ReportReconcileEnd(ctx, uObj, result, err)
+	structuredreporting.ReportReconcileStart(ctx, uObj, k8s.ReconcilerTypeIAMPolicyMember)
+	defer structuredreporting.ReportReconcileEnd(ctx, uObj, result, err, k8s.ReconcilerTypeIAMPolicyMember)
 	requeue, err := reconcileContext.doReconcile(&memberPolicy)
 	if err != nil {
 		return reconcile.Result{}, err

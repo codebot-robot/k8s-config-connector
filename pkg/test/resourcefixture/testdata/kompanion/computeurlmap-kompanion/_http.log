@@ -1,4 +1,4 @@
-GET https://compute.googleapis.com/compute/v1/projects/${projectId}/global/backendServices/computeurlmap-kompanion-default-${uniqueId}?alt=json
+GET https://compute.googleapis.com/compute/v1/projects/${projectId}/global/backendServices/${backendServiceID}?alt=json
 Content-Type: application/json
 User-Agent: kcc/${kccVersion} (+https://github.com/GoogleCloudPlatform/k8s-config-connector) kcc/controller-manager/${kccVersion}
 
@@ -18,11 +18,11 @@ X-Xss-Protection: 0
     "errors": [
       {
         "domain": "global",
-        "message": "The resource 'projects/${projectId}/global/backendServices/computeurlmap-kompanion-default-${uniqueId}' was not found",
+        "message": "The resource 'projects/${projectId}/global/backendServices/${backendServiceID}' was not found",
         "reason": "notFound"
       }
     ],
-    "message": "The resource 'projects/${projectId}/global/backendServices/computeurlmap-kompanion-default-${uniqueId}' was not found"
+    "message": "The resource 'projects/${projectId}/global/backendServices/${backendServiceID}' was not found"
   }
 }
 
@@ -43,7 +43,7 @@ User-Agent: kcc/${kccVersion} (+https://github.com/GoogleCloudPlatform/k8s-confi
     "oauth2ClientSecret": ""
   },
   "loadBalancingScheme": "INTERNAL_MANAGED",
-  "name": "computeurlmap-kompanion-default-${uniqueId}",
+  "name": "${backendServiceID}",
   "protocol": "HTTPS",
   "sessionAffinity": "NONE",
   "timeoutSec": 30
@@ -64,15 +64,50 @@ X-Xss-Protection: 0
   "insertTime": "2024-04-01T12:34:56.123456Z",
   "kind": "compute#operation",
   "name": "${operationID}",
+  "operationType": "insert",
   "progress": 0,
   "selfLink": "https://www.googleapis.com/compute/v1/projects/${projectId}/global/operations/${operationID}",
   "startTime": "2024-04-01T12:34:56.123456Z",
-  "status": "DONE"
+  "status": "RUNNING",
+  "targetId": "${backendServiceID}",
+  "targetLink": "https://www.googleapis.com/compute/v1/projects/${projectId}/global/backendServices/${backendServiceID}",
+  "user": "user@example.com"
 }
 
 ---
 
-GET https://compute.googleapis.com/compute/v1/projects/${projectId}/global/backendServices/computeurlmap-kompanion-default-${uniqueId}?alt=json
+GET https://compute.googleapis.com/compute/v1/projects/${projectId}/global/operations/${operationID}?alt=json&prettyPrint=false
+User-Agent: google-api-go-client/0.5 kcc/${kccVersion} (+https://github.com/GoogleCloudPlatform/k8s-config-connector) kcc/controller-manager/${kccVersion}
+
+200 OK
+Content-Type: application/json; charset=UTF-8
+Server: ESF
+Vary: Origin
+Vary: X-Origin
+Vary: Referer
+X-Content-Type-Options: nosniff
+X-Frame-Options: SAMEORIGIN
+X-Xss-Protection: 0
+
+{
+  "endTime": "2024-04-01T12:34:56.123456Z",
+  "id": "000000000000000000000",
+  "insertTime": "2024-04-01T12:34:56.123456Z",
+  "kind": "compute#operation",
+  "name": "${operationID}",
+  "operationType": "insert",
+  "progress": 100,
+  "selfLink": "https://www.googleapis.com/compute/v1/projects/${projectId}/global/operations/${operationID}",
+  "startTime": "2024-04-01T12:34:56.123456Z",
+  "status": "DONE",
+  "targetId": "${backendServiceID}",
+  "targetLink": "https://www.googleapis.com/compute/v1/projects/${projectId}/global/backendServices/${backendServiceID}",
+  "user": "user@example.com"
+}
+
+---
+
+GET https://compute.googleapis.com/compute/v1/projects/${projectId}/global/backendServices/${backendServiceID}?alt=json
 Content-Type: application/json
 User-Agent: kcc/${kccVersion} (+https://github.com/GoogleCloudPlatform/k8s-config-connector) kcc/controller-manager/${kccVersion}
 
@@ -87,11 +122,13 @@ X-Frame-Options: SAMEORIGIN
 X-Xss-Protection: 0
 
 {
+  "affinityCookieTtlSec": 0,
   "connectionDraining": {
     "drainingTimeoutSec": 300
   },
   "creationTimestamp": "2024-04-01T12:34:56.123456Z",
   "description": "Default Backend Service for computeurlmap-kompanion",
+  "fingerprint": "abcdef0123A=",
   "iap": {
     "enabled": false,
     "oauth2ClientId": "",
@@ -100,16 +137,16 @@ X-Xss-Protection: 0
   "id": "000000000000000000000",
   "kind": "compute#backendService",
   "loadBalancingScheme": "INTERNAL_MANAGED",
-  "name": "computeurlmap-kompanion-default-${uniqueId}",
+  "name": "${backendServiceID}",
   "protocol": "HTTPS",
-  "selfLink": "https://www.googleapis.com/compute/v1/projects/${projectId}/global/backendServices/computeurlmap-kompanion-default-${uniqueId}",
+  "selfLink": "https://www.googleapis.com/compute/v1/projects/${projectId}/global/backendServices/${backendServiceID}",
   "sessionAffinity": "NONE",
   "timeoutSec": 30
 }
 
 ---
 
-GET https://compute.googleapis.com/compute/v1/projects/${projectId}/global/backendServices/computeurlmap-kompanion-chaosmonkey-${uniqueId}?alt=json
+GET https://compute.googleapis.com/compute/v1/projects/${projectId}/global/backendServices/${backendServiceID}?alt=json
 Content-Type: application/json
 User-Agent: kcc/${kccVersion} (+https://github.com/GoogleCloudPlatform/k8s-config-connector) kcc/controller-manager/${kccVersion}
 
@@ -129,11 +166,11 @@ X-Xss-Protection: 0
     "errors": [
       {
         "domain": "global",
-        "message": "The resource 'projects/${projectId}/global/backendServices/computeurlmap-kompanion-chaosmonkey-${uniqueId}' was not found",
+        "message": "The resource 'projects/${projectId}/global/backendServices/${backendServiceID}' was not found",
         "reason": "notFound"
       }
     ],
-    "message": "The resource 'projects/${projectId}/global/backendServices/computeurlmap-kompanion-chaosmonkey-${uniqueId}' was not found"
+    "message": "The resource 'projects/${projectId}/global/backendServices/${backendServiceID}' was not found"
   }
 }
 
@@ -154,7 +191,7 @@ User-Agent: kcc/${kccVersion} (+https://github.com/GoogleCloudPlatform/k8s-confi
     "oauth2ClientSecret": ""
   },
   "loadBalancingScheme": "INTERNAL_MANAGED",
-  "name": "computeurlmap-kompanion-chaosmonkey-${uniqueId}",
+  "name": "${backendServiceID}",
   "protocol": "HTTPS",
   "sessionAffinity": "NONE",
   "timeoutSec": 30
@@ -175,15 +212,50 @@ X-Xss-Protection: 0
   "insertTime": "2024-04-01T12:34:56.123456Z",
   "kind": "compute#operation",
   "name": "${operationID}",
+  "operationType": "insert",
   "progress": 0,
   "selfLink": "https://www.googleapis.com/compute/v1/projects/${projectId}/global/operations/${operationID}",
   "startTime": "2024-04-01T12:34:56.123456Z",
-  "status": "DONE"
+  "status": "RUNNING",
+  "targetId": "${backendServiceID}",
+  "targetLink": "https://www.googleapis.com/compute/v1/projects/${projectId}/global/backendServices/${backendServiceID}",
+  "user": "user@example.com"
 }
 
 ---
 
-GET https://compute.googleapis.com/compute/v1/projects/${projectId}/global/backendServices/computeurlmap-kompanion-chaosmonkey-${uniqueId}?alt=json
+GET https://compute.googleapis.com/compute/v1/projects/${projectId}/global/operations/${operationID}?alt=json&prettyPrint=false
+User-Agent: google-api-go-client/0.5 kcc/${kccVersion} (+https://github.com/GoogleCloudPlatform/k8s-config-connector) kcc/controller-manager/${kccVersion}
+
+200 OK
+Content-Type: application/json; charset=UTF-8
+Server: ESF
+Vary: Origin
+Vary: X-Origin
+Vary: Referer
+X-Content-Type-Options: nosniff
+X-Frame-Options: SAMEORIGIN
+X-Xss-Protection: 0
+
+{
+  "endTime": "2024-04-01T12:34:56.123456Z",
+  "id": "000000000000000000000",
+  "insertTime": "2024-04-01T12:34:56.123456Z",
+  "kind": "compute#operation",
+  "name": "${operationID}",
+  "operationType": "insert",
+  "progress": 100,
+  "selfLink": "https://www.googleapis.com/compute/v1/projects/${projectId}/global/operations/${operationID}",
+  "startTime": "2024-04-01T12:34:56.123456Z",
+  "status": "DONE",
+  "targetId": "${backendServiceID}",
+  "targetLink": "https://www.googleapis.com/compute/v1/projects/${projectId}/global/backendServices/${backendServiceID}",
+  "user": "user@example.com"
+}
+
+---
+
+GET https://compute.googleapis.com/compute/v1/projects/${projectId}/global/backendServices/${backendServiceID}?alt=json
 Content-Type: application/json
 User-Agent: kcc/${kccVersion} (+https://github.com/GoogleCloudPlatform/k8s-config-connector) kcc/controller-manager/${kccVersion}
 
@@ -198,11 +270,13 @@ X-Frame-Options: SAMEORIGIN
 X-Xss-Protection: 0
 
 {
+  "affinityCookieTtlSec": 0,
   "connectionDraining": {
     "drainingTimeoutSec": 300
   },
   "creationTimestamp": "2024-04-01T12:34:56.123456Z",
   "description": "Chaosmonkey Backend Service for computeurlmap-kompanion",
+  "fingerprint": "abcdef0123A=",
   "iap": {
     "enabled": false,
     "oauth2ClientId": "",
@@ -211,16 +285,16 @@ X-Xss-Protection: 0
   "id": "000000000000000000000",
   "kind": "compute#backendService",
   "loadBalancingScheme": "INTERNAL_MANAGED",
-  "name": "computeurlmap-kompanion-chaosmonkey-${uniqueId}",
+  "name": "${backendServiceID}",
   "protocol": "HTTPS",
-  "selfLink": "https://www.googleapis.com/compute/v1/projects/${projectId}/global/backendServices/computeurlmap-kompanion-chaosmonkey-${uniqueId}",
+  "selfLink": "https://www.googleapis.com/compute/v1/projects/${projectId}/global/backendServices/${backendServiceID}",
   "sessionAffinity": "NONE",
   "timeoutSec": 30
 }
 
 ---
 
-GET https://compute.googleapis.com/compute/v1/projects/${projectId}/global/backendServices/computeurlmap-kompanion-chaosmonkeymulti-${uniqueId}?alt=json
+GET https://compute.googleapis.com/compute/v1/projects/${projectId}/global/backendServices/${backendServiceID}?alt=json
 Content-Type: application/json
 User-Agent: kcc/${kccVersion} (+https://github.com/GoogleCloudPlatform/k8s-config-connector) kcc/controller-manager/${kccVersion}
 
@@ -240,11 +314,11 @@ X-Xss-Protection: 0
     "errors": [
       {
         "domain": "global",
-        "message": "The resource 'projects/${projectId}/global/backendServices/computeurlmap-kompanion-chaosmonkeymulti-${uniqueId}' was not found",
+        "message": "The resource 'projects/${projectId}/global/backendServices/${backendServiceID}' was not found",
         "reason": "notFound"
       }
     ],
-    "message": "The resource 'projects/${projectId}/global/backendServices/computeurlmap-kompanion-chaosmonkeymulti-${uniqueId}' was not found"
+    "message": "The resource 'projects/${projectId}/global/backendServices/${backendServiceID}' was not found"
   }
 }
 
@@ -265,7 +339,7 @@ User-Agent: kcc/${kccVersion} (+https://github.com/GoogleCloudPlatform/k8s-confi
     "oauth2ClientSecret": ""
   },
   "loadBalancingScheme": "INTERNAL_MANAGED",
-  "name": "computeurlmap-kompanion-chaosmonkeymulti-${uniqueId}",
+  "name": "${backendServiceID}",
   "protocol": "HTTPS",
   "sessionAffinity": "NONE",
   "timeoutSec": 30
@@ -286,15 +360,50 @@ X-Xss-Protection: 0
   "insertTime": "2024-04-01T12:34:56.123456Z",
   "kind": "compute#operation",
   "name": "${operationID}",
+  "operationType": "insert",
   "progress": 0,
   "selfLink": "https://www.googleapis.com/compute/v1/projects/${projectId}/global/operations/${operationID}",
   "startTime": "2024-04-01T12:34:56.123456Z",
-  "status": "DONE"
+  "status": "RUNNING",
+  "targetId": "${backendServiceID}",
+  "targetLink": "https://www.googleapis.com/compute/v1/projects/${projectId}/global/backendServices/${backendServiceID}",
+  "user": "user@example.com"
 }
 
 ---
 
-GET https://compute.googleapis.com/compute/v1/projects/${projectId}/global/backendServices/computeurlmap-kompanion-chaosmonkeymulti-${uniqueId}?alt=json
+GET https://compute.googleapis.com/compute/v1/projects/${projectId}/global/operations/${operationID}?alt=json&prettyPrint=false
+User-Agent: google-api-go-client/0.5 kcc/${kccVersion} (+https://github.com/GoogleCloudPlatform/k8s-config-connector) kcc/controller-manager/${kccVersion}
+
+200 OK
+Content-Type: application/json; charset=UTF-8
+Server: ESF
+Vary: Origin
+Vary: X-Origin
+Vary: Referer
+X-Content-Type-Options: nosniff
+X-Frame-Options: SAMEORIGIN
+X-Xss-Protection: 0
+
+{
+  "endTime": "2024-04-01T12:34:56.123456Z",
+  "id": "000000000000000000000",
+  "insertTime": "2024-04-01T12:34:56.123456Z",
+  "kind": "compute#operation",
+  "name": "${operationID}",
+  "operationType": "insert",
+  "progress": 100,
+  "selfLink": "https://www.googleapis.com/compute/v1/projects/${projectId}/global/operations/${operationID}",
+  "startTime": "2024-04-01T12:34:56.123456Z",
+  "status": "DONE",
+  "targetId": "${backendServiceID}",
+  "targetLink": "https://www.googleapis.com/compute/v1/projects/${projectId}/global/backendServices/${backendServiceID}",
+  "user": "user@example.com"
+}
+
+---
+
+GET https://compute.googleapis.com/compute/v1/projects/${projectId}/global/backendServices/${backendServiceID}?alt=json
 Content-Type: application/json
 User-Agent: kcc/${kccVersion} (+https://github.com/GoogleCloudPlatform/k8s-config-connector) kcc/controller-manager/${kccVersion}
 
@@ -309,11 +418,13 @@ X-Frame-Options: SAMEORIGIN
 X-Xss-Protection: 0
 
 {
+  "affinityCookieTtlSec": 0,
   "connectionDraining": {
     "drainingTimeoutSec": 300
   },
   "creationTimestamp": "2024-04-01T12:34:56.123456Z",
   "description": "Chaosmonkeymulti Backend Service for computeurlmap-kompanion",
+  "fingerprint": "abcdef0123A=",
   "iap": {
     "enabled": false,
     "oauth2ClientId": "",
@@ -322,9 +433,9 @@ X-Xss-Protection: 0
   "id": "000000000000000000000",
   "kind": "compute#backendService",
   "loadBalancingScheme": "INTERNAL_MANAGED",
-  "name": "computeurlmap-kompanion-chaosmonkeymulti-${uniqueId}",
+  "name": "${backendServiceID}",
   "protocol": "HTTPS",
-  "selfLink": "https://www.googleapis.com/compute/v1/projects/${projectId}/global/backendServices/computeurlmap-kompanion-chaosmonkeymulti-${uniqueId}",
+  "selfLink": "https://www.googleapis.com/compute/v1/projects/${projectId}/global/backendServices/${backendServiceID}",
   "sessionAffinity": "NONE",
   "timeoutSec": 30
 }
@@ -366,7 +477,7 @@ Content-Type: application/json
 User-Agent: kcc/${kccVersion} (+https://github.com/GoogleCloudPlatform/k8s-config-connector) kcc/controller-manager/${kccVersion}
 
 {
-  "defaultService": "https://www.googleapis.com/compute/v1/projects/${projectId}/global/backendServices/computeurlmap-kompanion-default-${uniqueId}",
+  "defaultService": "https://www.googleapis.com/compute/v1/projects/${projectId}/global/backendServices/${backendServiceID}",
   "hostRules": [
     {
       "hosts": [
@@ -394,7 +505,7 @@ User-Agent: kcc/${kccVersion} (+https://github.com/GoogleCloudPlatform/k8s-confi
   "name": "computeurlmap-kompanion-${uniqueId}",
   "pathMatchers": [
     {
-      "defaultService": "https://www.googleapis.com/compute/v1/projects/${projectId}/global/backendServices/computeurlmap-kompanion-chaosmonkey-${uniqueId}",
+      "defaultService": "https://www.googleapis.com/compute/v1/projects/${projectId}/global/backendServices/${backendServiceID}",
       "name": "chaosmonkey-cloudnetworks-x-gcpnp-anz",
       "routeRules": [
         {
@@ -407,7 +518,7 @@ User-Agent: kcc/${kccVersion} (+https://github.com/GoogleCloudPlatform/k8s-confi
           "routeAction": {
             "weightedBackendServices": [
               {
-                "backendService": "https://www.googleapis.com/compute/v1/projects/${projectId}/global/backendServices/computeurlmap-kompanion-chaosmonkey-${uniqueId}",
+                "backendService": "https://www.googleapis.com/compute/v1/projects/${projectId}/global/backendServices/${backendServiceID}",
                 "weight": 500
               }
             ]
@@ -416,7 +527,7 @@ User-Agent: kcc/${kccVersion} (+https://github.com/GoogleCloudPlatform/k8s-confi
       ]
     },
     {
-      "defaultService": "https://www.googleapis.com/compute/v1/projects/${projectId}/global/backendServices/computeurlmap-kompanion-chaosmonkeymulti-${uniqueId}",
+      "defaultService": "https://www.googleapis.com/compute/v1/projects/${projectId}/global/backendServices/${backendServiceID}",
       "name": "chaosmonkeymulti-cloudnetworks-x-gcpnp-anz",
       "routeRules": [
         {
@@ -429,7 +540,7 @@ User-Agent: kcc/${kccVersion} (+https://github.com/GoogleCloudPlatform/k8s-confi
           "routeAction": {
             "weightedBackendServices": [
               {
-                "backendService": "https://www.googleapis.com/compute/v1/projects/${projectId}/global/backendServices/computeurlmap-kompanion-chaosmonkeymulti-${uniqueId}",
+                "backendService": "https://www.googleapis.com/compute/v1/projects/${projectId}/global/backendServices/${backendServiceID}",
                 "weight": 500
               }
             ]
@@ -438,7 +549,7 @@ User-Agent: kcc/${kccVersion} (+https://github.com/GoogleCloudPlatform/k8s-confi
       ]
     },
     {
-      "defaultService": "https://www.googleapis.com/compute/v1/projects/${projectId}/global/backendServices/computeurlmap-kompanion-default-${uniqueId}",
+      "defaultService": "https://www.googleapis.com/compute/v1/projects/${projectId}/global/backendServices/${backendServiceID}",
       "name": "computeurlmap-kompanion-default"
     }
   ]
@@ -483,7 +594,7 @@ X-Xss-Protection: 0
 
 {
   "creationTimestamp": "2024-04-01T12:34:56.123456Z",
-  "defaultService": "https://www.googleapis.com/compute/v1/projects/${projectId}/global/backendServices/computeurlmap-kompanion-default-${uniqueId}",
+  "defaultService": "https://www.googleapis.com/compute/v1/projects/${projectId}/global/backendServices/${backendServiceID}",
   "hostRules": [
     {
       "hosts": [
@@ -513,7 +624,7 @@ X-Xss-Protection: 0
   "name": "computeurlmap-kompanion-${uniqueId}",
   "pathMatchers": [
     {
-      "defaultService": "https://www.googleapis.com/compute/v1/projects/${projectId}/global/backendServices/computeurlmap-kompanion-chaosmonkey-${uniqueId}",
+      "defaultService": "https://www.googleapis.com/compute/v1/projects/${projectId}/global/backendServices/${backendServiceID}",
       "name": "chaosmonkey-cloudnetworks-x-gcpnp-anz",
       "routeRules": [
         {
@@ -526,7 +637,7 @@ X-Xss-Protection: 0
           "routeAction": {
             "weightedBackendServices": [
               {
-                "backendService": "https://www.googleapis.com/compute/v1/projects/${projectId}/global/backendServices/computeurlmap-kompanion-chaosmonkey-${uniqueId}",
+                "backendService": "https://www.googleapis.com/compute/v1/projects/${projectId}/global/backendServices/${backendServiceID}",
                 "weight": 500
               }
             ]
@@ -535,7 +646,7 @@ X-Xss-Protection: 0
       ]
     },
     {
-      "defaultService": "https://www.googleapis.com/compute/v1/projects/${projectId}/global/backendServices/computeurlmap-kompanion-chaosmonkeymulti-${uniqueId}",
+      "defaultService": "https://www.googleapis.com/compute/v1/projects/${projectId}/global/backendServices/${backendServiceID}",
       "name": "chaosmonkeymulti-cloudnetworks-x-gcpnp-anz",
       "routeRules": [
         {
@@ -548,7 +659,7 @@ X-Xss-Protection: 0
           "routeAction": {
             "weightedBackendServices": [
               {
-                "backendService": "https://www.googleapis.com/compute/v1/projects/${projectId}/global/backendServices/computeurlmap-kompanion-chaosmonkeymulti-${uniqueId}",
+                "backendService": "https://www.googleapis.com/compute/v1/projects/${projectId}/global/backendServices/${backendServiceID}",
                 "weight": 500
               }
             ]
@@ -557,7 +668,7 @@ X-Xss-Protection: 0
       ]
     },
     {
-      "defaultService": "https://www.googleapis.com/compute/v1/projects/${projectId}/global/backendServices/computeurlmap-kompanion-default-${uniqueId}",
+      "defaultService": "https://www.googleapis.com/compute/v1/projects/${projectId}/global/backendServices/${backendServiceID}",
       "name": "computeurlmap-kompanion-default"
     }
   ],
@@ -593,7 +704,7 @@ X-Xss-Protection: 0
 
 ---
 
-GET https://compute.googleapis.com/compute/v1/projects/${projectId}/global/backendServices/computeurlmap-kompanion-chaosmonkeymulti-${uniqueId}?alt=json
+GET https://compute.googleapis.com/compute/v1/projects/${projectId}/global/backendServices/${backendServiceID}?alt=json
 Content-Type: application/json
 User-Agent: kcc/${kccVersion} (+https://github.com/GoogleCloudPlatform/k8s-config-connector) kcc/controller-manager/${kccVersion}
 
@@ -608,11 +719,13 @@ X-Frame-Options: SAMEORIGIN
 X-Xss-Protection: 0
 
 {
+  "affinityCookieTtlSec": 0,
   "connectionDraining": {
     "drainingTimeoutSec": 300
   },
   "creationTimestamp": "2024-04-01T12:34:56.123456Z",
   "description": "Chaosmonkeymulti Backend Service for computeurlmap-kompanion",
+  "fingerprint": "abcdef0123A=",
   "iap": {
     "enabled": false,
     "oauth2ClientId": "",
@@ -621,16 +734,16 @@ X-Xss-Protection: 0
   "id": "000000000000000000000",
   "kind": "compute#backendService",
   "loadBalancingScheme": "INTERNAL_MANAGED",
-  "name": "computeurlmap-kompanion-chaosmonkeymulti-${uniqueId}",
+  "name": "${backendServiceID}",
   "protocol": "HTTPS",
-  "selfLink": "https://www.googleapis.com/compute/v1/projects/${projectId}/global/backendServices/computeurlmap-kompanion-chaosmonkeymulti-${uniqueId}",
+  "selfLink": "https://www.googleapis.com/compute/v1/projects/${projectId}/global/backendServices/${backendServiceID}",
   "sessionAffinity": "NONE",
   "timeoutSec": 30
 }
 
 ---
 
-DELETE https://compute.googleapis.com/compute/v1/projects/${projectId}/global/backendServices/computeurlmap-kompanion-chaosmonkeymulti-${uniqueId}?alt=json
+DELETE https://compute.googleapis.com/compute/v1/projects/${projectId}/global/backendServices/${backendServiceID}?alt=json
 Content-Type: application/json
 User-Agent: kcc/${kccVersion} (+https://github.com/GoogleCloudPlatform/k8s-config-connector) kcc/controller-manager/${kccVersion}
 
@@ -649,15 +762,50 @@ X-Xss-Protection: 0
   "insertTime": "2024-04-01T12:34:56.123456Z",
   "kind": "compute#operation",
   "name": "${operationID}",
+  "operationType": "delete",
   "progress": 0,
   "selfLink": "https://www.googleapis.com/compute/v1/projects/${projectId}/global/operations/${operationID}",
   "startTime": "2024-04-01T12:34:56.123456Z",
-  "status": "DONE"
+  "status": "RUNNING",
+  "targetId": "${backendServiceID}",
+  "targetLink": "https://www.googleapis.com/compute/v1/projects/${projectId}/global/backendServices/${backendServiceID}",
+  "user": "user@example.com"
 }
 
 ---
 
-GET https://compute.googleapis.com/compute/v1/projects/${projectId}/global/backendServices/computeurlmap-kompanion-chaosmonkey-${uniqueId}?alt=json
+GET https://compute.googleapis.com/compute/v1/projects/${projectId}/global/operations/${operationID}?alt=json&prettyPrint=false
+User-Agent: google-api-go-client/0.5 kcc/${kccVersion} (+https://github.com/GoogleCloudPlatform/k8s-config-connector) kcc/controller-manager/${kccVersion}
+
+200 OK
+Content-Type: application/json; charset=UTF-8
+Server: ESF
+Vary: Origin
+Vary: X-Origin
+Vary: Referer
+X-Content-Type-Options: nosniff
+X-Frame-Options: SAMEORIGIN
+X-Xss-Protection: 0
+
+{
+  "endTime": "2024-04-01T12:34:56.123456Z",
+  "id": "000000000000000000000",
+  "insertTime": "2024-04-01T12:34:56.123456Z",
+  "kind": "compute#operation",
+  "name": "${operationID}",
+  "operationType": "delete",
+  "progress": 100,
+  "selfLink": "https://www.googleapis.com/compute/v1/projects/${projectId}/global/operations/${operationID}",
+  "startTime": "2024-04-01T12:34:56.123456Z",
+  "status": "DONE",
+  "targetId": "${backendServiceID}",
+  "targetLink": "https://www.googleapis.com/compute/v1/projects/${projectId}/global/backendServices/${backendServiceID}",
+  "user": "user@example.com"
+}
+
+---
+
+GET https://compute.googleapis.com/compute/v1/projects/${projectId}/global/backendServices/${backendServiceID}?alt=json
 Content-Type: application/json
 User-Agent: kcc/${kccVersion} (+https://github.com/GoogleCloudPlatform/k8s-config-connector) kcc/controller-manager/${kccVersion}
 
@@ -672,11 +820,13 @@ X-Frame-Options: SAMEORIGIN
 X-Xss-Protection: 0
 
 {
+  "affinityCookieTtlSec": 0,
   "connectionDraining": {
     "drainingTimeoutSec": 300
   },
   "creationTimestamp": "2024-04-01T12:34:56.123456Z",
   "description": "Chaosmonkey Backend Service for computeurlmap-kompanion",
+  "fingerprint": "abcdef0123A=",
   "iap": {
     "enabled": false,
     "oauth2ClientId": "",
@@ -685,16 +835,16 @@ X-Xss-Protection: 0
   "id": "000000000000000000000",
   "kind": "compute#backendService",
   "loadBalancingScheme": "INTERNAL_MANAGED",
-  "name": "computeurlmap-kompanion-chaosmonkey-${uniqueId}",
+  "name": "${backendServiceID}",
   "protocol": "HTTPS",
-  "selfLink": "https://www.googleapis.com/compute/v1/projects/${projectId}/global/backendServices/computeurlmap-kompanion-chaosmonkey-${uniqueId}",
+  "selfLink": "https://www.googleapis.com/compute/v1/projects/${projectId}/global/backendServices/${backendServiceID}",
   "sessionAffinity": "NONE",
   "timeoutSec": 30
 }
 
 ---
 
-DELETE https://compute.googleapis.com/compute/v1/projects/${projectId}/global/backendServices/computeurlmap-kompanion-chaosmonkey-${uniqueId}?alt=json
+DELETE https://compute.googleapis.com/compute/v1/projects/${projectId}/global/backendServices/${backendServiceID}?alt=json
 Content-Type: application/json
 User-Agent: kcc/${kccVersion} (+https://github.com/GoogleCloudPlatform/k8s-config-connector) kcc/controller-manager/${kccVersion}
 
@@ -713,15 +863,50 @@ X-Xss-Protection: 0
   "insertTime": "2024-04-01T12:34:56.123456Z",
   "kind": "compute#operation",
   "name": "${operationID}",
+  "operationType": "delete",
   "progress": 0,
   "selfLink": "https://www.googleapis.com/compute/v1/projects/${projectId}/global/operations/${operationID}",
   "startTime": "2024-04-01T12:34:56.123456Z",
-  "status": "DONE"
+  "status": "RUNNING",
+  "targetId": "${backendServiceID}",
+  "targetLink": "https://www.googleapis.com/compute/v1/projects/${projectId}/global/backendServices/${backendServiceID}",
+  "user": "user@example.com"
 }
 
 ---
 
-GET https://compute.googleapis.com/compute/v1/projects/${projectId}/global/backendServices/computeurlmap-kompanion-default-${uniqueId}?alt=json
+GET https://compute.googleapis.com/compute/v1/projects/${projectId}/global/operations/${operationID}?alt=json&prettyPrint=false
+User-Agent: google-api-go-client/0.5 kcc/${kccVersion} (+https://github.com/GoogleCloudPlatform/k8s-config-connector) kcc/controller-manager/${kccVersion}
+
+200 OK
+Content-Type: application/json; charset=UTF-8
+Server: ESF
+Vary: Origin
+Vary: X-Origin
+Vary: Referer
+X-Content-Type-Options: nosniff
+X-Frame-Options: SAMEORIGIN
+X-Xss-Protection: 0
+
+{
+  "endTime": "2024-04-01T12:34:56.123456Z",
+  "id": "000000000000000000000",
+  "insertTime": "2024-04-01T12:34:56.123456Z",
+  "kind": "compute#operation",
+  "name": "${operationID}",
+  "operationType": "delete",
+  "progress": 100,
+  "selfLink": "https://www.googleapis.com/compute/v1/projects/${projectId}/global/operations/${operationID}",
+  "startTime": "2024-04-01T12:34:56.123456Z",
+  "status": "DONE",
+  "targetId": "${backendServiceID}",
+  "targetLink": "https://www.googleapis.com/compute/v1/projects/${projectId}/global/backendServices/${backendServiceID}",
+  "user": "user@example.com"
+}
+
+---
+
+GET https://compute.googleapis.com/compute/v1/projects/${projectId}/global/backendServices/${backendServiceID}?alt=json
 Content-Type: application/json
 User-Agent: kcc/${kccVersion} (+https://github.com/GoogleCloudPlatform/k8s-config-connector) kcc/controller-manager/${kccVersion}
 
@@ -736,11 +921,13 @@ X-Frame-Options: SAMEORIGIN
 X-Xss-Protection: 0
 
 {
+  "affinityCookieTtlSec": 0,
   "connectionDraining": {
     "drainingTimeoutSec": 300
   },
   "creationTimestamp": "2024-04-01T12:34:56.123456Z",
   "description": "Default Backend Service for computeurlmap-kompanion",
+  "fingerprint": "abcdef0123A=",
   "iap": {
     "enabled": false,
     "oauth2ClientId": "",
@@ -749,16 +936,16 @@ X-Xss-Protection: 0
   "id": "000000000000000000000",
   "kind": "compute#backendService",
   "loadBalancingScheme": "INTERNAL_MANAGED",
-  "name": "computeurlmap-kompanion-default-${uniqueId}",
+  "name": "${backendServiceID}",
   "protocol": "HTTPS",
-  "selfLink": "https://www.googleapis.com/compute/v1/projects/${projectId}/global/backendServices/computeurlmap-kompanion-default-${uniqueId}",
+  "selfLink": "https://www.googleapis.com/compute/v1/projects/${projectId}/global/backendServices/${backendServiceID}",
   "sessionAffinity": "NONE",
   "timeoutSec": 30
 }
 
 ---
 
-DELETE https://compute.googleapis.com/compute/v1/projects/${projectId}/global/backendServices/computeurlmap-kompanion-default-${uniqueId}?alt=json
+DELETE https://compute.googleapis.com/compute/v1/projects/${projectId}/global/backendServices/${backendServiceID}?alt=json
 Content-Type: application/json
 User-Agent: kcc/${kccVersion} (+https://github.com/GoogleCloudPlatform/k8s-config-connector) kcc/controller-manager/${kccVersion}
 
@@ -777,8 +964,43 @@ X-Xss-Protection: 0
   "insertTime": "2024-04-01T12:34:56.123456Z",
   "kind": "compute#operation",
   "name": "${operationID}",
+  "operationType": "delete",
   "progress": 0,
   "selfLink": "https://www.googleapis.com/compute/v1/projects/${projectId}/global/operations/${operationID}",
   "startTime": "2024-04-01T12:34:56.123456Z",
-  "status": "DONE"
+  "status": "RUNNING",
+  "targetId": "${backendServiceID}",
+  "targetLink": "https://www.googleapis.com/compute/v1/projects/${projectId}/global/backendServices/${backendServiceID}",
+  "user": "user@example.com"
+}
+
+---
+
+GET https://compute.googleapis.com/compute/v1/projects/${projectId}/global/operations/${operationID}?alt=json&prettyPrint=false
+User-Agent: google-api-go-client/0.5 kcc/${kccVersion} (+https://github.com/GoogleCloudPlatform/k8s-config-connector) kcc/controller-manager/${kccVersion}
+
+200 OK
+Content-Type: application/json; charset=UTF-8
+Server: ESF
+Vary: Origin
+Vary: X-Origin
+Vary: Referer
+X-Content-Type-Options: nosniff
+X-Frame-Options: SAMEORIGIN
+X-Xss-Protection: 0
+
+{
+  "endTime": "2024-04-01T12:34:56.123456Z",
+  "id": "000000000000000000000",
+  "insertTime": "2024-04-01T12:34:56.123456Z",
+  "kind": "compute#operation",
+  "name": "${operationID}",
+  "operationType": "delete",
+  "progress": 100,
+  "selfLink": "https://www.googleapis.com/compute/v1/projects/${projectId}/global/operations/${operationID}",
+  "startTime": "2024-04-01T12:34:56.123456Z",
+  "status": "DONE",
+  "targetId": "${backendServiceID}",
+  "targetLink": "https://www.googleapis.com/compute/v1/projects/${projectId}/global/backendServices/${backendServiceID}",
+  "user": "user@example.com"
 }

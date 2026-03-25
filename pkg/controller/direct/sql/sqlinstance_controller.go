@@ -16,15 +16,17 @@ package sql
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"sort"
 	"strings"
 	"time"
 
 	api "google.golang.org/api/sqladmin/v1beta4"
+	"google.golang.org/protobuf/encoding/protojson"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/klog/v2"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	refs "github.com/GoogleCloudPlatform/k8s-config-connector/apis/refs/v1beta1"
 	krm "github.com/GoogleCloudPlatform/k8s-config-connector/apis/sql/v1beta1"
@@ -32,18 +34,467 @@ import (
 	"github.com/GoogleCloudPlatform/k8s-config-connector/pkg/controller/direct"
 	"github.com/GoogleCloudPlatform/k8s-config-connector/pkg/controller/direct/directbase"
 	"github.com/GoogleCloudPlatform/k8s-config-connector/pkg/controller/direct/registry"
+	pb "github.com/GoogleCloudPlatform/k8s-config-connector/pkg/gcpclients/generated/google/cloud/sql/v1beta4"
 	"github.com/GoogleCloudPlatform/k8s-config-connector/pkg/k8s"
 	"github.com/GoogleCloudPlatform/k8s-config-connector/pkg/structuredreporting"
 	"github.com/googleapis/gax-go/v2"
 )
 
-const (
-	ctrlName                            = "sqlinstance-controller"
-	unmanageEditionAnnotationValue      = "spec.settings.edition"
-	unmanageInstanceTypeAnnotationValue = "spec.instanceType"
-)
+const ctrlName = "sqlinstance-controller"
+
+// FieldMetadata encapsulates the state and logic for a field that can be unmanaged.
+type FieldMetadata struct {
+	// isUnmanaged tracks if the user has marked this field as unmanaged for a specific resource instance.
+	isUnmanaged bool
+
+	// preserveActualValue contains the specific logic to copy this field's value
+	// from the live GCP resource (`actual`) to the outgoing API request payload (`out`).
+	preserveActualValue func(out *api.DatabaseInstance, actual *api.DatabaseInstance)
+}
+
+var supportedUnmanageableFields = map[string]*FieldMetadata{
+	"spec.instanceType": {
+		preserveActualValue: func(out *api.DatabaseInstance, actual *api.DatabaseInstance) {
+			out.InstanceType = actual.InstanceType
+		},
+	},
+	"spec.maintenanceVersion": {
+		preserveActualValue: func(out *api.DatabaseInstance, actual *api.DatabaseInstance) {
+			out.MaintenanceVersion = actual.MaintenanceVersion
+		},
+	},
+	"spec.settings.edition": {
+		preserveActualValue: func(out *api.DatabaseInstance, actual *api.DatabaseInstance) {
+			if actual.Settings != nil {
+				if out.Settings == nil {
+					out.Settings = &api.Settings{}
+				}
+				out.Settings.Edition = actual.Settings.Edition
+			}
+		},
+	},
+	"spec.settings": {
+		preserveActualValue: func(out *api.DatabaseInstance, actual *api.DatabaseInstance) {
+			out.Settings = actual.Settings
+		},
+	},
+	"spec.settings.activationPolicy": {
+		preserveActualValue: func(out *api.DatabaseInstance, actual *api.DatabaseInstance) {
+			if actual.Settings != nil {
+				if out.Settings == nil {
+					out.Settings = &api.Settings{}
+				}
+				out.Settings.ActivationPolicy = actual.Settings.ActivationPolicy
+			}
+		},
+	},
+	"spec.settings.backupConfiguration": {
+		preserveActualValue: func(out *api.DatabaseInstance, actual *api.DatabaseInstance) {
+			if actual.Settings != nil {
+				if out.Settings == nil {
+					out.Settings = &api.Settings{}
+				}
+				out.Settings.BackupConfiguration = actual.Settings.BackupConfiguration
+			}
+		},
+	},
+	"spec.settings.connectorEnforcement": {
+		preserveActualValue: func(out *api.DatabaseInstance, actual *api.DatabaseInstance) {
+			if actual.Settings != nil {
+				if out.Settings == nil {
+					out.Settings = &api.Settings{}
+				}
+				out.Settings.ConnectorEnforcement = actual.Settings.ConnectorEnforcement
+			}
+		},
+	},
+	"spec.settings.dataCacheConfig": {
+		preserveActualValue: func(out *api.DatabaseInstance, actual *api.DatabaseInstance) {
+			if actual.Settings != nil {
+				if out.Settings == nil {
+					out.Settings = &api.Settings{}
+				}
+				out.Settings.DataCacheConfig = actual.Settings.DataCacheConfig
+			}
+		},
+	},
+	"spec.settings.diskAutoresize": {
+		preserveActualValue: func(out *api.DatabaseInstance, actual *api.DatabaseInstance) {
+			if actual.Settings != nil {
+				if out.Settings == nil {
+					out.Settings = &api.Settings{}
+				}
+				out.Settings.StorageAutoResize = actual.Settings.StorageAutoResize
+			}
+		},
+	},
+	"spec.settings.diskAutoresizeLimit": {
+		preserveActualValue: func(out *api.DatabaseInstance, actual *api.DatabaseInstance) {
+			if actual.Settings != nil {
+				if out.Settings == nil {
+					out.Settings = &api.Settings{}
+				}
+				out.Settings.StorageAutoResizeLimit = actual.Settings.StorageAutoResizeLimit
+			}
+		},
+	},
+	"spec.settings.diskSize": {
+		preserveActualValue: func(out *api.DatabaseInstance, actual *api.DatabaseInstance) {
+			if actual.Settings != nil {
+				if out.Settings == nil {
+					out.Settings = &api.Settings{}
+				}
+				out.Settings.DataDiskSizeGb = actual.Settings.DataDiskSizeGb
+			}
+		},
+	},
+	"spec.settings.diskType": {
+		preserveActualValue: func(out *api.DatabaseInstance, actual *api.DatabaseInstance) {
+			if actual.Settings != nil {
+				if out.Settings == nil {
+					out.Settings = &api.Settings{}
+				}
+				out.Settings.DataDiskType = actual.Settings.DataDiskType
+			}
+		},
+	},
+	"spec.settings.ipConfiguration": {
+		preserveActualValue: func(out *api.DatabaseInstance, actual *api.DatabaseInstance) {
+			if actual.Settings != nil {
+				if out.Settings == nil {
+					out.Settings = &api.Settings{}
+				}
+				out.Settings.IpConfiguration = actual.Settings.IpConfiguration
+			}
+		},
+	},
+	"spec.settings.locationPreference": {
+		preserveActualValue: func(out *api.DatabaseInstance, actual *api.DatabaseInstance) {
+			if actual.Settings != nil {
+				if out.Settings == nil {
+					out.Settings = &api.Settings{}
+				}
+				out.Settings.LocationPreference = actual.Settings.LocationPreference
+			}
+		},
+	},
+	"spec.settings.pricingPlan": {
+		preserveActualValue: func(out *api.DatabaseInstance, actual *api.DatabaseInstance) {
+			if actual.Settings != nil {
+				if out.Settings == nil {
+					out.Settings = &api.Settings{}
+				}
+				out.Settings.PricingPlan = actual.Settings.PricingPlan
+			}
+		},
+	},
+	"spec.settings.backupConfiguration.backupRetentionSettings": {
+		preserveActualValue: func(out *api.DatabaseInstance, actual *api.DatabaseInstance) {
+			if actual.Settings != nil && actual.Settings.BackupConfiguration != nil {
+				if out.Settings == nil {
+					out.Settings = &api.Settings{}
+				}
+				if out.Settings.BackupConfiguration == nil {
+					out.Settings.BackupConfiguration = &api.BackupConfiguration{}
+				}
+				out.Settings.BackupConfiguration.BackupRetentionSettings = actual.Settings.BackupConfiguration.BackupRetentionSettings
+			}
+		},
+	},
+	"spec.settings.backupConfiguration.enabled": {
+		preserveActualValue: func(out *api.DatabaseInstance, actual *api.DatabaseInstance) {
+			if actual.Settings != nil && actual.Settings.BackupConfiguration != nil {
+				if out.Settings == nil {
+					out.Settings = &api.Settings{}
+				}
+				if out.Settings.BackupConfiguration == nil {
+					out.Settings.BackupConfiguration = &api.BackupConfiguration{}
+				}
+				out.Settings.BackupConfiguration.Enabled = actual.Settings.BackupConfiguration.Enabled
+			}
+		},
+	},
+	"spec.settings.backupConfiguration.pointInTimeRecoveryEnabled": {
+		preserveActualValue: func(out *api.DatabaseInstance, actual *api.DatabaseInstance) {
+			if actual.Settings != nil && actual.Settings.BackupConfiguration != nil {
+				if out.Settings == nil {
+					out.Settings = &api.Settings{}
+				}
+				if out.Settings.BackupConfiguration == nil {
+					out.Settings.BackupConfiguration = &api.BackupConfiguration{}
+				}
+				out.Settings.BackupConfiguration.PointInTimeRecoveryEnabled = actual.Settings.BackupConfiguration.PointInTimeRecoveryEnabled
+			}
+		},
+	},
+	"spec.settings.backupConfiguration.startTime": {
+		preserveActualValue: func(out *api.DatabaseInstance, actual *api.DatabaseInstance) {
+			if actual.Settings != nil && actual.Settings.BackupConfiguration != nil {
+				if out.Settings == nil {
+					out.Settings = &api.Settings{}
+				}
+				if out.Settings.BackupConfiguration == nil {
+					out.Settings.BackupConfiguration = &api.BackupConfiguration{}
+				}
+				out.Settings.BackupConfiguration.StartTime = actual.Settings.BackupConfiguration.StartTime
+			}
+		},
+	},
+	"spec.settings.backupConfiguration.transactionLogRetentionDays": {
+		preserveActualValue: func(out *api.DatabaseInstance, actual *api.DatabaseInstance) {
+			if actual.Settings != nil && actual.Settings.BackupConfiguration != nil {
+				if out.Settings == nil {
+					out.Settings = &api.Settings{}
+				}
+				if out.Settings.BackupConfiguration == nil {
+					out.Settings.BackupConfiguration = &api.BackupConfiguration{}
+				}
+				out.Settings.BackupConfiguration.TransactionLogRetentionDays = actual.Settings.BackupConfiguration.TransactionLogRetentionDays
+			}
+		},
+	},
+	"spec.settings.backupConfiguration.backupRetentionSettings.retainedBackups": {
+		preserveActualValue: func(out *api.DatabaseInstance, actual *api.DatabaseInstance) {
+			if actual.Settings != nil && actual.Settings.BackupConfiguration != nil && actual.Settings.BackupConfiguration.BackupRetentionSettings != nil {
+				if out.Settings == nil {
+					out.Settings = &api.Settings{}
+				}
+				if out.Settings.BackupConfiguration == nil {
+					out.Settings.BackupConfiguration = &api.BackupConfiguration{}
+				}
+				if out.Settings.BackupConfiguration.BackupRetentionSettings == nil {
+					out.Settings.BackupConfiguration.BackupRetentionSettings = &api.BackupRetentionSettings{}
+				}
+				out.Settings.BackupConfiguration.BackupRetentionSettings.RetainedBackups = actual.Settings.BackupConfiguration.BackupRetentionSettings.RetainedBackups
+			}
+		},
+	},
+	"spec.settings.backupConfiguration.backupRetentionSettings.retentionUnit": {
+		preserveActualValue: func(out *api.DatabaseInstance, actual *api.DatabaseInstance) {
+			if actual.Settings != nil && actual.Settings.BackupConfiguration != nil && actual.Settings.BackupConfiguration.BackupRetentionSettings != nil {
+				if out.Settings == nil {
+					out.Settings = &api.Settings{}
+				}
+				if out.Settings.BackupConfiguration == nil {
+					out.Settings.BackupConfiguration = &api.BackupConfiguration{}
+				}
+				if out.Settings.BackupConfiguration.BackupRetentionSettings == nil {
+					out.Settings.BackupConfiguration.BackupRetentionSettings = &api.BackupRetentionSettings{}
+				}
+				out.Settings.BackupConfiguration.BackupRetentionSettings.RetentionUnit = actual.Settings.BackupConfiguration.BackupRetentionSettings.RetentionUnit
+			}
+		},
+	},
+	"spec.settings.dataCacheConfig.dataCacheEnabled": {
+		preserveActualValue: func(out *api.DatabaseInstance, actual *api.DatabaseInstance) {
+			if actual.Settings != nil && actual.Settings.DataCacheConfig != nil {
+				if out.Settings == nil {
+					out.Settings = &api.Settings{}
+				}
+				if out.Settings.DataCacheConfig == nil {
+					out.Settings.DataCacheConfig = &api.DataCacheConfig{}
+				}
+				out.Settings.DataCacheConfig.DataCacheEnabled = actual.Settings.DataCacheConfig.DataCacheEnabled
+			}
+		},
+	},
+	"spec.settings.ipConfiguration.ipv4Enabled": {
+		preserveActualValue: func(out *api.DatabaseInstance, actual *api.DatabaseInstance) {
+			if actual.Settings != nil && actual.Settings.IpConfiguration != nil {
+				if out.Settings == nil {
+					out.Settings = &api.Settings{}
+				}
+				if out.Settings.IpConfiguration == nil {
+					out.Settings.IpConfiguration = &api.IpConfiguration{}
+				}
+				out.Settings.IpConfiguration.Ipv4Enabled = actual.Settings.IpConfiguration.Ipv4Enabled
+			}
+		},
+	},
+	"spec.settings.locationPreference.zone": {
+		preserveActualValue: func(out *api.DatabaseInstance, actual *api.DatabaseInstance) {
+			if actual.Settings != nil && actual.Settings.LocationPreference != nil {
+				if out.Settings == nil {
+					out.Settings = &api.Settings{}
+				}
+				if out.Settings.LocationPreference == nil {
+					out.Settings.LocationPreference = &api.LocationPreference{}
+				}
+				out.Settings.LocationPreference.Zone = actual.Settings.LocationPreference.Zone
+			}
+		},
+	},
+	"spec.replicaConfiguration": {
+		preserveActualValue: func(out *api.DatabaseInstance, actual *api.DatabaseInstance) {
+			out.ReplicaConfiguration = actual.ReplicaConfiguration
+		},
+	},
+	"spec.replicaConfiguration.caCertificate": {
+		preserveActualValue: func(out *api.DatabaseInstance, actual *api.DatabaseInstance) {
+			if actual.ReplicaConfiguration != nil && actual.ReplicaConfiguration.MysqlReplicaConfiguration != nil {
+				if out.ReplicaConfiguration == nil {
+					out.ReplicaConfiguration = &api.ReplicaConfiguration{}
+				}
+				if out.ReplicaConfiguration.MysqlReplicaConfiguration == nil {
+					out.ReplicaConfiguration.MysqlReplicaConfiguration = &api.MySqlReplicaConfiguration{}
+				}
+				out.ReplicaConfiguration.MysqlReplicaConfiguration.CaCertificate = actual.ReplicaConfiguration.MysqlReplicaConfiguration.CaCertificate
+			}
+		},
+	},
+	"spec.replicaConfiguration.clientCertificate": {
+		preserveActualValue: func(out *api.DatabaseInstance, actual *api.DatabaseInstance) {
+			if actual.ReplicaConfiguration != nil && actual.ReplicaConfiguration.MysqlReplicaConfiguration != nil {
+				if out.ReplicaConfiguration == nil {
+					out.ReplicaConfiguration = &api.ReplicaConfiguration{}
+				}
+				if out.ReplicaConfiguration.MysqlReplicaConfiguration == nil {
+					out.ReplicaConfiguration.MysqlReplicaConfiguration = &api.MySqlReplicaConfiguration{}
+				}
+				out.ReplicaConfiguration.MysqlReplicaConfiguration.ClientCertificate = actual.ReplicaConfiguration.MysqlReplicaConfiguration.ClientCertificate
+			}
+		},
+	},
+	"spec.replicaConfiguration.clientKey": {
+		preserveActualValue: func(out *api.DatabaseInstance, actual *api.DatabaseInstance) {
+			if actual.ReplicaConfiguration != nil && actual.ReplicaConfiguration.MysqlReplicaConfiguration != nil {
+				if out.ReplicaConfiguration == nil {
+					out.ReplicaConfiguration = &api.ReplicaConfiguration{}
+				}
+				if out.ReplicaConfiguration.MysqlReplicaConfiguration == nil {
+					out.ReplicaConfiguration.MysqlReplicaConfiguration = &api.MySqlReplicaConfiguration{}
+				}
+				out.ReplicaConfiguration.MysqlReplicaConfiguration.ClientKey = actual.ReplicaConfiguration.MysqlReplicaConfiguration.ClientKey
+			}
+		},
+	},
+	"spec.replicaConfiguration.connectRetryInterval": {
+		preserveActualValue: func(out *api.DatabaseInstance, actual *api.DatabaseInstance) {
+			if actual.ReplicaConfiguration != nil && actual.ReplicaConfiguration.MysqlReplicaConfiguration != nil {
+				if out.ReplicaConfiguration == nil {
+					out.ReplicaConfiguration = &api.ReplicaConfiguration{}
+				}
+				if out.ReplicaConfiguration.MysqlReplicaConfiguration == nil {
+					out.ReplicaConfiguration.MysqlReplicaConfiguration = &api.MySqlReplicaConfiguration{}
+				}
+				out.ReplicaConfiguration.MysqlReplicaConfiguration.ConnectRetryInterval = actual.ReplicaConfiguration.MysqlReplicaConfiguration.ConnectRetryInterval
+			}
+		},
+	},
+	"spec.replicaConfiguration.dumpFilePath": {
+		preserveActualValue: func(out *api.DatabaseInstance, actual *api.DatabaseInstance) {
+			if actual.ReplicaConfiguration != nil && actual.ReplicaConfiguration.MysqlReplicaConfiguration != nil {
+				if out.ReplicaConfiguration == nil {
+					out.ReplicaConfiguration = &api.ReplicaConfiguration{}
+				}
+				if out.ReplicaConfiguration.MysqlReplicaConfiguration == nil {
+					out.ReplicaConfiguration.MysqlReplicaConfiguration = &api.MySqlReplicaConfiguration{}
+				}
+				out.ReplicaConfiguration.MysqlReplicaConfiguration.DumpFilePath = actual.ReplicaConfiguration.MysqlReplicaConfiguration.DumpFilePath
+			}
+		},
+	},
+	"spec.replicaConfiguration.failoverTarget": {
+		preserveActualValue: func(out *api.DatabaseInstance, actual *api.DatabaseInstance) {
+			if actual.ReplicaConfiguration != nil {
+				if out.ReplicaConfiguration == nil {
+					out.ReplicaConfiguration = &api.ReplicaConfiguration{}
+				}
+				out.ReplicaConfiguration.FailoverTarget = actual.ReplicaConfiguration.FailoverTarget
+			}
+		},
+	},
+	"spec.replicaConfiguration.masterHeartbeatPeriod": {
+		preserveActualValue: func(out *api.DatabaseInstance, actual *api.DatabaseInstance) {
+			if actual.ReplicaConfiguration != nil && actual.ReplicaConfiguration.MysqlReplicaConfiguration != nil {
+				if out.ReplicaConfiguration == nil {
+					out.ReplicaConfiguration = &api.ReplicaConfiguration{}
+				}
+				if out.ReplicaConfiguration.MysqlReplicaConfiguration == nil {
+					out.ReplicaConfiguration.MysqlReplicaConfiguration = &api.MySqlReplicaConfiguration{}
+				}
+				out.ReplicaConfiguration.MysqlReplicaConfiguration.MasterHeartbeatPeriod = actual.ReplicaConfiguration.MysqlReplicaConfiguration.MasterHeartbeatPeriod
+			}
+		},
+	},
+	"spec.replicaConfiguration.password": {
+		preserveActualValue: func(out *api.DatabaseInstance, actual *api.DatabaseInstance) {
+			if actual.ReplicaConfiguration != nil && actual.ReplicaConfiguration.MysqlReplicaConfiguration != nil {
+				if out.ReplicaConfiguration == nil {
+					out.ReplicaConfiguration = &api.ReplicaConfiguration{}
+				}
+				if out.ReplicaConfiguration.MysqlReplicaConfiguration == nil {
+					out.ReplicaConfiguration.MysqlReplicaConfiguration = &api.MySqlReplicaConfiguration{}
+				}
+				out.ReplicaConfiguration.MysqlReplicaConfiguration.Password = actual.ReplicaConfiguration.MysqlReplicaConfiguration.Password
+			}
+		},
+	},
+	"spec.replicaConfiguration.sslCipher": {
+		preserveActualValue: func(out *api.DatabaseInstance, actual *api.DatabaseInstance) {
+			if actual.ReplicaConfiguration != nil && actual.ReplicaConfiguration.MysqlReplicaConfiguration != nil {
+				if out.ReplicaConfiguration == nil {
+					out.ReplicaConfiguration = &api.ReplicaConfiguration{}
+				}
+				if out.ReplicaConfiguration.MysqlReplicaConfiguration == nil {
+					out.ReplicaConfiguration.MysqlReplicaConfiguration = &api.MySqlReplicaConfiguration{}
+				}
+				out.ReplicaConfiguration.MysqlReplicaConfiguration.SslCipher = actual.ReplicaConfiguration.MysqlReplicaConfiguration.SslCipher
+			}
+		},
+	},
+	"spec.replicaConfiguration.username": {
+		preserveActualValue: func(out *api.DatabaseInstance, actual *api.DatabaseInstance) {
+			if actual.ReplicaConfiguration != nil && actual.ReplicaConfiguration.MysqlReplicaConfiguration != nil {
+				if out.ReplicaConfiguration == nil {
+					out.ReplicaConfiguration = &api.ReplicaConfiguration{}
+				}
+				if out.ReplicaConfiguration.MysqlReplicaConfiguration == nil {
+					out.ReplicaConfiguration.MysqlReplicaConfiguration = &api.MySqlReplicaConfiguration{}
+				}
+				out.ReplicaConfiguration.MysqlReplicaConfiguration.Username = actual.ReplicaConfiguration.MysqlReplicaConfiguration.Username
+			}
+		},
+	},
+	"spec.replicaConfiguration.verifyServerCertificate": {
+		preserveActualValue: func(out *api.DatabaseInstance, actual *api.DatabaseInstance) {
+			if actual.ReplicaConfiguration != nil && actual.ReplicaConfiguration.MysqlReplicaConfiguration != nil {
+				if out.ReplicaConfiguration == nil {
+					out.ReplicaConfiguration = &api.ReplicaConfiguration{}
+				}
+				if out.ReplicaConfiguration.MysqlReplicaConfiguration == nil {
+					out.ReplicaConfiguration.MysqlReplicaConfiguration = &api.MySqlReplicaConfiguration{}
+				}
+				out.ReplicaConfiguration.MysqlReplicaConfiguration.VerifyServerCertificate = actual.ReplicaConfiguration.MysqlReplicaConfiguration.VerifyServerCertificate
+			}
+		},
+	},
+	"spec.replicationCluster": {
+		preserveActualValue: func(out *api.DatabaseInstance, actual *api.DatabaseInstance) {
+			out.ReplicationCluster = actual.ReplicationCluster
+		},
+	},
+	"spec.replicationCluster.failoverDrReplicaRef": {
+		preserveActualValue: func(out *api.DatabaseInstance, actual *api.DatabaseInstance) {
+			if actual.ReplicationCluster != nil {
+				if out.ReplicationCluster == nil {
+					out.ReplicationCluster = &api.ReplicationCluster{}
+				}
+				out.ReplicationCluster.FailoverDrReplicaName = actual.ReplicationCluster.FailoverDrReplicaName
+			}
+		},
+	},
+}
+
+var sortedUnmanageableFieldPaths []string
 
 func init() {
+	// Pre-sort the keys for stable error messages.
+	for path := range supportedUnmanageableFields {
+		sortedUnmanageableFieldPaths = append(sortedUnmanageableFieldPaths, path)
+	}
+	sort.Strings(sortedUnmanageableFieldPaths)
+
 	registry.RegisterModel(krm.SQLInstanceGVK, newSQLInstanceModel)
 }
 
@@ -67,12 +518,14 @@ type sqlInstanceAdapter struct {
 	sqlOperationsClient *api.OperationsService
 	sqlInstancesClient  *api.InstancesService
 	sqlUsersClient      *api.UsersService
-	unmanagedFields     []string
+	fieldMeta           map[string]*FieldMetadata
 }
 
 var _ directbase.Adapter = &sqlInstanceAdapter{}
 
-func (m *sqlInstanceModel) AdapterForObject(ctx context.Context, kube client.Reader, u *unstructured.Unstructured) (directbase.Adapter, error) {
+func (m *sqlInstanceModel) AdapterForObject(ctx context.Context, op *directbase.AdapterForObjectOperation) (directbase.Adapter, error) {
+	u := op.GetUnstructured()
+	kube := op.Reader
 	obj := &krm.SQLInstance{}
 	if err := runtime.DefaultUnstructuredConverter.FromUnstructured(u.Object, &obj); err != nil {
 		return nil, fmt.Errorf("converting to %T failed: %w", obj, err)
@@ -98,6 +551,13 @@ func (m *sqlInstanceModel) AdapterForObject(ctx context.Context, kube client.Rea
 		return nil, err
 	}
 
+	if obj.Spec.Settings.Edition != nil {
+		edition := *obj.Spec.Settings.Edition
+		if edition != "ENTERPRISE" && edition != "ENTERPRISE_PLUS" {
+			return nil, fmt.Errorf("unrecognized edition %q; supported values are ENTERPRISE and ENTERPRISE_PLUS", edition)
+		}
+	}
+
 	adapter := &sqlInstanceAdapter{
 		projectID:           projectID,
 		resourceID:          resourceID,
@@ -105,17 +565,25 @@ func (m *sqlInstanceModel) AdapterForObject(ctx context.Context, kube client.Rea
 		sqlOperationsClient: gcpClient.sqlOperationsClient(),
 		sqlInstancesClient:  gcpClient.sqlInstancesClient(),
 		sqlUsersClient:      gcpClient.sqlUsersClient(),
+		fieldMeta:           make(map[string]*FieldMetadata),
 	}
 
-	unmanaged, ok := obj.GetAnnotations()["cnrm.cloud.google.com/unmanaged"]
-	if ok && unmanaged != "" {
-		unmanagedFields := strings.Split(unmanaged, ",")
-		for _, field := range unmanagedFields {
-			if field != unmanageEditionAnnotationValue && field != unmanageInstanceTypeAnnotationValue {
-				return nil, fmt.Errorf("unmanaging field `%s` is not supported, supported fields are: %s", field, []string{unmanageEditionAnnotationValue, unmanageInstanceTypeAnnotationValue})
+	unmanaged := obj.GetAnnotations()[k8s.UnmanagedFieldsList]
+	if unmanaged != "" {
+		unmanagedFieldsList := strings.Split(unmanaged, ",")
+		for _, fieldPath := range unmanagedFieldsList {
+			field, supported := supportedUnmanageableFields[fieldPath]
+			if !supported {
+				return nil, fmt.Errorf("unmanaging field `%s` is not supported, supported fields are: %v", fieldPath, sortedUnmanageableFieldPaths)
 			}
+
+			newField := &FieldMetadata{
+				isUnmanaged:         true,
+				preserveActualValue: field.preserveActualValue,
+			}
+
+			adapter.fieldMeta[fieldPath] = newField
 		}
-		adapter.unmanagedFields = unmanagedFields
 	}
 	return adapter, nil
 }
@@ -137,16 +605,14 @@ func (a *sqlInstanceAdapter) Find(ctx context.Context) (bool, error) {
 
 	a.actual = instance
 
-	log := klog.FromContext(ctx).WithName(ctrlName)
+	log := klog.FromContext(ctx)
 	log.V(2).Info("found SQLInstance", "actual", a.actual)
 
 	return true, nil
 }
 
 func (a *sqlInstanceAdapter) Create(ctx context.Context, createOp *directbase.CreateOperation) error {
-	u := createOp.GetUnstructured()
-
-	log := klog.FromContext(ctx).WithName(ctrlName)
+	log := klog.FromContext(ctx)
 	log.V(2).Info("creating SQLInstance", "desired", a.desired)
 
 	if a.projectID == "" {
@@ -157,7 +623,7 @@ func (a *sqlInstanceAdapter) Create(ctx context.Context, createOp *directbase.Cr
 	}
 
 	if a.desired.Spec.CloneSource != nil {
-		return a.cloneInstance(ctx, u, log)
+		return a.cloneInstance(ctx, createOp)
 	} else {
 		// if the maitenance version is provided on CREATE, we need to break up the operation between
 		// a create and a patch with the maintenance version
@@ -167,12 +633,13 @@ func (a *sqlInstanceAdapter) Create(ctx context.Context, createOp *directbase.Cr
 			a.desired.Spec.MaintenanceVersion = nil
 		}
 
-		if err := a.insertInstance(ctx, u, log); err != nil {
+		if err := a.insertInstance(ctx, createOp); err != nil {
 			return err
 		}
+
 		if maintenanceVersion != "" {
 			newMaintDb := &api.DatabaseInstance{
-				MaintenanceVersion: direct.ValueOf(a.desired.Spec.MaintenanceVersion),
+				MaintenanceVersion: maintenanceVersion,
 			}
 
 			op, err := a.sqlInstancesClient.Patch(a.projectID, a.resourceID, newMaintDb).Context(ctx).Do()
@@ -194,7 +661,9 @@ func (a *sqlInstanceAdapter) Create(ctx context.Context, createOp *directbase.Cr
 	}
 }
 
-func (a *sqlInstanceAdapter) cloneInstance(ctx context.Context, u *unstructured.Unstructured, log klog.Logger) error {
+func (a *sqlInstanceAdapter) cloneInstance(ctx context.Context, createOp *directbase.CreateOperation) error {
+	log := klog.FromContext(ctx)
+	u := createOp.GetUnstructured()
 	desiredGCP, err := SQLInstanceCloneKRMToGCP(a.desired)
 	if err != nil {
 		return err
@@ -220,11 +689,18 @@ func (a *sqlInstanceAdapter) cloneInstance(ctx context.Context, u *unstructured.
 	if err != nil {
 		return fmt.Errorf("updating SQLInstance status failed: %w", err)
 	}
+
+	if err := a.SetLastModifiedCookie(ctx, createOp, created); err != nil {
+		return err
+	}
+
 	return setStatus(u, status)
 }
 
-func (a *sqlInstanceAdapter) insertInstance(ctx context.Context, u *unstructured.Unstructured, log klog.Logger) error {
-	desiredGCP, err := SQLInstanceKRMToGCP(a.desired, a.actual, a.unmanagedFields)
+func (a *sqlInstanceAdapter) insertInstance(ctx context.Context, createOp *directbase.CreateOperation) error {
+	log := klog.FromContext(ctx)
+	u := createOp.GetUnstructured()
+	desiredGCP, err := SQLInstanceKRMToGCP(a.desired, a.actual, a.fieldMeta)
 	if err != nil {
 		return err
 	}
@@ -269,6 +745,11 @@ func (a *sqlInstanceAdapter) insertInstance(ctx context.Context, u *unstructured
 	if err != nil {
 		return fmt.Errorf("updating SQLInstance status failed: %w", err)
 	}
+
+	if err := a.SetLastModifiedCookie(ctx, createOp, created); err != nil {
+		return err
+	}
+
 	return setStatus(u, status)
 }
 
@@ -278,12 +759,13 @@ func (a *sqlInstanceAdapter) Update(ctx context.Context, updateOp *directbase.Up
 	log := klog.FromContext(ctx)
 	log.V(2).Info("updating SQLInstance", "desired", a.desired)
 
-	isEditionUnmanaged := false
-	for _, field := range a.unmanagedFields {
-		if field == unmanageEditionAnnotationValue {
-			isEditionUnmanaged = true
-			break
+	if upToDate, err := a.CompareLastModifiedCookie(ctx, updateOp, a.actual); err == nil && upToDate {
+		log.V(2).Info("resource is up to date (cookie match)", "name", a.resourceID)
+		status, err := SQLInstanceStatusGCPToKRM(a.actual)
+		if err != nil {
+			return fmt.Errorf("updating SQLInstance status failed: %w", err)
 		}
+		return setStatus(u, status)
 	}
 
 	// First, handle database version updates
@@ -293,7 +775,7 @@ func (a *sqlInstanceAdapter) Update(ctx context.Context, updateOp *directbase.Up
 		}
 
 		{
-			report := &structuredreporting.Diff{}
+			report := &structuredreporting.Diff{Object: u}
 			report.AddField(".databaseVersion", a.actual.DatabaseVersion, a.desired.Spec.DatabaseVersion)
 			structuredreporting.ReportDiff(ctx, report)
 		}
@@ -316,6 +798,16 @@ func (a *sqlInstanceAdapter) Update(ctx context.Context, updateOp *directbase.Up
 		a.actual = updated
 	}
 
+	isEditionUnmanaged := false
+	if editionField, ok := a.fieldMeta["spec.settings.edition"]; ok {
+		isEditionUnmanaged = editionField.isUnmanaged
+	}
+	isSettingsUnmanaged := false
+	if settingsField, ok := a.fieldMeta["spec.settings"]; ok {
+		isSettingsUnmanaged = settingsField.isUnmanaged
+	}
+	isEditionUnmanaged = isEditionUnmanaged || isSettingsUnmanaged
+
 	// Next, handle database edition updates
 	if !isEditionUnmanaged {
 		desiredEdition := "ENTERPRISE" // Default value
@@ -323,7 +815,12 @@ func (a *sqlInstanceAdapter) Update(ctx context.Context, updateOp *directbase.Up
 			desiredEdition = *a.desired.Spec.Settings.Edition
 		}
 
-		if desiredEdition != a.actual.Settings.Edition {
+		actualEdition := "ENTERPRISE" // Default value
+		if a.actual.Settings.Edition != "" {
+			actualEdition = a.actual.Settings.Edition
+		}
+
+		if desiredEdition != actualEdition {
 			newEditionDb := &api.DatabaseInstance{
 				Settings: &api.Settings{
 					Edition: direct.ValueOf(&desiredEdition),
@@ -335,8 +832,8 @@ func (a *sqlInstanceAdapter) Update(ctx context.Context, updateOp *directbase.Up
 			}
 
 			{
-				report := &structuredreporting.Diff{}
-				report.AddField(".settings.edition", a.actual.Settings.Edition, desiredEdition)
+				report := &structuredreporting.Diff{Object: u}
+				report.AddField(".settings.edition", actualEdition, desiredEdition)
 				structuredreporting.ReportDiff(ctx, report)
 			}
 
@@ -359,14 +856,19 @@ func (a *sqlInstanceAdapter) Update(ctx context.Context, updateOp *directbase.Up
 		}
 	}
 
+	isMaintenanceVersionUnmanaged := false
+	if mvField, ok := a.fieldMeta["spec.maintenanceVersion"]; ok {
+		isMaintenanceVersionUnmanaged = mvField.isUnmanaged
+	}
+
 	// we also need to handle maintenanceVersion updates separately ...
-	if a.desired.Spec.MaintenanceVersion != nil && *a.desired.Spec.MaintenanceVersion != a.actual.MaintenanceVersion {
+	if maintenanceVersion := direct.ValueOf(a.desired.Spec.MaintenanceVersion); !isMaintenanceVersionUnmanaged && maintenanceVersion != "" && maintenanceVersion != a.actual.MaintenanceVersion {
 		newMaintDb := &api.DatabaseInstance{
-			MaintenanceVersion: direct.ValueOf(a.desired.Spec.MaintenanceVersion),
+			MaintenanceVersion: maintenanceVersion,
 		}
 
 		{
-			report := &structuredreporting.Diff{}
+			report := &structuredreporting.Diff{Object: u}
 			report.AddField(".maintenanceVersion", a.actual.MaintenanceVersion, a.desired.Spec.MaintenanceVersion)
 			structuredreporting.ReportDiff(ctx, report)
 		}
@@ -388,15 +890,16 @@ func (a *sqlInstanceAdapter) Update(ctx context.Context, updateOp *directbase.Up
 	}
 
 	// Finally, update rest of the fields
-	desiredGCP, err := SQLInstanceKRMToGCP(a.desired, a.actual, a.unmanagedFields)
+	desiredGCP, err := SQLInstanceKRMToGCP(a.desired, a.actual, a.fieldMeta)
 	if err != nil {
 		return err
 	}
 
 	instanceForStatus := a.actual
-	instanceDiff := &structuredreporting.Diff{}
-	if !InstancesMatch(desiredGCP, a.actual, instanceDiff) {
+
+	if instanceDiff := DiffInstances(desiredGCP, a.actual); instanceDiff.HasDiff() {
 		updateOp.RecordUpdatingEvent()
+		instanceDiff.Object = u
 
 		{
 			structuredreporting.ReportDiff(ctx, instanceDiff)
@@ -423,12 +926,52 @@ func (a *sqlInstanceAdapter) Update(ctx context.Context, updateOp *directbase.Up
 	if err != nil {
 		return fmt.Errorf("updating SQLInstance status failed: %w", err)
 	}
+
+	if err := a.SetLastModifiedCookie(ctx, updateOp, instanceForStatus); err != nil {
+		return err
+	}
+
 	return setStatus(u, status)
+}
+
+func (a *sqlInstanceAdapter) SetLastModifiedCookie(ctx context.Context, op directbase.Operation, actual *api.DatabaseInstance) error {
+	finalDesiredGCP, err := SQLInstanceKRMToGCP(a.desired, actual, a.fieldMeta)
+	if err != nil {
+		return err
+	}
+	finalDesiredProto, err := a.toProto(ctx, finalDesiredGCP)
+	if err != nil {
+		return err
+	}
+	finalActualProto, err := a.toProto(ctx, actual)
+	if err != nil {
+		return err
+	}
+	if err := op.SetLastModifiedCookie(ctx, finalDesiredProto, finalActualProto); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (a *sqlInstanceAdapter) CompareLastModifiedCookie(ctx context.Context, op directbase.Operation, actual *api.DatabaseInstance) (bool, error) {
+	desiredGCP, err := SQLInstanceKRMToGCP(a.desired, actual, a.fieldMeta)
+	if err != nil {
+		return false, err
+	}
+	desiredProto, err := a.toProto(ctx, desiredGCP)
+	if err != nil {
+		return false, err
+	}
+	actualProto, err := a.toProto(ctx, actual)
+	if err != nil {
+		return false, err
+	}
+	return op.CompareLastModifiedCookie(desiredProto, actualProto)
 }
 
 // Delete implements the Adapter interface.
 func (a *sqlInstanceAdapter) Delete(ctx context.Context, deleteOp *directbase.DeleteOperation) (bool, error) {
-	log := klog.FromContext(ctx).WithName(ctrlName)
+	log := klog.FromContext(ctx)
 	log.V(2).Info("deleting SQLInstance", "actual", a.actual)
 
 	op, err := a.sqlInstancesClient.Delete(a.projectID, a.resourceID).Context(ctx).Do()
@@ -474,7 +1017,7 @@ func (a *sqlInstanceAdapter) Export(ctx context.Context) (*unstructured.Unstruct
 }
 
 func (a *sqlInstanceAdapter) pollForLROCompletion(ctx context.Context, op *api.Operation, verb string) error {
-	log := klog.FromContext(ctx).WithName(ctrlName)
+	log := klog.FromContext(ctx)
 	var err error
 
 	pollingBackoff := gax.Backoff{
@@ -498,6 +1041,48 @@ func (a *sqlInstanceAdapter) pollForLROCompletion(ctx context.Context, op *api.O
 	}
 
 	return nil
+}
+
+func (a *sqlInstanceAdapter) toProto(ctx context.Context, instance *api.DatabaseInstance) (*pb.DatabaseInstance, error) {
+	if instance == nil {
+		return nil, nil
+	}
+
+	// The GCP API Go library often has more fields than our proto.
+	// We marshal to JSON and then unmarshal into the proto, discarding unknown fields.
+	j, err := json.Marshal(instance)
+	if err != nil {
+		return nil, fmt.Errorf("marshalling api to json: %w", err)
+	}
+
+	// Mask out fields that are not in the proto
+	var m map[string]any
+	if err := json.Unmarshal(j, &m); err != nil {
+		return nil, fmt.Errorf("unmarshalling api to map: %w", err)
+	}
+	delete(m, "satisfiesPzi")
+	if settings, ok := m["settings"].(map[string]any); ok {
+		if bc, ok := settings["backupConfiguration"].(map[string]any); ok {
+			delete(bc, "backupTier")
+		}
+	}
+	j, err = json.Marshal(m)
+	if err != nil {
+		return nil, fmt.Errorf("marshalling map to json: %w", err)
+	}
+
+	out := &pb.DatabaseInstance{}
+	unmarshalOptions := protojson.UnmarshalOptions{
+		// We use DiscardUnknown because the GCP API often has more fields than our proto.
+		// For example, satisfiesPzi and backupTier are not in the proto but are in the API.
+		// We explicitly delete some known fields above, but DiscardUnknown is more robust
+		// against new fields being added to the GCP API.
+		DiscardUnknown: true,
+	}
+	if err := unmarshalOptions.Unmarshal(j, out); err != nil {
+		return nil, fmt.Errorf("unmarshalling json to proto %v: %w", out.ProtoReflect().Descriptor().FullName(), err)
+	}
+	return out, nil
 }
 
 func setStatus(u *unstructured.Unstructured, typedStatus any) error {

@@ -19,12 +19,13 @@ set -o nounset
 set -o pipefail
 
 REPO_ROOT="$(git rev-parse --show-toplevel)"
+source "${REPO_ROOT}/dev/tools/goimports.sh"
 cd ${REPO_ROOT}/dev/tools/controllerbuilder
 
+./generate-proto.sh
+
 go run . generate-types \
-    --service google.identity.accesscontextmanager.v1 \
-    --api-version accesscontextmanager.cnrm.cloud.google.com/v1beta1  \
-    --resource AccessContextManagerAccessPolicy:AccessPolicy
+    --config ${REPO_ROOT}/apis/accesscontextmanager/v1beta1/generatetypes.yaml
 
 go run . generate-mapper \
     --service google.identity.accesscontextmanager.v1 \
@@ -34,4 +35,4 @@ go run . generate-mapper \
 cd ${REPO_ROOT}
 dev/tasks/generate-crds
 
-go run -mod=readonly golang.org/x/tools/cmd/goimports@latest -w  pkg/controller/direct/accesscontextmanager/
+go run -mod=readonly golang.org/x/tools/cmd/goimports@${GOLANG_X_TOOLS_VERSION} -w  pkg/controller/direct/accesscontextmanager/

@@ -16,13 +16,14 @@ package compute
 
 import (
 	pb "cloud.google.com/go/compute/apiv1/computepb"
+	computev1beta1 "github.com/GoogleCloudPlatform/k8s-config-connector/apis/compute/v1beta1"
 	krm "github.com/GoogleCloudPlatform/k8s-config-connector/apis/compute/v1beta1"
 	refs "github.com/GoogleCloudPlatform/k8s-config-connector/apis/refs/v1beta1"
 
 	"github.com/GoogleCloudPlatform/k8s-config-connector/pkg/controller/direct"
 )
 
-func ComputeFirewallPolicyRuleSpec_FromProto(mapCtx *direct.MapContext, in *pb.FirewallPolicyRule) *krm.ComputeFirewallPolicyRuleSpec {
+func ComputeFirewallPolicyRuleSpec_v1beta1_FromProto(mapCtx *direct.MapContext, in *pb.FirewallPolicyRule) *krm.ComputeFirewallPolicyRuleSpec {
 	if in == nil {
 		return nil
 	}
@@ -32,7 +33,7 @@ func ComputeFirewallPolicyRuleSpec_FromProto(mapCtx *direct.MapContext, in *pb.F
 	out.Direction = in.GetDirection()
 	out.Disabled = in.Disabled
 	out.EnableLogging = in.EnableLogging
-	out.Match = FirewallPolicyRuleMatcher_FromProto(mapCtx, in.Match)
+	out.Match = FirewallPolicyRuleMatcher_v1beta1_FromProto(mapCtx, in.Match)
 	out.Priority = int64(in.GetPriority())
 	// MISSING: RuleName
 	// MISSING: SecurityProfileGroup
@@ -42,7 +43,7 @@ func ComputeFirewallPolicyRuleSpec_FromProto(mapCtx *direct.MapContext, in *pb.F
 	// MISSING: TlsInspect
 	return out
 }
-func ComputeFirewallPolicyRuleSpec_ToProto(mapCtx *direct.MapContext, in *krm.ComputeFirewallPolicyRuleSpec) *pb.FirewallPolicyRule {
+func ComputeFirewallPolicyRuleSpec_v1beta1_ToProto(mapCtx *direct.MapContext, in *krm.ComputeFirewallPolicyRuleSpec) *pb.FirewallPolicyRule {
 	if in == nil {
 		return nil
 	}
@@ -52,7 +53,7 @@ func ComputeFirewallPolicyRuleSpec_ToProto(mapCtx *direct.MapContext, in *krm.Co
 	out.Direction = direct.LazyPtr(in.Direction)
 	out.Disabled = in.Disabled
 	out.EnableLogging = in.EnableLogging
-	out.Match = FirewallPolicyRuleMatcher_ToProto(mapCtx, in.Match)
+	out.Match = FirewallPolicyRuleMatcher_v1beta1_ToProto(mapCtx, in.Match)
 	out.Priority = direct.LazyPtr(int32(in.Priority))
 	// MISSING: RuleName
 	// MISSING: SecurityProfileGroup
@@ -62,7 +63,7 @@ func ComputeFirewallPolicyRuleSpec_ToProto(mapCtx *direct.MapContext, in *krm.Co
 	return out
 }
 
-func FirewallPolicyRuleMatcherLayer4Config_FromProto(mapCtx *direct.MapContext, in *pb.FirewallPolicyRuleMatcherLayer4Config) *krm.FirewallPolicyRuleMatcherLayer4Config {
+func FirewallPolicyRuleMatcherLayer4Config_v1beta1_FromProto(mapCtx *direct.MapContext, in *pb.FirewallPolicyRuleMatcherLayer4Config) *krm.FirewallPolicyRuleMatcherLayer4Config {
 	if in == nil {
 		return nil
 	}
@@ -71,7 +72,7 @@ func FirewallPolicyRuleMatcherLayer4Config_FromProto(mapCtx *direct.MapContext, 
 	out.Ports = in.Ports
 	return out
 }
-func FirewallPolicyRuleMatcherLayer4Config_ToProto(mapCtx *direct.MapContext, in *krm.FirewallPolicyRuleMatcherLayer4Config) *pb.FirewallPolicyRuleMatcherLayer4Config {
+func FirewallPolicyRuleMatcherLayer4Config_v1beta1_ToProto(mapCtx *direct.MapContext, in *krm.FirewallPolicyRuleMatcherLayer4Config) *pb.FirewallPolicyRuleMatcherLayer4Config {
 	if in == nil {
 		return nil
 	}
@@ -81,7 +82,7 @@ func FirewallPolicyRuleMatcherLayer4Config_ToProto(mapCtx *direct.MapContext, in
 	return out
 }
 
-func ComputeFirewallPolicyRuleSpec_TargetResources_ToProto(mapCtx *direct.MapContext, in []*refs.ComputeNetworkRef) []string {
+func ComputeFirewallPolicyRuleSpec_TargetResources_ToProto(mapCtx *direct.MapContext, in []*computev1beta1.ComputeNetworkRef) []string {
 	if in == nil {
 		return nil
 	}
@@ -115,13 +116,13 @@ func ComputeFirewallPolicyRuleSpec_TargetServiceAccounts_ToProto(mapCtx *direct.
 	return out
 }
 
-func ComputeFirewallPolicyRuleSpec_TargetResources_FromProto(mapCtx *direct.MapContext, in []string) []*refs.ComputeNetworkRef {
+func ComputeFirewallPolicyRuleSpec_TargetResources_FromProto(mapCtx *direct.MapContext, in []string) []*computev1beta1.ComputeNetworkRef {
 	if in == nil {
 		return nil
 	}
-	var out []*refs.ComputeNetworkRef
+	var out []*computev1beta1.ComputeNetworkRef
 	for _, i := range in {
-		out = append(out, &refs.ComputeNetworkRef{
+		out = append(out, &computev1beta1.ComputeNetworkRef{
 			External: i,
 		})
 	}
@@ -141,7 +142,7 @@ func ComputeFirewallPolicyRuleSpec_TargetServiceAccounts_FromProto(mapCtx *direc
 	return out
 }
 
-func ComputeFirewallPolicyRuleStatus_ToProto(mapCtx *direct.MapContext, in *krm.ComputeFirewallPolicyRuleStatus) *pb.FirewallPolicyRule {
+func ComputeFirewallPolicyRuleStatus_v1beta1_ToProto(mapCtx *direct.MapContext, in *krm.ComputeFirewallPolicyRuleStatus) *pb.FirewallPolicyRule {
 	if in == nil {
 		return nil
 	}
@@ -152,7 +153,7 @@ func ComputeFirewallPolicyRuleStatus_ToProto(mapCtx *direct.MapContext, in *krm.
 	return out
 }
 
-func ComputeFirewallPolicyRuleStatus_FromProto(mapCtx *direct.MapContext, in *pb.FirewallPolicyRule) *krm.ComputeFirewallPolicyRuleStatus {
+func ComputeFirewallPolicyRuleStatus_v1beta1_FromProto(mapCtx *direct.MapContext, in *pb.FirewallPolicyRule) *krm.ComputeFirewallPolicyRuleStatus {
 	if in == nil {
 		return nil
 	}

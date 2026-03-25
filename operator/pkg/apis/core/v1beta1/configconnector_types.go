@@ -66,6 +66,38 @@ type ConfigConnectorSpec struct {
 	//+kubebuilder:validation:Enum=Absent;Merge
 	//+kubebuilder:validation:Optional
 	StateIntoSpec *StateIntoSpecValue `json:"stateIntoSpec,omitempty"`
+
+	// ConfigConnector specific experiments
+	Experiments *CCExperiments `json:"experiments,omitempty"`
+}
+
+type CCExperiments struct {
+	// MultiClusterLease defines configuration specific to multi-cluster leader election.
+	// +optional
+	MultiClusterLease *MultiClusterLeaseSpec `json:"multiClusterLease,omitempty"`
+}
+
+// MultiClusterLeaseSpec defines the configuration for a multi-cluster lease.
+type MultiClusterLeaseSpec struct {
+	// The name of the MultiClusterLease object that KCC will create.
+	LeaseName string `json:"leaseName"`
+	// The namespace where the MultiClusterLease object will be created.
+	Namespace string `json:"namespace"`
+	// The identity of the cluster candidate for the KCC components, hared by all KCC replicas
+	// and workloads across all clusters that are part of the same election.
+	//  This name must be unique across all the clusters that you are configuring the multi cluster set up for.
+	// +required
+	ClusterCandidateIdentity string `json:"clusterCandidateIdentity"`
+
+	// ResourceReplicationMode specifies how the resources will be synced to the passive clusters.
+	// Can be either 'Status', 'Full', or 'Disabled'.
+	// 'Status' (default) means only the status field (and occasionally essential fields like spec.resourceID) are synced.
+	// 'Full' means both the spec and status are synced.
+	// 'Disabled' means resource replication is completely turned off for this lease.
+	// +optional
+	// +kubebuilder:validation:Enum=Status;Full;Disabled
+	// +kubebuilder:default=Status
+	ResourceReplicationMode string `json:"resourceReplicationMode,omitempty"`
 }
 
 // ConfigConnectorStatus defines the observed state of ConfigConnector

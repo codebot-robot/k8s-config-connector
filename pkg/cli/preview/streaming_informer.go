@@ -23,6 +23,7 @@ import (
 	"time"
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/types"
 	toolscache "k8s.io/client-go/tools/cache"
 	"k8s.io/klog/v2"
@@ -35,11 +36,12 @@ import (
 type streamingInformer struct {
 	streamingClient *StreamingClient
 	typeInfo        *typeInfo
+	namespace       string
 	mutex           sync.Mutex
 
 	eventHandlerRegistrations []*eventHandlerRegistration
-
-	resyncPeriod time.Duration
+	objectTransformers        []ObjectTransformer
+	resyncPeriod              time.Duration
 
 	hasSynced atomic.Bool
 	objects   objects
@@ -52,7 +54,24 @@ type objects struct {
 }
 
 // OnListObject is called from list, the lock should be held
-func (o *objects) OnListObject(obj Object, isInInitialList bool, eventHandlerRegistrations []*eventHandlerRegistration) {
+func (o *objects) OnListObject(ctx context.Context, obj Object, isInInitialList bool, eventHandlerRegistrations []*eventHandlerRegistration, objectTransformers []ObjectTransformer) error {
+	if clientObj, ok := obj.(client.Object); ok {
+		// Deep copy to avoid mutating the original object if it's shared
+		copied := clientObj.DeepCopyObject()
+		var okCopy bool
+		clientObj, okCopy = copied.(client.Object)
+		if !okCopy {
+			return fmt.Errorf("DeepCopyObject returned %T, expected client.Object", copied)
+		}
+		obj = clientObj
+		for _, transformer := range objectTransformers {
+			if err := transformer(ctx, clientObj); err != nil {
+				klog.Errorf("transformer failed: %v", err)
+				return fmt.Errorf("transformer failed: %w", err)
+			}
+		}
+	}
+
 	id := types.NamespacedName{
 		Namespace: obj.GetNamespace(),
 		Name:      obj.GetName(),
@@ -61,10 +80,27 @@ func (o *objects) OnListObject(obj Object, isInInitialList bool, eventHandlerReg
 	for _, handler := range eventHandlerRegistrations {
 		handler.handler.OnAdd(obj, false)
 	}
+	return nil
 }
 
 // OnWatchAdd is called from watch, the lock is not held
-func (o *objects) OnWatchAdd(obj Object, eventHandlerRegistrations []*eventHandlerRegistration) {
+func (o *objects) OnWatchAdd(ctx context.Context, obj Object, eventHandlerRegistrations []*eventHandlerRegistration, objectTransformers []ObjectTransformer) error {
+	if clientObj, ok := obj.(client.Object); ok {
+		// Deep copy to avoid mutating the original object if it's shared
+		copied := clientObj.DeepCopyObject()
+		var okCopy bool
+		clientObj, okCopy = copied.(client.Object)
+		if !okCopy {
+			return fmt.Errorf("DeepCopyObject returned %T, expected client.Object", copied)
+		}
+		obj = clientObj
+		for _, transformer := range objectTransformers {
+			if err := transformer(ctx, clientObj); err != nil {
+				klog.Errorf("transformer failed: %v", err)
+			}
+		}
+	}
+
 	id := types.NamespacedName{
 		Namespace: obj.GetNamespace(),
 		Name:      obj.GetName(),
@@ -77,15 +113,18 @@ func (o *objects) OnWatchAdd(obj Object, eventHandlerRegistrations []*eventHandl
 	for _, handler := range eventHandlerRegistrations {
 		handler.handler.OnAdd(obj, false)
 	}
+	return nil
 }
 
 var _ cache.Informer = &streamingInformer{}
 
 // newStreamingInformer creates a new streaming informer.
-func newStreamingInformer(streamingClient *StreamingClient, typeInfo *typeInfo) (*streamingInformer, error) {
+func newStreamingInformer(streamingClient *StreamingClient, typeInfo *typeInfo, namespace string, objectTransformers []ObjectTransformer) (*streamingInformer, error) {
 	s := &streamingInformer{
-		streamingClient: streamingClient,
-		typeInfo:        typeInfo,
+		streamingClient:    streamingClient,
+		typeInfo:           typeInfo,
+		namespace:          namespace,
+		objectTransformers: objectTransformers,
 	}
 	s.objects = objects{
 		store: make(map[types.NamespacedName]Object),
@@ -131,12 +170,20 @@ func (i *streamingInformer) runOnce(ctx context.Context) error {
 	}
 
 	i.hasSynced.Store(true)
-	watchListener := &watchListener{objects: &i.objects, eventHandlerRegistrations: i.eventHandlerRegistrations}
+	watchListener := &watchListener{
+		objects:                   &i.objects,
+		eventHandlerRegistrations: i.eventHandlerRegistrations,
+		objectTransformers:        i.objectTransformers,
+	}
 	watchOptions := WatchOptions{
 		ResourceVersion:     listMetadata.ResourceVersion,
 		AllowWatchBookmarks: true,
 	}
-	if err := i.streamingClient.Watch(ctx, i.typeInfo, watchOptions, watchListener); err != nil {
+	namespace := ""
+	if i.typeInfo.Scope == meta.RESTScopeNamespace {
+		namespace = i.namespace
+	}
+	if err := i.streamingClient.Watch(ctx, i.typeInfo, namespace, watchOptions, watchListener); err != nil {
 		return err
 	}
 
@@ -149,8 +196,17 @@ func (i *streamingInformer) doList(ctx context.Context) (*ListMetadata, error) {
 	defer i.objects.mutex.Unlock()
 
 	isInInitialList := !i.hasSynced.Load()
-	listListener := &listListener{objects: &i.objects, isInInitialList: isInInitialList, eventHandlerRegistrations: i.eventHandlerRegistrations}
-	if err := i.streamingClient.List(ctx, i.typeInfo, listListener); err != nil {
+	listListener := &listListener{
+		objects:                   &i.objects,
+		isInInitialList:           isInInitialList,
+		eventHandlerRegistrations: i.eventHandlerRegistrations,
+		objectTransformers:        i.objectTransformers,
+	}
+	namespace := ""
+	if i.typeInfo.Scope == meta.RESTScopeNamespace {
+		namespace = i.namespace
+	}
+	if err := i.streamingClient.List(ctx, i.typeInfo, namespace, listListener); err != nil {
 		return nil, err
 	}
 	return &listListener.metadata, nil
@@ -160,6 +216,7 @@ func (i *streamingInformer) doList(ctx context.Context) (*ListMetadata, error) {
 type listListener struct {
 	isInInitialList           bool
 	eventHandlerRegistrations []*eventHandlerRegistration
+	objectTransformers        []ObjectTransformer
 	objects                   *objects
 	metadata                  ListMetadata
 }
@@ -170,9 +227,8 @@ func (i *listListener) OnListBegin(metadata ListMetadata) {
 }
 
 // OnListObject is called when an object is listed.
-func (i *listListener) OnListObject(obj Object) error {
-	i.objects.OnListObject(obj, i.isInInitialList, i.eventHandlerRegistrations)
-	return nil
+func (i *listListener) OnListObject(ctx context.Context, obj Object) error {
+	return i.objects.OnListObject(ctx, obj, i.isInInitialList, i.eventHandlerRegistrations, i.objectTransformers)
 }
 
 // OnListEnd is called when the list operation ends.
@@ -182,16 +238,16 @@ func (i *listListener) OnListEnd() {
 type watchListener struct {
 	objects                   *objects
 	eventHandlerRegistrations []*eventHandlerRegistration
+	objectTransformers        []ObjectTransformer
 }
 
 // OnWatchEvent is called when a watch event occurs.
-func (i *watchListener) OnWatchEvent(eventType string, obj Object) error {
+func (i *watchListener) OnWatchEvent(ctx context.Context, eventType string, obj Object) error {
 	switch eventType {
 	case "ADDED":
-		i.objects.OnWatchAdd(obj, i.eventHandlerRegistrations)
-		return nil
+		return i.objects.OnWatchAdd(ctx, obj, i.eventHandlerRegistrations, i.objectTransformers)
 	case "BOOKMARK":
-		klog.Infof("BOOKMARK %+v", obj)
+		klog.V(2).Infof("BOOKMARK %+v", obj)
 		return nil
 	default:
 		return fmt.Errorf("unknown event type: %q", eventType)
@@ -287,6 +343,13 @@ func (i *eventHandlerRegistration) HasSynced() bool {
 func (i *streamingInformer) Get(ctx context.Context, key client.ObjectKey, obj client.Object, opts ...client.GetOption) error {
 	if len(opts) != 0 {
 		return fmt.Errorf("options not implemented: %v", opts)
+	}
+
+	// During preview, each resource is only reconciled once.
+	// If CC or CCC objects are not synced, the reconciler can give out false positives
+	// (successfully reconcile without actually invoking the actual reconciler).
+	if !i.WaitForCacheSync(ctx) {
+		return fmt.Errorf("streamingInformer WaitForCacheSync failed")
 	}
 
 	i.objects.mutex.Lock()

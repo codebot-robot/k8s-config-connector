@@ -15,6 +15,7 @@
 package v1beta1
 
 import (
+	computev1beta1 "github.com/GoogleCloudPlatform/k8s-config-connector/apis/compute/v1beta1"
 	refs "github.com/GoogleCloudPlatform/k8s-config-connector/apis/refs/v1beta1"
 	refsv1beta1secret "github.com/GoogleCloudPlatform/k8s-config-connector/apis/refs/v1beta1/secret"
 	"github.com/GoogleCloudPlatform/k8s-config-connector/pkg/apis/k8s/v1alpha1"
@@ -80,7 +81,7 @@ type AlloyDBClusterSpec struct {
 	//  form: `projects/{project}/global/networks/{network_id}`. This is required
 	//  to create a cluster. Deprecated, use network_config.network instead.
 	// +kcc:proto:field=google.cloud.alloydb.v1beta.Cluster.network
-	NetworkRef *refs.ComputeNetworkRef `json:"networkRef,omitempty"`
+	NetworkRef *computev1beta1.ComputeNetworkRef `json:"networkRef,omitempty"`
 
 	/* NOTYET
 	// For Resource freshness validation (https://google.aip.dev/154)
@@ -256,7 +257,7 @@ type Cluster_NetworkConfig struct {
 	//  `projects/{project_number}/global/networks/{network_id}`. This is
 	//  required to create a cluster.
 	// +kcc:proto:field=google.cloud.alloydb.v1beta.Cluster.NetworkConfig.network
-	NetworkRef *refs.ComputeNetworkRef `json:"networkRef,omitempty"`
+	NetworkRef *computev1beta1.ComputeNetworkRef `json:"networkRef,omitempty"`
 
 	// Optional. Name of the allocated IP range for the private IP AlloyDB
 	//  cluster, for example: "google-managed-services-default". If set, the
@@ -486,7 +487,10 @@ type ClusterObservedState struct {
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 // +kubebuilder:resource:categories=gcp,shortName=gcpalloydbcluster;gcpalloydbclusters
 // +kubebuilder:subresource:status
-// +kubebuilder:metadata:labels="cnrm.cloud.google.com/tf2crd=true";"cnrm.cloud.google.com/managed-by-kcc=true";"cnrm.cloud.google.com/stability-level=stable";"cnrm.cloud.google.com/system=true"
+// +kubebuilder:metadata:labels="cnrm.cloud.google.com/tf2crd=true"
+// +kubebuilder:metadata:labels="cnrm.cloud.google.com/managed-by-kcc=true"
+// +kubebuilder:metadata:labels="cnrm.cloud.google.com/stability-level=stable"
+// +kubebuilder:metadata:labels="cnrm.cloud.google.com/system=true"
 // +kubebuilder:metadata:labels="internal.cloud.google.com/additional-versions=v1alpha1"
 // +kubebuilder:printcolumn:name="Age",JSONPath=".metadata.creationTimestamp",type="date"
 // +kubebuilder:printcolumn:name="Ready",JSONPath=".status.conditions[?(@.type=='Ready')].status",type="string",description="When 'True', the most recent reconcile of the resource succeeded"
@@ -511,6 +515,19 @@ type AlloyDBClusterList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
 	Items           []AlloyDBCluster `json:"items"`
+}
+
+// v1 objects with fields missing from v1beta1 commented out
+
+// +kcc:proto=google.cloud.alloydb.v1beta.MaintenanceUpdatePolicy
+type MaintenanceUpdatePolicy struct {
+	// Preferred windows to perform maintenance. Currently limited to 1.
+	// +kcc:proto:field=google.cloud.alloydb.v1beta.MaintenanceUpdatePolicy.maintenance_windows
+	MaintenanceWindows []MaintenanceUpdatePolicy_MaintenanceWindow `json:"maintenanceWindows,omitempty"`
+
+	// Periods to deny maintenance. Currently limited to 1.
+	// +kcc:proto:field=google.cloud.alloydb.v1beta.MaintenanceUpdatePolicy.deny_maintenance_periods
+	//DenyMaintenancePeriods []MaintenanceUpdatePolicy_DenyMaintenancePeriod `json:"denyMaintenancePeriods,omitempty"`
 }
 
 func init() {

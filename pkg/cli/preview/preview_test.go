@@ -139,7 +139,7 @@ spec:
 	upstreamRESTConfig := harness.GetRESTConfig()
 
 	recorder := NewRecorder()
-	if err := recorder.PreloadGKNN(ctx, upstreamRESTConfig); err != nil {
+	if err := recorder.PreloadGKNN(ctx, upstreamRESTConfig, ""); err != nil {
 		t.Fatalf("PreloadGKNN: %v", err)
 	}
 
@@ -228,7 +228,7 @@ func getKubebuilderAssetDir() (string, error) {
 		candidates = append(candidates, file.Name())
 	}
 	if len(candidates) == 0 {
-		return "", fmt.Errorf("found no kubebuilder assets in %v", dir)
+		return "", fmt.Errorf("found no kubebuilder-envtest assets in %v", dir)
 	}
 	bestCandidate := candidates[len(candidates)-1]
 	return filepath.Join(dir, bestCandidate), nil

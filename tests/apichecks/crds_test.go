@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"slices"
 	"sort"
 	"strings"
 	"testing"
@@ -158,16 +159,7 @@ func TestNoRefsInStatus(t *testing.T) {
 					return
 				}
 
-				// Check if this is named like a ref
-				isRef := false
-				if strings.HasSuffix(fieldPath, "Ref") {
-					isRef = true
-				}
-				if strings.HasSuffix(fieldPath, "Refs[]") || strings.HasSuffix(fieldPath, "Refs") {
-					isRef = true
-				}
-
-				if isRef {
+				if isRefFieldPath(fieldPath) {
 					errs = append(errs, fmt.Sprintf("[no_refs_in_status] crd=%s version=%v: reference field %q should not be in status", crd.Name, version.Name, fieldPath))
 				}
 			})
@@ -202,6 +194,79 @@ func TestCRDsDoNotHaveFooUrlRef(t *testing.T) {
 			})
 		}
 	}
+}
+
+func isRefFieldPath(fieldPath string) bool {
+	// Check if this is named like a ref
+	isRef := false
+	if strings.HasSuffix(fieldPath, "Ref") {
+		isRef = true
+	}
+	if strings.HasSuffix(fieldPath, "Refs[]") || strings.HasSuffix(fieldPath, "Refs") {
+		isRef = true
+	}
+	return isRef
+}
+
+// CRDs should not have parentFooRef fields; use fooRef even for parent references.
+func TestCRDsHaveParentRefs(t *testing.T) {
+	crds, err := crdloader.LoadAllCRDs()
+	if err != nil {
+		t.Fatalf("error loading crds: %v", err)
+	}
+
+	var errs []string
+	for _, crd := range crds {
+		// Only visit the latest version of the CRD.
+		latest := findLatestVersion(t, crd)
+
+		for _, version := range crd.Spec.Versions {
+			if version.Name != latest {
+				continue
+			}
+
+			var allRefs []string
+			visitCRDVersion(version, func(field *CRDField) {
+				fieldPath := field.FieldPath
+
+				// Well-known exception
+				if fieldPath == ".status.externalRef" {
+					return
+				}
+
+				// Check if this is named like a ref
+				if isRefFieldPath(fieldPath) {
+					lastDot := strings.LastIndex(fieldPath, ".")
+					lastField := fieldPath[lastDot+1:]
+					id := strings.TrimSuffix(lastField, "Ref")
+					id = strings.TrimSuffix(id, "Refs")
+					id = strings.TrimSuffix(id, "Refs[]")
+					if strings.Contains(id, "Ref") {
+						t.Fatalf("could not trim Ref from fieldPath %q", fieldPath)
+					}
+					allRefs = append(allRefs, id)
+				}
+			})
+
+			slices.Sort(allRefs)
+
+			parents := 0
+			for _, ref := range allRefs {
+				if strings.HasPrefix(ref, "parent") {
+					parents++
+				}
+			}
+			if parents != 0 {
+				errs = append(errs, fmt.Sprintf("[crds_should_not_have_parent_refs] crd=%s version=%v: found a parent ref (found %v)", crd.Name, version.Name, allRefs))
+			}
+		}
+	}
+
+	sort.Strings(errs)
+
+	want := strings.Join(errs, "\n") + "\n"
+
+	test.CompareGoldenFile(t, "testdata/exceptions/crds_have_parent_refs.txt", want)
 }
 
 // Enforces acronym capitalization on CRDs
@@ -523,20 +588,7 @@ func findFieldsNotCoveredByTests(t *testing.T, shouldVisitCRD func(crd *apiexten
 	var errs []string
 	for _, crd := range crds {
 		// Only visit the latest version of the CRD.
-		versions := make(map[string]bool)
-		for _, version := range crd.Spec.Versions {
-			versions[version.Name] = true
-		}
-		latest := ""
-		for _, version := range []string{"v1", "v1beta1", "v1alpha1"} {
-			if versions[version] {
-				latest = version
-				break
-			}
-		}
-		if latest == "" {
-			t.Fatalf("no latest version found for crd %s", crd.Name)
-		}
+		latest := findLatestVersion(t, crd)
 
 		for _, version := range crd.Spec.Versions {
 			if version.Name != latest {
@@ -637,6 +689,24 @@ func findFieldsNotCoveredByTests(t *testing.T, shouldVisitCRD func(crd *apiexten
 
 	sort.Strings(errs)
 	return errs
+}
+
+func findLatestVersion(t *testing.T, crd apiextensions.CustomResourceDefinition) string {
+	versions := make(map[string]bool)
+	for _, version := range crd.Spec.Versions {
+		versions[version.Name] = true
+	}
+	latest := ""
+	for _, version := range []string{"v1", "v1beta1", "v1alpha1"} {
+		if versions[version] {
+			latest = version
+			break
+		}
+	}
+	if latest == "" {
+		t.Fatalf("no latest version found for crd %s", crd.Name)
+	}
+	return latest
 }
 
 func loadOutputOnlySpecFields() (map[string]bool, error) {
@@ -952,4 +1022,125 @@ func isValidPlural(singular, plural string) bool {
 func isVowel(r rune) bool {
 	r = unicode.ToLower(r)
 	return r == 'a' || r == 'e' || r == 'i' || r == 'o' || r == 'u'
+}
+
+func TestCRDObjectTypes(t *testing.T) {
+	// knownInvalidCRDs is a list of CRDs that currently fail the validation.
+	// We want to eventually fix these, but for now we allowlist them so the test passes.
+	// This allows us to detect new regressions.
+	knownInvalidCRDs := map[string]bool{
+		"accesscontextmanageraccesslevels.accesscontextmanager.cnrm.cloud.google.com":   true, // status.observedState is an empty object
+		"aiplatformmodels.aiplatform.cnrm.cloud.google.com":                             true, // status.observedState.supportedExportFormats[] is an empty object
+		"apigeeenvironments.apigee.cnrm.cloud.google.com":                               true, // status.observedState is an empty object
+		"apigeeorganizations.apigee.cnrm.cloud.google.com":                              true, // status.observedState is an empty object
+		"bigqueryconnectionconnections.bigqueryconnection.cnrm.cloud.google.com":        true, // spec.cloudResource is an empty object
+		"bigquerydatapolicies.bigquerydatapolicy.cnrm.cloud.google.com":                 true, // status.observedState is an empty object
+		"bigquerydatatransferconfigs.bigquerydatatransfer.cnrm.cloud.google.com":        true, // spec.scheduleOptionsV2.manualSchedule is an empty object
+		"bigquerytables.bigquery.cnrm.cloud.google.com":                                 true, // status.observedState is an empty object
+		"bigtableauthorizedviews.bigtable.cnrm.cloud.google.com":                        true, // status.observedState is an empty object
+		"bigtablelogicalviews.bigtable.cnrm.cloud.google.com":                           true, // status.observedState is an empty object
+		"bigtablematerializedviews.bigtable.cnrm.cloud.google.com":                      true, // status.observedState is an empty object
+		"clouddmsmigrationjobs.clouddms.cnrm.cloud.google.com":                          true, // spec.staticIPConnectivity and status.observedState are empty objects
+		"datacatalogentries.datacatalog.cnrm.cloud.google.com":                          true, // spec.featureOnlineStoreSpec and status.observedState.databaseTableSpec.dataplexTable.dataplexSpec.dataFormat.csv are empty objects
+		"datacatalogpolicytags.datacatalog.cnrm.cloud.google.com":                       true, // status.observedState is an empty object
+		"dataformrepositories.dataform.cnrm.cloud.google.com":                           true, // status.observedState is an empty object
+		"dataprocjobs.dataproc.cnrm.cloud.google.com":                                   true, // spec.pysparkJob.loggingConfig is an empty object
+		"dataprocnodegroups.dataproc.cnrm.cloud.google.com":                             true, // status.observedState.nodeGroupConfig.managedGroupConfig is an empty object
+		"datastreamconnectionprofiles.datastream.cnrm.cloud.google.com":                 true, // spec.staticServiceIPConnectivity is an empty object
+		"discoveryengineengines.discoveryengine.cnrm.cloud.google.com":                  true, // status.observedState is an empty object
+		"firestorebackupschedules.firestore.cnrm.cloud.google.com":                      true, // spec.dailyRecurrence is an empty object
+		"firestorefields.firestore.cnrm.cloud.google.com":                               true, // spec.indexConfig.indexes[].fields[].vectorConfig.flat is an empty object
+		"iamdenypolicies.iam.cnrm.cloud.google.com":                                     true, // status.observedState is an empty object
+		"memorystoreinstances.memorystore.cnrm.cloud.google.com":                        true, // status.observedState.stateInfo.updateInfo is an empty object
+		"monitoringdashboards.monitoring.cnrm.cloud.google.com":                         true, // spec.rowLayout.rows[].widgets[].singleViewGroup is an empty object
+		"recaptchaenterprisefirewallpolicies.recaptchaenterprise.cnrm.cloud.google.com": true, // spec.actions[].allow/block/redirect are empty objects
+		"servicenetworkingpeereddnsdomains.servicenetworking.cnrm.cloud.google.com":     true, // status.observedState is an empty object
+		"spannerbackupschedules.spanner.cnrm.cloud.google.com":                          true, // spec.fullBackupSpec is an empty object
+		"vertexaiindexes.vertexai.cnrm.cloud.google.com":                                true, // spec.metadata.config.algorithmConfig.bruteForceConfig is an empty object
+	}
+
+	crds, err := crdloader.LoadAllCRDs()
+	if err != nil {
+		t.Fatalf("error loading crds: %v", err)
+	}
+
+	for _, crd := range crds {
+		t.Run(crd.Name, func(t *testing.T) {
+			isKnownInvalid := knownInvalidCRDs[crd.Name]
+			invalidVersions := 0
+			for _, version := range crd.Spec.Versions {
+				if version.Schema == nil || version.Schema.OpenAPIV3Schema == nil {
+					continue
+				}
+				schema := version.Schema.OpenAPIV3Schema
+				for name, subProps := range schema.Properties {
+					if name == "metadata" {
+						continue
+					}
+					if err := validateCRDProps(&subProps, fmt.Sprintf("%s.%s", version.Name, name)); err != nil {
+						if isKnownInvalid {
+							t.Logf("KNOWN INVALID: version %s is invalid: %v", version.Name, err)
+							invalidVersions++
+						} else {
+							t.Errorf("version %s is invalid: %v", version.Name, err)
+						}
+					}
+				}
+			}
+			if isKnownInvalid && invalidVersions == 0 {
+				t.Errorf("CRD %s is in knownInvalidCRDs but passed validation; please remove it from the list", crd.Name)
+			}
+		})
+	}
+}
+
+func validateCRDProps(props *apiextensions.JSONSchemaProps, path string) error {
+	if props.Type == "object" {
+		if len(props.Properties) == 0 && props.AdditionalProperties == nil && (props.XPreserveUnknownFields == nil || !*props.XPreserveUnknownFields) {
+			return fmt.Errorf("object at %s is missing properties, additionalProperties, or x-kubernetes-preserve-unknown-fields", path)
+		}
+	}
+	for name, subProps := range props.Properties {
+		if err := validateCRDProps(&subProps, path+"."+name); err != nil {
+			return err
+		}
+	}
+	if props.Items != nil {
+		if props.Items.Schema != nil {
+			if err := validateCRDProps(props.Items.Schema, path+"[]"); err != nil {
+				return err
+			}
+		}
+		for i := range props.Items.JSONSchemas {
+			if err := validateCRDProps(&props.Items.JSONSchemas[i], fmt.Sprintf("%s[%d]", path, i)); err != nil {
+				return err
+			}
+		}
+	}
+	if props.AdditionalProperties != nil && props.AdditionalProperties.Schema != nil {
+		if err := validateCRDProps(props.AdditionalProperties.Schema, path+"[*]"); err != nil {
+			return err
+		}
+	}
+	for i := range props.AllOf {
+		if err := validateCRDProps(&props.AllOf[i], fmt.Sprintf("%s.allOf[%d]", path, i)); err != nil {
+			return err
+		}
+	}
+	for i := range props.AnyOf {
+		if err := validateCRDProps(&props.AnyOf[i], fmt.Sprintf("%s.anyOf[%d]", path, i)); err != nil {
+			return err
+		}
+	}
+	for i := range props.OneOf {
+		if err := validateCRDProps(&props.OneOf[i], fmt.Sprintf("%s.oneOf[%d]", path, i)); err != nil {
+			return err
+		}
+	}
+	if props.Not != nil {
+		if err := validateCRDProps(props.Not, path+".not"); err != nil {
+			return err
+		}
+	}
+	return nil
 }

@@ -29,8 +29,8 @@ func init() {
 
 func computeFirewallPolicyRuleFuzzer() fuzztesting.KRMFuzzer {
 	f := fuzztesting.NewKRMTypedFuzzer(&pb.FirewallPolicyRule{},
-		ComputeFirewallPolicyRuleSpec_FromProto, ComputeFirewallPolicyRuleSpec_ToProto,
-		ComputeFirewallPolicyRuleStatus_FromProto, ComputeFirewallPolicyRuleStatus_ToProto,
+		ComputeFirewallPolicyRuleSpec_v1beta1_FromProto, ComputeFirewallPolicyRuleSpec_v1beta1_ToProto,
+		ComputeFirewallPolicyRuleStatus_v1beta1_FromProto, ComputeFirewallPolicyRuleStatus_v1beta1_ToProto,
 	)
 
 	f.SpecFields.Insert(".action")
@@ -51,6 +51,9 @@ func computeFirewallPolicyRuleFuzzer() fuzztesting.KRMFuzzer {
 	f.UnimplementedFields.Insert(".target_secure_tags")
 	f.UnimplementedFields.Insert(".tls_inspect")
 	f.UnimplementedFields.Insert(".match.src_secure_tags")
+	f.UnimplementedFields.Insert(".match.src_networks")
+	f.UnimplementedFields.Insert(".match.src_network_type")
+	f.UnimplementedFields.Insert(".match.dest_network_type")
 
 	return f
 }

@@ -10,7 +10,8 @@ tools:
 	GOBIN=`pwd`/bin/ go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.28
 	GOBIN=`pwd`/bin/ go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.2
 	wget -N -O bin/protoc.zip https://github.com/protocolbuffers/protobuf/releases/download/v3.12.4/protoc-3.12.4-linux-x86_64.zip
-	cd bin; rm -rf protoc; mkdir protoc; cd protoc; unzip ../protoc.zip
+	cd bin; rm -rf protoc; mkdir protoc; cd protoc; python3 -m zipfile -e ../protoc.zip .
+	chmod +x bin/protoc/bin/protoc
 
 GOOGLEAPI_VERSION?=$(shell grep https://github.com/googleapis/googleapis git.versions | awk '{print $$2}' )
 .PHONY: sync-repo
@@ -115,13 +116,11 @@ gen-proto-no-fixup:
 		./third_party/googleapis/mockgcp/cloud/bigquery/analyticshub/v1/*.proto \
 		./third_party/googleapis/mockgcp/cloud/bigquery/connection/v1/*.proto \
 		./third_party/googleapis/mockgcp/cloud/bigquery/datatransfer/v1/*.proto \
-		./third_party/googleapis/mockgcp/cloud/billing/v1/*.proto \
 		./third_party/googleapis/mockgcp/cloud/certificatemanager/v1/*.proto \
 		./third_party/googleapis/mockgcp/cloud/tasks/v2/*.proto \
 		./third_party/googleapis/mockgcp/cloud/common/*.proto \
 		./third_party/googleapis/mockgcp/cloud/compute/v1/*.proto \
 		./third_party/googleapis/mockgcp/cloud/documentai/v1/*.proto \
-		./third_party/googleapis/mockgcp/cloud/edgecontainer/v1/*.proto \
 		./third_party/googleapis/mockgcp/cloud/edgenetwork/v1/*.proto \
 		./third_party/googleapis/mockgcp/cloud/filestore/v1/*.proto \
 		./third_party/googleapis/mockgcp/cloud/functions/v1/*.proto \
@@ -133,10 +132,10 @@ gen-proto-no-fixup:
 		./third_party/googleapis/mockgcp/cloud/gkehub/v1beta1/membership.proto \
 		./third_party/googleapis/mockgcp/cloud/gkemulticloud/v1/*.proto \
 		./third_party/googleapis/mockgcp/cloud/kms/v1/*.proto \
-		./third_party/googleapis/mockgcp/cloud/managedkafka/v1/*.proto \
 		./third_party/googleapis/mockgcp/cloud/deploy/v1/*.proto \
-		./third_party/googleapis/mockgcp/cloud/memorystore/v1beta/*.proto \
+		./third_party/googleapis/mockgcp/cloud/memorystore/v1/*.proto \
 		./third_party/googleapis/mockgcp/cloud/orgpolicy/v2/*.proto \
+		./third_party/googleapis/mockgcp/cloud/parametermanager/v1/*.proto \
 		./third_party/googleapis/mockgcp/cloud/privilegedaccessmanager/v1/*.proto \
 		./third_party/googleapis/mockgcp/cloud/pubsublite/v1/*.proto \
 		./third_party/googleapis/mockgcp/cloud/redis/cluster/v1/*.proto \
@@ -157,6 +156,7 @@ gen-proto-no-fixup:
 		./third_party/googleapis/mockgcp/devtools/artifactregistry/v1/*.proto \
 		./third_party/googleapis/mockgcp/devtools/cloudbuild/v1/*.proto	 \
 		./third_party/googleapis/mockgcp/iam/admin/v1/*.proto \
+		./third_party/googleapis/mockgcp/iam/v1/resource_policy_member.proto \
 		./third_party/googleapis/mockgcp/monitoring/dashboard/v1/*.proto \
 		./third_party/googleapis/mockgcp/monitoring/metricsscope/v1/*.proto \
 		./third_party/googleapis/mockgcp/monitoring/v3/*.proto \
@@ -182,7 +182,8 @@ gen-proto-no-fixup:
 		./third_party/googleapis/mockgcp/cloud/modelarmor/v1/service.proto \
 		./third_party/googleapis/mockgcp/cloud/gkebackup/v1/*.proto \
 		./third_party/googleapis/mockgcp/cloud/run/v2/*.proto \
-		./third_party/googleapis/mockgcp/cloud/speech/v2/*.proto
+		./third_party/googleapis/mockgcp/cloud/speech/v2/*.proto \
+		./third_party/googleapis/mockgcp/devtools/sourcerepo/v1/*.proto
 
 
 .PHONY: generate-grpc-for-google-protos
@@ -202,7 +203,6 @@ generate-grpc-for-google-protos:
 		--grpc-gateway_opt logtostderr=true \
 		--grpc-gateway_opt paths=source_relative \
 		--grpc-gateway_opt standalone=true \
-		./third_party/googleapis/google/cloud/billing/budgets/v1beta1/*.proto \
 		./third_party/googleapis/google/cloud/discoveryengine/v1/data_store_service.proto \
 		./third_party/googleapis/google/cloud/discoveryengine/v1/engine_service.proto \
 		./third_party/googleapis/google/bigtable/admin/v2/*.proto \
@@ -210,7 +210,6 @@ generate-grpc-for-google-protos:
 		./third_party/googleapis/google/cloud/aiplatform/v1/model_garden_service.proto \
 		./third_party/googleapis/google/storage/control/v2/*.proto \
 		./third_party/googleapis/google/cloud/batch/v1/*.proto \
-		./third_party/googleapis/google/cloud/edgecontainer/v1/*.proto \
 		./third_party/googleapis/google/cloud/apigateway/v1/apigateway_service.proto \
 		./third_party/googleapis/google/cloud/networksecurity/v1beta1/*.proto \
 		./third_party/googleapis/google/cloud/networkservices/v1/*.proto \
@@ -218,7 +217,6 @@ generate-grpc-for-google-protos:
 		./third_party/googleapis/google/cloud/clouddms/v1/*.proto \
 		./third_party/googleapis/google/cloud/notebooks/v1/*.proto \
 		./third_party/googleapis/google/cloud/recaptchaenterprise/v1/*.proto \
-		./third_party/googleapis/google/firestore/admin/v1/*.proto \
 		./third_party/googleapis/google/iam/v2/*.proto \
 		./third_party/googleapis/google/logging/v2/*.proto \
 		./third_party/googleapis/google/analytics/admin/v1alpha/*.proto

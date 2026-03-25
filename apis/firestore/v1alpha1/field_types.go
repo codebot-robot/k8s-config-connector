@@ -17,6 +17,8 @@ package v1alpha1
 import (
 	"github.com/GoogleCloudPlatform/k8s-config-connector/pkg/apis/k8s/v1alpha1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	v1beta1 "github.com/GoogleCloudPlatform/k8s-config-connector/apis/firestore/v1beta1"
 )
 
 var FirestoreFieldGVK = GroupVersion.WithKind("FirestoreField")
@@ -24,40 +26,16 @@ var FirestoreFieldGVK = GroupVersion.WithKind("FirestoreField")
 // FirestoreFieldSpec defines the desired state of FirestoreField
 // +kcc:spec:proto=google.firestore.admin.v1.Field
 type FirestoreFieldSpec struct {
+	// The FirestoreDatabase containing the collection group for this field.
+	// +required
+	DatabaseRef *v1beta1.FirestoreDatabaseRef `json:"databaseRef"`
+
 	// The FirestoreField name. If not given, the metadata.name will be used.
 	ResourceID *string `json:"resourceID,omitempty"`
 
 	// The collectionGroup of which this field is a part.
 	// +required
 	CollectionGroup *string `json:"collectionGroup,omitempty"`
-
-	// NOTYET:
-	// // Required. A field name of the form:
-	// //  `projects/{project_id}/databases/{database_id}/collectionGroups/{collection_id}/fields/{field_path}`
-	// //
-	// //  A field path can be a simple field name, e.g. `address` or a path to fields
-	// //  within `map_value` , e.g. `address.city`,
-	// //  or a special field path. The only valid special field is `*`, which
-	// //  represents any field.
-	// //
-	// //  Field paths can be quoted using `` ` `` (backtick). The only character that
-	// //  must be escaped within a quoted field path is the backtick character
-	// //  itself, escaped using a backslash. Special characters in field paths that
-	// //  must be quoted include: `*`, `.`,
-	// //  `` ` `` (backtick), `[`, `]`, as well as any ascii symbolic characters.
-	// //
-	// //  Examples:
-	// //  `` `address.city` `` represents a field named `address.city`, not the map
-	// //  key `city` in the field `address`. `` `*` `` represents a field named `*`,
-	// //  not any field.
-	// //
-	// //  A special `Field` contains the default indexing settings for all fields.
-	// //  This field's resource name is:
-	// //  `projects/{project_id}/databases/{database_id}/collectionGroups/__default__/fields/*`
-	// //  Indexes defined on this `Field` will be applied to all fields which do not
-	// //  have their own `Field` index configuration.
-	// // +kcc:proto:field=google.firestore.admin.v1.Field.name
-	// Name *string `json:"name,omitempty"`
 
 	// The index configuration for this field. If unset, field indexing will
 	//  revert to the configuration defined by the `ancestor_field`. To
@@ -66,12 +44,17 @@ type FirestoreFieldSpec struct {
 	// +kcc:proto:field=google.firestore.admin.v1.Field.index_config
 	IndexConfig *Field_IndexConfig `json:"indexConfig,omitempty"`
 
-	// NOTYET: This type ends up with no fields?
-	// // The TTL configuration for this `Field`.
-	// //  Setting or unsetting this will enable or disable the TTL for
-	// //  documents that have this `Field`.
-	// // +kcc:proto:field=google.firestore.admin.v1.Field.ttl_config
-	// TTLConfig *Field_TTLConfig `json:"ttlConfig,omitempty"`
+	// The TTL configuration for this `Field`.
+	TTLConfig *Field_TTLConfig_Spec `json:"ttlConfig,omitempty"`
+}
+
+// The Spec version of the TTL configuration for this `Field`.
+// Note that this field is unusual - its presence indicates that TTL should be
+// enabled, and its absence indicates that TTL should be disabled.
+// We handle it specially.
+type Field_TTLConfig_Spec struct {
+	// Whether to enable TTL for documents based on this field.
+	Enabled *bool `json:"enabled,omitempty"`
 }
 
 // +kcc:proto=google.firestore.admin.v1.Field.IndexConfig
@@ -205,7 +188,8 @@ type FirestoreFieldObservedState struct {
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 // +kubebuilder:resource:categories=gcp,shortName=gcpfirestorefield;gcpfirestorefields
 // +kubebuilder:subresource:status
-// +kubebuilder:metadata:labels="cnrm.cloud.google.com/managed-by-kcc=true";"cnrm.cloud.google.com/system=true"
+// +kubebuilder:metadata:labels="cnrm.cloud.google.com/managed-by-kcc=true"
+// +kubebuilder:metadata:labels="cnrm.cloud.google.com/system=true"
 // +kubebuilder:printcolumn:name="Age",JSONPath=".metadata.creationTimestamp",type="date"
 // +kubebuilder:printcolumn:name="Ready",JSONPath=".status.conditions[?(@.type=='Ready')].status",type="string",description="When 'True', the most recent reconcile of the resource succeeded"
 // +kubebuilder:printcolumn:name="Status",JSONPath=".status.conditions[?(@.type=='Ready')].reason",type="string",description="The reason for the value in 'Ready'"

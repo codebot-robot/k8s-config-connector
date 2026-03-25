@@ -19,15 +19,29 @@ set -o nounset
 set -o pipefail
 
 REPO_ROOT="$(git rev-parse --show-toplevel)"
+source "${REPO_ROOT}/dev/tools/goimports.sh"
 cd ${REPO_ROOT}/dev/tools/controllerbuilder
+
+./generate-proto.sh
 
 go run . generate-types \
   --service google.cloud.compute.v1 \
   --api-version compute.cnrm.cloud.google.com/v1beta1  \
   --resource ComputeFirewallPolicyRule:FirewallPolicyRule \
-  --resource ComputeTargetTcpProxy:TargetTcpProxy
+  --resource ComputeForwardingRule:ForwardingRule \
+  --resource ComputeResourcePolicy:ResourcePolicy \
+  --resource ComputeSecurityPolicy:SecurityPolicy \
+  --resource ComputeSubnetwork:Subnetwork \
+  --resource ComputeTargetTcpProxy:TargetTcpProxy \
+  --resource ComputeTargetHTTPSProxy:TargetHttpsProxy \
+  --resource ComputeNodeTemplate:NodeTemplate
+
+go run . generate-mapper \
+    --multiversion \
+    --service google.cloud.compute.v1 \
+    --api-version compute.cnrm.cloud.google.com/v1beta1
 
 cd ${REPO_ROOT}
 dev/tasks/generate-crds
 
-go run -mod=readonly golang.org/x/tools/cmd/goimports@latest -w  pkg/controller/direct/compute/
+go run -mod=readonly golang.org/x/tools/cmd/goimports@${GOLANG_X_TOOLS_VERSION} -w  pkg/controller/direct/compute/

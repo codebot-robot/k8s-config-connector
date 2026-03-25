@@ -2,12 +2,13 @@ apiVersion: sql.cnrm.cloud.google.com/v1beta1
 kind: SQLInstance
 metadata:
   annotations:
+    cnrm.cloud.google.com/last-changed-cookie: normalized-cookie
     cnrm.cloud.google.com/project-id: ${projectId}
     cnrm.cloud.google.com/unmanaged: spec.settings.edition,spec.settings.edition
   finalizers:
   - cnrm.cloud.google.com/finalizer
   - cnrm.cloud.google.com/deletion-defender
-  generation: 2
+  generation: 1
   name: sqlinstance-${uniqueId}
   namespace: ${projectId}
 spec:
@@ -27,7 +28,7 @@ status:
   firstIpAddress: 10.1.2.3
   instanceType: CLOUD_SQL_INSTANCE
   ipAddress: 10.1.2.3
-  observedGeneration: 2
+  observedGeneration: 1
   publicIpAddress: 10.1.2.3
   selfLink: https://sqladmin.googleapis.com/sql/v1beta4/projects/${projectId}/instances/sqlinstance-${uniqueId}
   serverCaCert:

@@ -50,6 +50,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/rest"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
@@ -82,7 +83,10 @@ func Add(mgr manager.Manager, deps *kontroller.Deps) error {
 	if err != nil {
 		return err
 	}
-	return add(mgr, reconciler)
+	opt := controller.Options{
+		SkipNameValidation: ptr.To(deps.SkipNameValidation),
+	}
+	return add(mgr, reconciler, opt)
 }
 
 // NewReconciler returns a new reconcile.Reconciler.
@@ -108,12 +112,19 @@ func NewReconciler(mgr manager.Manager, provider *tfschema.Provider, smLoader *s
 }
 
 // add adds a new Controller to mgr with r as the reconcile.Reconciler.
-func add(mgr manager.Manager, r *ReconcileIAMPolicy) error {
+func add(mgr manager.Manager, r *ReconcileIAMPolicy, opt controller.Options) error {
+	if opt.MaxConcurrentReconciles == 0 {
+		opt.MaxConcurrentReconciles = k8s.ControllerMaxConcurrentReconciles
+	}
+	if opt.RateLimiter == nil {
+		opt.RateLimiter = ratelimiter.NewRateLimiter()
+	}
+
 	obj := &iamv1beta1.IAMPolicy{}
 	_, err := builder.
 		ControllerManagedBy(mgr).
 		Named(controllerName).
-		WithOptions(controller.Options{MaxConcurrentReconciles: k8s.ControllerMaxConcurrentReconciles, RateLimiter: ratelimiter.NewRateLimiter()}).
+		WithOptions(opt).
 		WatchesRawSource(source.TypedChannel(r.immediateReconcileRequests, &handler.EnqueueRequestForObject{})).
 		For(obj, builder.OnlyMetadata, builder.WithPredicates(predicate.UnderlyingResourceOutOfSyncPredicate{})).
 		Build(r)
@@ -149,7 +160,7 @@ type reconcileContext struct {
 
 // Reconcile checks k8s for the current state of the resource.
 func (r *ReconcileIAMPolicy) Reconcile(ctx context.Context, request reconcile.Request) (result reconcile.Result, err error) {
-	logger.Info("Running reconcile", "resource", request.NamespacedName)
+	logger.V(1).Info("Running reconcile", "resource", request.NamespacedName)
 	startTime := time.Now()
 	ctx, cancel := context.WithTimeout(ctx, k8s.ReconcileDeadline)
 	defer cancel()
@@ -186,8 +197,8 @@ func (r *ReconcileIAMPolicy) Reconcile(ctx context.Context, request reconcile.Re
 	uObj.SetNamespace(policy.GetNamespace())
 	uObj.SetName(policy.GetName())
 	uObj.SetGroupVersionKind(iamv1beta1.IAMPolicyGVK)
-	structuredreporting.ReportReconcileStart(ctx, uObj)
-	defer structuredreporting.ReportReconcileEnd(ctx, uObj, result, err)
+	structuredreporting.ReportReconcileStart(ctx, uObj, k8s.ReconcilerTypeIAMPolicy)
+	defer structuredreporting.ReportReconcileEnd(ctx, uObj, result, err, k8s.ReconcilerTypeIAMPolicy)
 	requeue, err := runCtx.doReconcile(policy)
 	if err != nil {
 		return reconcile.Result{}, err

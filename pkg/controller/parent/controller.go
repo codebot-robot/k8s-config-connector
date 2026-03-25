@@ -73,7 +73,14 @@ type ParentReconciler struct {
 	reconcilers Reconcilers
 }
 
-func Add(mgr manager.Manager, gvk schema.GroupVersionKind, reconcilers *Reconcilers) error {
+func Add(mgr manager.Manager, gvk schema.GroupVersionKind, reconcilers *Reconcilers, opt controller.Options) error {
+	if opt.MaxConcurrentReconciles == 0 {
+		opt.MaxConcurrentReconciles = k8s.ControllerMaxConcurrentReconciles
+	}
+	if opt.RateLimiter == nil {
+		opt.RateLimiter = ratelimiter.NewRateLimiter()
+	}
+
 	controllerName := fmt.Sprintf("%v-parent-controller", strings.ToLower(gvk.Kind))
 	obj := &unstructured.Unstructured{}
 	obj.SetGroupVersionKind(gvk)
@@ -97,7 +104,7 @@ func Add(mgr manager.Manager, gvk schema.GroupVersionKind, reconcilers *Reconcil
 		Named(controllerName).
 		For(obj, builder.OnlyMetadata, builder.WithPredicates(predicates...)).
 		WatchesRawSource(source.TypedChannel(immediateReconcileRequests, &handler.EnqueueRequestForObject{})).
-		WithOptions(controller.Options{MaxConcurrentReconciles: k8s.ControllerMaxConcurrentReconciles, RateLimiter: ratelimiter.NewRateLimiter()}).
+		WithOptions(opt).
 		Build(r)
 	if err != nil {
 		return fmt.Errorf("error creating new parent controller: %w", err)
@@ -108,7 +115,7 @@ func Add(mgr manager.Manager, gvk schema.GroupVersionKind, reconcilers *Reconcil
 func (r *ParentReconciler) Reconcile(ctx context.Context, req reconcile.Request) (reconcile.Result, error) {
 	logger := log.FromContext(ctx)
 
-	logger.Info("parent reconciler starting", "resource", req.NamespacedName)
+	logger.V(1).Info("parent reconciler starting", "resource", req.NamespacedName)
 
 	u := &unstructured.Unstructured{}
 	u.SetGroupVersionKind(r.gvk)
@@ -122,12 +129,12 @@ func (r *ParentReconciler) Reconcile(ctx context.Context, req reconcile.Request)
 	}
 	resourceControllerConfig := resourceconfig.LoadConfig()
 	if !resourceconfig.IsControllerSupported(r.gvk, controllerType) {
-		logger.Info("controller type not supported for this resource", "resource", req.NamespacedName, "type", controllerType)
+		logger.V(1).Info("controller type not supported for this resource", "resource", req.NamespacedName, "type", controllerType)
 		config, err := resourceControllerConfig.GetControllersForGVK(r.gvk)
 		if err != nil {
 			return reconcile.Result{}, fmt.Errorf("error getting controller config found for GroupKind %v", r.gvk.GroupKind())
 		}
-		logger.Info("supported controller types", "resource", req.NamespacedName, "supportedControllers", config.SupportedControllers)
+		logger.V(1).Info("supported controller types", "resource", req.NamespacedName, "supportedControllers", config.SupportedControllers)
 
 		// Try to write a status on the CCC
 		ccc := &corekccv1alpha1.ConfigConnectorContext{}
@@ -153,33 +160,33 @@ func (r *ParentReconciler) Reconcile(ctx context.Context, req reconcile.Request)
 		}
 
 		controllerType = config.DefaultController
-		logger.Info("falling back to default controller type", "resource", req.NamespacedName, "type", controllerType)
+		logger.V(1).Info("falling back to default controller type", "resource", req.NamespacedName, "type", controllerType)
 	}
 
-	logger.Info("routing to controller", "type", controllerType)
+	logger.V(1).Info("routing to controller", "resource", req.NamespacedName, "type", controllerType)
 
 	switch controllerType {
 	case k8s.ReconcilerTypeTerraform:
-		logger.Info("routing to TF reconciler")
+		logger.V(1).Info("routing to TF reconciler")
 		if r.reconcilers.TF == nil {
 			return reconcile.Result{}, fmt.Errorf("TF reconciler is not initialized for resource %v", r.gvk)
 		}
 		return r.reconcilers.TF.Reconcile(ctx, req)
 	case k8s.ReconcilerTypeDCL:
-		logger.Info("routing to DCL reconciler")
+		logger.V(1).Info("routing to DCL reconciler")
 		if r.reconcilers.DCL == nil {
 			return reconcile.Result{}, fmt.Errorf("DCL reconciler is not initialized for resource %v", r.gvk)
 		}
 		return r.reconcilers.DCL.Reconcile(ctx, req)
 	case k8s.ReconcilerTypeDirect:
-		logger.Info("routing to Direct reconciler")
+		logger.V(1).Info("routing to Direct reconciler")
 		if r.reconcilers.Direct == nil {
 			return reconcile.Result{}, fmt.Errorf("direct reconciler is not initialized for resource %v", r.gvk)
 		}
 		return r.reconcilers.Direct.Reconcile(ctx, req)
 	default:
 		if r.reconcilers.Custom != nil && r.reconcilers.Custom.Type == controllerType {
-			logger.Info("routing to custom reconciler", "type", controllerType)
+			logger.V(1).Info("routing to custom reconciler", "type", controllerType)
 			return r.reconcilers.Custom.Reconciler.Reconcile(ctx, req)
 		}
 		return reconcile.Result{}, fmt.Errorf("unknown controller type: %v", controllerType)

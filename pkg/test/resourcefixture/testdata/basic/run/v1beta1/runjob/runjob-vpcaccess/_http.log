@@ -260,7 +260,8 @@ X-Xss-Protection: 0
   "purpose": "PRIVATE",
   "region": "https://www.googleapis.com/compute/v1/projects/${projectId}/regions/us-central1",
   "selfLink": "https://www.googleapis.com/compute/v1/projects/${projectId}/regions/us-central1/subnetworks/${subnetworkID}",
-  "stackType": "IPV4_ONLY"
+  "stackType": "IPV4_ONLY",
+  "state": "READY"
 }
 
 ---
@@ -767,7 +768,7 @@ X-Xss-Protection: 0
   "createTime": "2024-04-01T12:34:56.123456Z",
   "creator": "${creatorID}",
   "etag": "abcdef0123A=",
-  "generation": "1",
+  "generation": "12345678901234",
   "labels": {
     "cnrm-test": "true",
     "managed-by-cnrm": "true"
@@ -882,8 +883,8 @@ X-Xss-Protection: 0
         "serviceAccount": "${projectNumber}-compute@developer.gserviceaccount.com",
         "timeout": "600s",
         "vpcAccess": {
-          "connector": "projects/${projectId}/locations/us-central1/connectors/c1-${uniqueId}",
-          "egress": 1
+          "connector": "projects/${projectId}/locations/us-central1/connectors/c2-${uniqueId}",
+          "egress": 2
         }
       }
     },
@@ -949,8 +950,8 @@ X-Xss-Protection: 0
         "serviceAccount": "${projectNumber}-compute@developer.gserviceaccount.com",
         "timeout": "600s",
         "vpcAccess": {
-          "connector": "projects/${projectId}/locations/us-central1/connectors/c1-${uniqueId}",
-          "egress": "ALL_TRAFFIC"
+          "connector": "projects/${projectId}/locations/us-central1/connectors/c2-${uniqueId}",
+          "egress": "PRIVATE_RANGES_ONLY"
         }
       }
     },
@@ -995,8 +996,8 @@ X-Xss-Protection: 0
         "serviceAccount": "${projectNumber}-compute@developer.gserviceaccount.com",
         "timeout": "600s",
         "vpcAccess": {
-          "connector": "projects/${projectId}/locations/us-central1/connectors/c1-${uniqueId}",
-          "egress": "ALL_TRAFFIC"
+          "connector": "projects/${projectId}/locations/us-central1/connectors/c2-${uniqueId}",
+          "egress": "PRIVATE_RANGES_ONLY"
         }
       }
     },
@@ -1031,7 +1032,7 @@ X-Xss-Protection: 0
   "createTime": "2024-04-01T12:34:56.123456Z",
   "creator": "${creatorID}",
   "etag": "abcdef0123A=",
-  "generation": "1",
+  "generation": "12345678901234",
   "labels": {
     "cnrm-test": "true",
     "managed-by-cnrm": "true"
@@ -1059,8 +1060,8 @@ X-Xss-Protection: 0
       "serviceAccount": "${projectNumber}-compute@developer.gserviceaccount.com",
       "timeout": "600s",
       "vpcAccess": {
-        "connector": "projects/${projectId}/locations/us-central1/connectors/c1-${uniqueId}",
-        "egress": 1
+        "connector": "projects/${projectId}/locations/us-central1/connectors/c2-${uniqueId}",
+        "egress": 2
       }
     }
   },
@@ -1124,8 +1125,8 @@ X-Xss-Protection: 0
         "serviceAccount": "${projectNumber}-compute@developer.gserviceaccount.com",
         "timeout": "600s",
         "vpcAccess": {
-          "connector": "projects/${projectId}/locations/us-central1/connectors/c1-${uniqueId}",
-          "egress": 1
+          "connector": "projects/${projectId}/locations/us-central1/connectors/c2-${uniqueId}",
+          "egress": 2
         }
       }
     },
@@ -1191,8 +1192,8 @@ X-Xss-Protection: 0
         "serviceAccount": "${projectNumber}-compute@developer.gserviceaccount.com",
         "timeout": "600s",
         "vpcAccess": {
-          "connector": "projects/${projectId}/locations/us-central1/connectors/c1-${uniqueId}",
-          "egress": "ALL_TRAFFIC"
+          "connector": "projects/${projectId}/locations/us-central1/connectors/c2-${uniqueId}",
+          "egress": "PRIVATE_RANGES_ONLY"
         }
       }
     },
@@ -1237,8 +1238,8 @@ X-Xss-Protection: 0
         "serviceAccount": "${projectNumber}-compute@developer.gserviceaccount.com",
         "timeout": "600s",
         "vpcAccess": {
-          "connector": "projects/${projectId}/locations/us-central1/connectors/c1-${uniqueId}",
-          "egress": "ALL_TRAFFIC"
+          "connector": "projects/${projectId}/locations/us-central1/connectors/c2-${uniqueId}",
+          "egress": "PRIVATE_RANGES_ONLY"
         }
       }
     },
@@ -1457,7 +1458,8 @@ X-Xss-Protection: 0
   "purpose": "PRIVATE",
   "region": "https://www.googleapis.com/compute/v1/projects/${projectId}/regions/us-central1",
   "selfLink": "https://www.googleapis.com/compute/v1/projects/${projectId}/regions/us-central1/subnetworks/${subnetworkID}",
-  "stackType": "IPV4_ONLY"
+  "stackType": "IPV4_ONLY",
+  "state": "READY"
 }
 
 ---

@@ -18,11 +18,13 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"slices"
 	"time"
 
 	"golang.org/x/oauth2"
 	"k8s.io/client-go/rest"
 	"k8s.io/klog/v2"
+	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 
 	"github.com/GoogleCloudPlatform/k8s-config-connector/pkg/contexts"
@@ -31,6 +33,7 @@ import (
 	"github.com/GoogleCloudPlatform/k8s-config-connector/pkg/controller/kccmanager/nocache"
 	"github.com/GoogleCloudPlatform/k8s-config-connector/pkg/structuredreporting"
 	transport_tpg "github.com/hashicorp/terraform-provider-google-beta/google-beta/transport"
+	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 // PreviewInstance runs KCC but intercepts GCP and Kubernetes API calls.
@@ -42,6 +45,14 @@ type PreviewInstance struct {
 	hookGCP  *interceptingGCPClient
 	hookKube *interceptingKubeClient
 	recorder *Recorder
+
+	// Namespace is the namespace of the cluster to preview
+	// If empty, all namespaces are previewed
+	// Namespace is the namespace of the cluster to preview
+	// If empty, all namespaces are previewed
+	Namespace string
+
+	ObjectTransformers []ObjectTransformer
 }
 
 // PreviewInstanceOptions are the options for creating a PreviewInstance.
@@ -57,6 +68,21 @@ type PreviewInstanceOptions struct {
 	// UpstreamGCPHTTPClient is the http client to use when talking to upstream (real) GCP
 	// (Upstream GCP may be mocked in tests)
 	UpstreamGCPHTTPClient *http.Client
+
+	// UpstreamGCPQPS is the QPS to use when talking to upstream (real) GCP
+	// This limit is per API.
+	UpstreamGCPQPS float64
+
+	// UpstreamGCPBurst is the burst to use when talking to upstream (real) GCP
+	// This limit is per API.
+	UpstreamGCPBurst int
+
+	// Namespace is the namespace of the cluster to preview
+	// If empty, all namespaces are previewed
+	Namespace string
+
+	// ObjectTransformers are the transformers to apply to objects
+	ObjectTransformers []ObjectTransformer
 }
 
 // NewPreviewInstance creates a new PreviewInstance.
@@ -68,17 +94,19 @@ func NewPreviewInstance(recorder *Recorder, options PreviewInstanceOptions) (*Pr
 		upstreamGCPHTTPClient = http.DefaultClient
 	}
 
-	hookKube, err := newInterceptingKubeClient(recorder, upstreamRESTConfig)
+	hookKube, err := newInterceptingKubeClient(recorder, upstreamRESTConfig, options.ObjectTransformers)
 	if err != nil {
 		return nil, err
 	}
 
-	hookGCP := newInterceptingGCPClient(upstreamGCPHTTPClient, authorization)
+	hookGCP := newInterceptingGCPClient(upstreamGCPHTTPClient, authorization, options.UpstreamGCPQPS, options.UpstreamGCPBurst)
 
 	i := &PreviewInstance{}
 	i.hookGCP = hookGCP
 	i.hookKube = hookKube
 	i.recorder = recorder
+	i.Namespace = options.Namespace
+	i.ObjectTransformers = slices.Clone(options.ObjectTransformers)
 
 	return i, nil
 }
@@ -90,6 +118,10 @@ var httpRoundTripperKey httpRoundTripperKeyType
 
 // Start starts the PreviewInstance.
 func (i *PreviewInstance) Start(ctx context.Context) error {
+	log := log.FromContext(ctx)
+	filteredLog := filterLogs(log)
+	ctx = klog.NewContext(ctx, filteredLog)
+
 	grpcUnaryInterceptor := i.hookGCP.GRPCUnaryClientInterceptor()
 	gcpHTTPClient := i.hookGCP.HTTPClient()
 
@@ -120,6 +152,12 @@ func (i *PreviewInstance) Start(ctx context.Context) error {
 	}
 
 	kccConfig := kccmanager.Config{}
+	kccConfig.ManagerOptions.Logger = filteredLog
+	if i.Namespace != "" {
+		kccConfig.ManagerOptions.Cache.DefaultNamespaces = map[string]cache.Config{
+			i.Namespace: {},
+		}
+	}
 	// Prevent manager from binding to a port to serve prometheus metrics
 	// since creating multiple managers for tests will fail if more than
 	// one manager tries to bind to the same port.
@@ -128,18 +166,16 @@ func (i *PreviewInstance) Start(ctx context.Context) error {
 	// creating multiple managers for tests will fail if more than one
 	// manager tries to bind to the same port.
 	kccConfig.ManagerOptions.HealthProbeBindAddress = "0"
+	kccConfig.SkipNameValidation = true
 
 	// Hook kube
 	kccConfig.ManagerOptions.NewCache = i.hookKube.NewCache
 	kccConfig.ManagerOptions.NewClient = i.hookKube.NewClient
-	kccConfig.ManagerOptions.BaseContext = func() context.Context {
-		return ctx
-	}
+
 	kccConfig.ManagerOptions.MapperProvider = i.hookKube.MapperProvider
 
 	// turn off caching (otherwise we get partial object metadata)
 	nocache.OnlyCacheCCAndCCC(&kccConfig.ManagerOptions)
-
 	// Use an empty restConfig as a failsafe against requests "leaking" to real kube-apiserver
 	restConfig := &rest.Config{}
 
@@ -174,7 +210,7 @@ func (i *PreviewInstance) Start(ctx context.Context) error {
 				return
 			case <-ticker.C:
 				if i.recorder.DoneReconciling() {
-					klog.Info("All resources reconciled, stopping manager.")
+					log.V(0).Info("All resources reconciled, stopping manager.")
 					cancel() // Cancel the inner context
 					return
 				}

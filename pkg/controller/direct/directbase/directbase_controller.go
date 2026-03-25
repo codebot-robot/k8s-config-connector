@@ -99,9 +99,10 @@ func NewReconciler(mgr manager.Manager, immediateReconcileRequests chan event.Ge
 		ReconcilerMetrics: metrics.ReconcilerMetrics{
 			ResourceNameLabel: metrics.ResourceNameLabel,
 		},
-		jitterGenerator: deps.JitterGenerator,
-		defaulters:      deps.Defaulters,
-		iamDeps:         deps.IAMAdapterDeps,
+		jitterGenerator:    deps.JitterGenerator,
+		defaulters:         deps.Defaulters,
+		iamDeps:            deps.IAMAdapterDeps,
+		SkipNameValidation: deps.SkipNameValidation,
 	}
 	return &r, nil
 }
@@ -116,7 +117,7 @@ func add(mgr manager.Manager, r *DirectReconciler) error {
 	controllerBuilder := builder.
 		ControllerManagedBy(mgr).
 		Named(r.controllerName).
-		WithOptions(crcontroller.Options{MaxConcurrentReconciles: k8s.ControllerMaxConcurrentReconciles, SkipNameValidation: ptr.To(true), RateLimiter: ratelimiter.NewRateLimiter()}).
+		WithOptions(crcontroller.Options{MaxConcurrentReconciles: k8s.ControllerMaxConcurrentReconciles, SkipNameValidation: ptr.To(r.SkipNameValidation), RateLimiter: ratelimiter.NewRateLimiter()}).
 		WatchesRawSource(
 			source.TypedChannel(r.immediateReconcileRequests, &handler.EnqueueRequestForObject{})).
 		For(obj, builder.OnlyMetadata, builder.WithPredicates(predicateList...))
@@ -161,6 +162,8 @@ type Deps struct {
 
 	// There are Dependencies for Adapters in particular (not the reconcilers)
 	IAMAdapterDeps *IAMAdapterDeps
+
+	SkipNameValidation bool
 }
 
 // TODO(kcc-team): we want to remove these in the future
@@ -193,6 +196,8 @@ type DirectReconciler struct {
 
 	// reconcilePredicate is the predicate which determines if we should be reconciling this object
 	reconcilePredicate predicate.Predicate
+
+	SkipNameValidation bool
 }
 
 type reconcileContext struct {
@@ -218,7 +223,7 @@ func (r *DirectReconciler) Reconcile(ctx context.Context, request reconcile.Requ
 
 	logger := log.FromContext(ctx)
 
-	logger.Info("Running reconcile", "resource", request.NamespacedName)
+	logger.V(1).Info("Running reconcile", "resource", request.NamespacedName)
 	startTime := time.Now()
 	ctx, cancel := context.WithTimeout(ctx, k8s.ReconcileDeadline)
 	defer cancel()
@@ -243,15 +248,15 @@ func (r *DirectReconciler) Reconcile(ctx context.Context, request reconcile.Requ
 		gvk:            r.gvk,
 		NamespacedName: request.NamespacedName,
 	}
-	structuredreporting.ReportReconcileStart(ctx, obj)
-	defer structuredreporting.ReportReconcileEnd(ctx, obj, result, err)
+	structuredreporting.ReportReconcileStart(ctx, obj, k8s.ReconcilerTypeDirect)
+	defer structuredreporting.ReportReconcileEnd(ctx, obj, result, err, k8s.ReconcilerTypeDirect)
 
 	skip, err := resourceactuation.ShouldSkip(obj)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
 	if skip {
-		logger.Info("Skipping reconcile as nothing has changed and 0 reconcile period is set", "resource", request.NamespacedName)
+		logger.V(2).Info("Skipping reconcile as nothing has changed and 0 reconcile period is set", "resource", request.NamespacedName)
 		return reconcile.Result{}, nil
 	}
 
@@ -275,7 +280,7 @@ func (r *DirectReconciler) Reconcile(ctx context.Context, request reconcile.Requ
 	if err != nil {
 		return reconcile.Result{}, err
 	}
-	logger.Info("successfully finished reconcile", "resource", request.NamespacedName, "time to next reconciliation", jitteredPeriod)
+	logger.V(2).Info("successfully finished reconcile", "resource", request.NamespacedName, "time to next reconciliation", jitteredPeriod)
 	return reconcile.Result{RequeueAfter: jitteredPeriod}, nil
 }
 
@@ -292,7 +297,7 @@ func (r *reconcileContext) doReconcile(ctx context.Context, u *unstructured.Unst
 	case v1beta1.Reconciling:
 		logger.V(2).Info("Actuating a resource as actuation mode is \"Reconciling\"", "resource", r.NamespacedName)
 	case v1beta1.Paused:
-		logger.Info("Skipping actuation of resource as actuation mode is \"Paused\"", "resource", r.NamespacedName)
+		logger.V(2).Info("Skipping actuation of resource as actuation mode is \"Paused\"", "resource", r.NamespacedName)
 
 		// add finalizers for deletion defender to make sure we don't delete cloud provider resources when uninstalling
 		if u.GetDeletionTimestamp().IsZero() {
@@ -332,7 +337,11 @@ func (r *reconcileContext) doReconcile(ctx context.Context, u *unstructured.Unst
 		adapter, adapteErr = m.IAMAdapterForObject(ctx, r.Reconciler.Client, u, r.Reconciler.iamDeps)
 	default:
 		// The default case handles any other type that implements the base model interface.
-		adapter, adapteErr = r.Reconciler.model.AdapterForObject(ctx, r.Reconciler.Client, u)
+		op := &AdapterForObjectOperation{
+			Reader: r.Reconciler.Client,
+			Object: u,
+		}
+		adapter, adapteErr = r.Reconciler.model.AdapterForObject(ctx, op)
 	}
 	if adapteErr != nil {
 		if unwrappedErr, ok := lifecyclehandler.CausedByUnresolvableDeps(adapteErr); ok {

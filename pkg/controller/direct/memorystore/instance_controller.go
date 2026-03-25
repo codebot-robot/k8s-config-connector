@@ -19,16 +19,17 @@ import (
 	"fmt"
 	"reflect"
 
-	krm "github.com/GoogleCloudPlatform/k8s-config-connector/apis/memorystore/v1alpha1"
+	krm "github.com/GoogleCloudPlatform/k8s-config-connector/apis/memorystore/v1beta1"
 	refs "github.com/GoogleCloudPlatform/k8s-config-connector/apis/refs/v1beta1"
 	"github.com/GoogleCloudPlatform/k8s-config-connector/pkg/config"
 	"github.com/GoogleCloudPlatform/k8s-config-connector/pkg/controller/direct"
 	"github.com/GoogleCloudPlatform/k8s-config-connector/pkg/controller/direct/directbase"
 	"github.com/GoogleCloudPlatform/k8s-config-connector/pkg/controller/direct/registry"
+	"github.com/GoogleCloudPlatform/k8s-config-connector/pkg/structuredreporting"
 
-	gcp "cloud.google.com/go/memorystore/apiv1beta"
+	gcp "cloud.google.com/go/memorystore/apiv1"
 
-	memorystorepb "cloud.google.com/go/memorystore/apiv1beta/memorystorepb"
+	memorystorepb "cloud.google.com/go/memorystore/apiv1/memorystorepb"
 	"google.golang.org/api/option"
 	"google.golang.org/protobuf/types/known/fieldmaskpb"
 
@@ -65,7 +66,9 @@ func (m *modelInstance) client(ctx context.Context) (*gcp.Client, error) {
 	return gcpClient, err
 }
 
-func (m *modelInstance) AdapterForObject(ctx context.Context, reader client.Reader, u *unstructured.Unstructured) (directbase.Adapter, error) {
+func (m *modelInstance) AdapterForObject(ctx context.Context, op *directbase.AdapterForObjectOperation) (directbase.Adapter, error) {
+	u := op.GetUnstructured()
+	reader := op.Reader
 	obj := &krm.MemorystoreInstance{}
 	if err := runtime.DefaultUnstructuredConverter.FromUnstructured(u.Object, &obj); err != nil {
 		return nil, fmt.Errorf("error converting to %T: %w", obj, err)
@@ -98,7 +101,7 @@ func resolveReferences(ctx context.Context, reader client.Reader, obj *krm.Memor
 			if connection.PscAutoConnection != nil {
 				autoConnection := connection.PscAutoConnection
 				if autoConnection.NetworkRef != nil {
-					if err := autoConnection.NetworkRef.Normalize(ctx, reader, obj); err != nil {
+					if err := autoConnection.NetworkRef.Normalize(ctx, reader, obj.Namespace); err != nil {
 						return err
 					}
 				}
@@ -108,17 +111,17 @@ func resolveReferences(ctx context.Context, reader client.Reader, obj *krm.Memor
 					}
 				}
 			}
-			if connection.PscConnection != nil {
-				userConnection := connection.PscConnection
-				if userConnection.NetworkRef != nil {
-					if err := userConnection.NetworkRef.Normalize(ctx, reader, obj); err != nil {
-						return err
-					}
-				}
-				if err := refs.ResolveComputeServiceAttachment(ctx, reader, obj.GetNamespace(), userConnection.ServiceAttachmentRef); err != nil {
-					return err
-				}
-			}
+			// if connection.PscConnection != nil {
+			// 	userConnection := connection.PscConnection
+			// 	if userConnection.NetworkRef != nil {
+			// 		if err := userConnection.NetworkRef.Normalize(ctx, reader, obj.Namespace); err != nil {
+			// 			return err
+			// 		}
+			// 	}
+			// 	if err := refs.ResolveComputeServiceAttachment(ctx, reader, obj.GetNamespace(), userConnection.ServiceAttachmentRef); err != nil {
+			// 		return err
+			// 	}
+			// }
 		}
 	}
 	return nil
@@ -217,34 +220,45 @@ func (a *InstanceAdapter) Update(ctx context.Context, updateOp *directbase.Updat
 		desiredPb.PersistenceConfig.RdbConfig = nil
 	}
 
+	report := &structuredreporting.Diff{Object: updateOp.GetUnstructured()}
+
 	var paths []string
 
 	// If replica count is unset, the field become unmanaged.
 	if a.desired.Spec.ReplicaCount != nil && !reflect.DeepEqual(desiredPb.ReplicaCount, a.actual.ReplicaCount) {
+		report.AddField("replica_count", a.actual.ReplicaCount, desiredPb.ReplicaCount)
 		paths = append(paths, "replica_count")
 	}
 	if a.desired.Spec.ShardCount != nil && !reflect.DeepEqual(desiredPb.ShardCount, a.actual.ShardCount) {
+		report.AddField("shard_count", a.actual.ShardCount, desiredPb.ShardCount)
 		paths = append(paths, "shard_count")
 	}
 	if a.desired.Spec.DeletionProtectionEnabled != nil && !reflect.DeepEqual(desiredPb.DeletionProtectionEnabled, a.actual.DeletionProtectionEnabled) {
+		report.AddField("deletion_protection_enabled", a.actual.DeletionProtectionEnabled, desiredPb.DeletionProtectionEnabled)
 		paths = append(paths, "deletion_protection_enabled")
 	}
 	if a.desired.Spec.PersistenceConfig != nil && !reflect.DeepEqual(desiredPb.PersistenceConfig, a.actual.PersistenceConfig) {
+		report.AddField("persistence_config", a.actual.PersistenceConfig, desiredPb.PersistenceConfig)
 		paths = append(paths, "persistence_config")
 	}
 	if a.desired.Spec.EngineConfigs != nil && !reflect.DeepEqual(desiredPb.EngineConfigs, a.actual.EngineConfigs) {
+		report.AddField("engine_configs", a.actual.EngineConfigs, desiredPb.EngineConfigs)
 		paths = append(paths, "engine_configs")
 	}
 	if a.desired.Spec.Endpoints != nil && !reflect.DeepEqual(desiredPb.Endpoints, a.actual.Endpoints) {
+		report.AddField("endpoints", a.actual.Endpoints, desiredPb.Endpoints)
 		paths = append(paths, "endpoints")
 	}
 	if a.desired.Spec.Labels != nil && !reflect.DeepEqual(desiredPb.Labels, a.actual.Labels) {
+		report.AddField("labels", a.actual.Labels, desiredPb.Labels)
 		paths = append(paths, "labels")
 	}
 	if a.desired.Spec.EngineVersion != nil && !reflect.DeepEqual(desiredPb.EngineVersion, a.actual.EngineVersion) {
+		report.AddField("engine_version", a.actual.EngineVersion, desiredPb.EngineVersion)
 		paths = append(paths, "engine_version")
 	}
 	if a.desired.Spec.NodeType != nil && !reflect.DeepEqual(desiredPb.NodeType, a.actual.NodeType) {
+		report.AddField("node_type", a.actual.NodeType, desiredPb.NodeType)
 		paths = append(paths, "node_type")
 	}
 
@@ -252,6 +266,7 @@ func (a *InstanceAdapter) Update(ctx context.Context, updateOp *directbase.Updat
 	if len(paths) == 0 {
 		log.V(2).Info("no field needs update", "name", a.id)
 	} else {
+		structuredreporting.ReportDiff(ctx, report)
 		log.V(2).Info("fields need update", "name", a.id, "paths", paths)
 		for _, path := range paths {
 			updateMask := &fieldmaskpb.FieldMask{

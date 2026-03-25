@@ -137,6 +137,7 @@ func newReconciler(mgr ctrl.Manager, opt *ReconcilerOptions) (*Reconciler, error
 		declarative.WithObjectTransform(r.handleConfigConnectorLifecycle()),
 		declarative.WithObjectTransform(r.installV1Beta1CRDsOnly()),
 		declarative.WithObjectTransform(r.applyCustomizations()),
+		declarative.WithObjectTransform(r.transformForExperiments()),
 		declarative.WithStatus(&declarative.StatusBuilder{
 			PreflightImpl: preflight,
 		}),
@@ -194,10 +195,11 @@ func (r *Reconciler) handleReconcileFailed(ctx context.Context, nn types.Namespa
 	}
 	msg := fmt.Errorf("error during reconciliation: %w", reconcileErr).Error()
 	r.recordEvent(cc, corev1.EventTypeWarning, k8s.UpdateFailed, msg)
-	cc.SetCommonStatus(v1alpha1.CommonStatus{
-		Healthy: false,
-		Errors:  []string{msg},
-	})
+	status := cc.GetCommonStatus()
+	status.Healthy = false
+	status.Errors = []string{msg}
+	status.ObservedGeneration = cc.Generation
+	cc.SetCommonStatus(status)
 	return r.updateConfigConnectorStatus(ctx, cc)
 }
 
@@ -211,10 +213,11 @@ func (r *Reconciler) handleReconcileSucceeded(ctx context.Context, nn types.Name
 		return fmt.Errorf("error getting ConfigConnector object %v: %w", nn.Name, err)
 	}
 	r.recordEvent(cc, corev1.EventTypeNormal, k8s.UpToDate, k8s.UpToDateMessage)
-	cc.SetCommonStatus(v1alpha1.CommonStatus{
-		Healthy: true,
-		Errors:  []string{},
-	})
+	status := cc.GetCommonStatus()
+	status.Healthy = true
+	status.Errors = []string{}
+	status.ObservedGeneration = cc.Generation
+	cc.SetCommonStatus(status)
 	return r.updateConfigConnectorStatus(ctx, cc)
 }
 
@@ -662,9 +665,61 @@ func (r *Reconciler) applyControllerResourceCR(ctx context.Context, cr *customiz
 		r.log.Info(msg)
 		return r.handleApplyControllerResourceCRFailed(ctx, cr, msg)
 	}
+	if cr.Spec.VerticalPodAutoscalerMode != nil && *cr.Spec.VerticalPodAutoscalerMode == customizev1beta1.VPAModeEnabled {
+		switch cr.Name {
+		case "cnrm-controller-manager", "cnrm-deletiondefender", "cnrm-unmanaged-detector":
+			sts := &appsv1.StatefulSet{}
+			sts.Namespace = k8s.CNRMSystemNamespace
+			sts.Name = cr.Name
+			if err := controllers.EnsureVPAForStatefulSet(ctx, r.client, sts, *cr.Spec.VerticalPodAutoscalerMode); err != nil {
+				return r.handleApplyControllerResourceCRFailed(ctx, cr, fmt.Sprintf("failed to ensure VPA for StatefulSet %s: %v", cr.Name, err))
+			}
+		case "cnrm-webhook-manager", "cnrm-resource-stats-recorder":
+			deployment := &appsv1.Deployment{}
+			deployment.Namespace = k8s.CNRMSystemNamespace
+			deployment.Name = cr.Name
+			if err := controllers.EnsureVPAForDeployment(ctx, r.client, deployment, *cr.Spec.VerticalPodAutoscalerMode); err != nil {
+				return r.handleApplyControllerResourceCRFailed(ctx, cr, fmt.Sprintf("failed to ensure VPA for Deployment %s: %v", cr.Name, err))
+			}
+		default:
+			r.log.Info("unrecognized controller resource name for VPA configuration", "name", cr.Name)
+		}
+
+		// If VPA is enabled, we try to get the recommendations and use them as the container resource customization.
+		recommendations, err := controllers.GetVPARecommendations(ctx, r.client, k8s.CNRMSystemNamespace, cr.Name)
+		if err != nil {
+			r.log.Error(err, "failed to get VPA recommendations", "Name", cr.Name)
+			// We don't fail the reconciliation here, just log the error and proceed with existing containers (which should be empty if VPA is enabled, but just in case).
+			// Actually, if VPA is enabled, cr.Spec.Containers must be empty per validation rule.
+			// So if we fail to get recommendations, we might end up applying nothing, which is fine (no customization).
+		} else if len(recommendations) > 0 {
+			// Construct ContainerResourceSpec from recommendations
+			var vpaContainers []customizev1beta1.ContainerResourceSpec
+			for containerName, resources := range recommendations {
+				vpaContainers = append(vpaContainers, customizev1beta1.ContainerResourceSpec{
+					Name: containerName,
+					Resources: customizev1beta1.ResourceRequirements{
+						Limits:   resources.Limits,
+						Requests: resources.Requests,
+					},
+				})
+			}
+			// Use VPA recommendations as the source of truth for customization
+			if err := controllers.ApplyContainerResourceCustomization(false, m, cr.Name, controllerGVK, vpaContainers, cr.Spec.Replicas); err != nil {
+				r.log.Error(err, "failed to apply VPA customization", "Name", cr.Name)
+				return r.handleApplyControllerResourceCRFailed(ctx, cr, fmt.Sprintf("failed to apply VPA customization %s: %v", cr.Name, err))
+			}
+			return r.handleApplyControllerResourceCRSucceeded(ctx, cr)
+		}
+	}
 	if err := controllers.ApplyContainerResourceCustomization(false, m, cr.Name, controllerGVK, cr.Spec.Containers, cr.Spec.Replicas); err != nil {
 		r.log.Error(err, "failed to apply customization", "Name", cr.Name)
 		return r.handleApplyControllerResourceCRFailed(ctx, cr, fmt.Sprintf("failed to apply customization %s: %v", cr.Name, err))
+	}
+	// Apply metadata host customization if specified
+	if err := controllers.ApplyMetadataHost(m, cr.Name, controllerGVK, cr.Spec.MetadataHost); err != nil {
+		r.log.Error(err, "failed to apply metadata host", "Name", cr.Name)
+		return r.handleApplyControllerResourceCRFailed(ctx, cr, fmt.Sprintf("failed to apply metadata host %s: %v", cr.Name, err))
 	}
 	return r.handleApplyControllerResourceCRSucceeded(ctx, cr)
 }
