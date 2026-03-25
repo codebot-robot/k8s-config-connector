@@ -469,6 +469,10 @@ func resolveForwardingRuleRefs(ctx context.Context, reader client.Reader, obj *k
 
 	// Get target, target is optional
 	if obj.Spec.Target != nil {
+		if obj.Spec.Target.MemorystoreInstanceServiceAttachmentRef != nil && obj.Spec.Target.ServiceAttachmentRef != nil {
+			return fmt.Errorf("cannot specify both memorystoreInstanceServiceAttachmentRef and serviceAttachmentRef in target")
+		}
+
 		// Get target MemorystoreInstanceServiceAttachmentRef
 		if obj.Spec.Target.MemorystoreInstanceServiceAttachmentRef != nil {
 			serviceAttachmentExternal, err := obj.Spec.Target.MemorystoreInstanceServiceAttachmentRef.NormalizedExternal(ctx, reader, obj.GetNamespace())

@@ -76,12 +76,39 @@ type Endpoint_ConnectionDetail struct {
 
 // +kcc:proto=google.cloud.memorystore.v1.Instance.PscConnection
 type PscConnection struct {
-	// The PSC connection id.
+	// Required. The PSC connection id of the forwarding rule connected to the
+	// service attachment.
+	// +kcc:proto:field=google.cloud.memorystore.v1.Instance.PscConnection.psc_connection_id
+	// +required
+	PscConnectionID *string `json:"pscConnectionID"`
+
+	// Required. The IP allocated on the consumer network for the PSC forwarding
+	// rule.
+	// +kcc:proto:field=google.cloud.memorystore.v1.Instance.PscConnection.ip_address
+	// +required
+	IpAddress *string `json:"ipAddress"`
+
+	// Required. The URI of the consumer side forwarding rule.
 	// +kcc:proto:field=google.cloud.memorystore.v1.Instance.PscConnection.forwarding_rule
-	ForwardingRuleRef *computev1beta1.ForwardingRuleRef `json:"forwardingRuleRef,omitempty"`
+	// +required
+	ForwardingRuleRef *computev1beta1.ForwardingRuleRef `json:"forwardingRuleRef"`
+
+	// Required. The consumer network where the IP address resides, in the form of
+	// projects/{project_id}/global/networks/{network_id}.
+	// +kcc:proto:field=google.cloud.memorystore.v1.Instance.PscConnection.network
+	// +required
+	NetworkRef *computev1beta1.ComputeNetworkRef `json:"networkRef"`
+
+	// Required. The service attachment which is the target of the PSC connection, in
+	// the form of projects/{project-id}/regions/{region}/serviceAttachments/{service-attachment-id}.
+	// +kcc:proto:field=google.cloud.memorystore.v1.Instance.PscConnection.service_attachment
+	// +required
+	ServiceAttachmentRef *refsv1beta1.ComputeServiceAttachmentRef `json:"serviceAttachmentRef"`
+
 	// Optional. The port number of the PSC connection.
 	//  Port will only be set for Primary/Reader or Discovery endpoint.
-	// +kcc:proto:field=google.cloud.memorystore.v1.PscConnection.port
+	// +kcc:proto:field=google.cloud.memorystore.v1.Instance.PscConnection.port
+	// +optional
 	Port *int32 `json:"port,omitempty"`
 }
 
@@ -90,6 +117,7 @@ type EndpointObservedState struct {
 	// Optional. A group of PSC connections. They are created in the same VPC
 	//  network, one for each service attachment in the cluster.
 	// +kcc:proto:field=google.cloud.memorystore.v1.Instance.InstanceEndpoint.connections
+	// +optional
 	Connections []Endpoint_ConnectionDetailObservedState `json:"connections,omitempty"`
 }
 
@@ -97,14 +125,21 @@ type EndpointObservedState struct {
 type Endpoint_ConnectionDetailObservedState struct {
 	// Detailed information of a PSC connection that is created through
 	//  service connectivity automation.
+	// +kcc:proto:field=google.cloud.memorystore.v1.Instance.ConnectionDetail.psc_auto_connection
+	// +optional
+	PscAutoConnection *PscAutoConnectionObservedState `json:"pscAutoConnection,omitempty"`
+
+	// Detailed information of a PSC connection that is created by the user.
 	// +kcc:proto:field=google.cloud.memorystore.v1.Instance.ConnectionDetail.psc_connection
+	// +optional
 	PscConnection *PscConnectionObservedState `json:"pscConnection,omitempty"`
 }
 
 // +kcc:observedstate:proto=google.cloud.memorystore.v1.Instance.PscConnection
 type PscConnectionObservedState struct {
 	// Output only. The consumer project_id where the forwarding rule is created from.
-	// +kcc:proto:field=google.cloud.memorystore.v1.PscConnection.project_id
+	// +kcc:proto:field=google.cloud.memorystore.v1.Instance.PscConnection.project_id
+	// +optional
 	ProjectID *string `json:"projectID,omitempty"`
 
 	// Output only. The status of the PSC connection: whether a connection exists
@@ -112,12 +147,64 @@ type PscConnectionObservedState struct {
 	//  periodically. Please use Private Service Connect APIs for the latest
 	//  status. For valid values,
 	//  see https://docs.cloud.google.com/memorystore/docs/valkey/reference/rest/v1/projects.locations.instances#pscconnectionstatus
-	// +kcc:proto:field=google.cloud.memorystore.v1.PscAutoConnection.psc_connection_status
+	// +kcc:proto:field=google.cloud.memorystore.v1.Instance.PscConnection.psc_connection_status
+	// +optional
 	PscConnectionStatus *string `json:"pscConnectionStatus,omitempty"`
 
 	// Output only. Type of the PSC connection. For valid values,
 	//  see https://docs.cloud.google.com/memorystore/docs/valkey/reference/rest/v1/projects.locations.instances#connectiontype
-	// +kcc:proto:field=google.cloud.memorystore.v1.PscAutoConnection.connection_type
+	// +kcc:proto:field=google.cloud.memorystore.v1.Instance.PscConnection.connection_type
+	// +optional
+	ConnectionType *string `json:"connectionType,omitempty"`
+}
+
+// +kcc:observedstate:proto=google.cloud.memorystore.v1.Instance.PscAutoConnection
+type PscAutoConnectionObservedState struct {
+	// Output only. The PSC connection id of the forwarding rule connected to the
+	// service attachment.
+	// +kcc:proto:field=google.cloud.memorystore.v1.Instance.PscAutoConnection.psc_connection_id
+	// +optional
+	PscConnectionID *string `json:"pscConnectionID,omitempty"`
+
+	// Output only. The IP allocated on the consumer network for the PSC
+	// forwarding rule.
+	// +kcc:proto:field=google.cloud.memorystore.v1.Instance.PscAutoConnection.ip_address
+	// +optional
+	IpAddress *string `json:"ipAddress,omitempty"`
+
+	// Output only. The URI of the consumer side forwarding rule.
+	// +kcc:proto:field=google.cloud.memorystore.v1.Instance.PscAutoConnection.forwarding_rule
+	// +optional
+	ForwardingRule *string `json:"forwardingRule,omitempty"`
+
+	// Output only. The consumer project_id where the forwarding rule is created from.
+	// +kcc:proto:field=google.cloud.memorystore.v1.Instance.PscAutoConnection.project_id
+	// +optional
+	ProjectID *string `json:"projectID,omitempty"`
+
+	// Output only. The consumer network where the IP address resides, in the form of
+	// projects/{project_id}/global/networks/{network_id}.
+	// +kcc:proto:field=google.cloud.memorystore.v1.Instance.PscAutoConnection.network
+	// +optional
+	Network *string `json:"network,omitempty"`
+
+	// Output only. The service attachment which is the target of the PSC connection, in
+	// the form of projects/{project-id}/regions/{region}/serviceAttachments/{service-attachment-id}.
+	// +kcc:proto:field=google.cloud.memorystore.v1.Instance.PscAutoConnection.service_attachment
+	// +optional
+	ServiceAttachment *string `json:"serviceAttachment,omitempty"`
+
+	// Output only. The status of the PSC connection: whether a connection exists
+	//  and ACTIVE or it no longer exists. Please note that this value is updated
+	//  periodically. Please use Private Service Connect APIs for the latest
+	//  status.
+	// +kcc:proto:field=google.cloud.memorystore.v1.Instance.PscAutoConnection.psc_connection_status
+	// +optional
+	PscConnectionStatus *string `json:"pscConnectionStatus,omitempty"`
+
+	// Output only. Type of the PSC connection.
+	// +kcc:proto:field=google.cloud.memorystore.v1.Instance.PscAutoConnection.connection_type
+	// +optional
 	ConnectionType *string `json:"connectionType,omitempty"`
 }
 

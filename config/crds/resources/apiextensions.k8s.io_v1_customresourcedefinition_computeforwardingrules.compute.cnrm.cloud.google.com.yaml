@@ -479,42 +479,20 @@ spec:
                   memorystoreInstanceServiceAttachmentRef:
                     description: MemorystoreInstanceServiceAttachmentRef defines the
                       resource reference to the GCP identifier for the ServiceAttachment
-                      managed by the MemorystoreInstance pointed by the MemorystoreInstanceRef.
+                      managed by the MemorystoreInstance.
                     properties:
-                      memorystoreInstanceRef:
+                      name:
                         description: The name of a MemorystoreInstance resource.
-                        oneOf:
-                        - not:
-                            required:
-                            - external
-                          required:
-                          - name
-                        - not:
-                            anyOf:
-                            - required:
-                              - name
-                            - required:
-                              - namespace
-                          required:
-                          - external
-                        properties:
-                          external:
-                            description: A reference to an externally managed MemorystoreInstance
-                              resource. Should be in the format "projects/{{projectID}}/locations/{{location}}/instances/{{instanceID}}".
-                            type: string
-                          name:
-                            description: The name of a MemorystoreInstance resource.
-                            type: string
-                          namespace:
-                            description: The namespace of a MemorystoreInstance resource.
-                            type: string
-                        type: object
+                        type: string
+                      namespace:
+                        description: The namespace of a MemorystoreInstance resource.
+                        type: string
                       pscAttachmentDetailsIndex:
                         description: The index of the PSC attachment details.
                         type: integer
                       serviceAttachmentExternal:
                         description: A reference to a ServiceAttachment managed by
-                          aMemorystoreInstance resource.
+                          a MemorystoreInstance resource.
                         type: string
                     type: object
                   serviceAttachmentRef:

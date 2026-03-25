@@ -232,7 +232,7 @@ func ComputeForwardingRuleSpec_Target_ToProto(mapCtx *direct.MapContext, in *krm
 	}
 	if oneof := in.MemorystoreInstanceServiceAttachmentRef; oneof != nil {
 		if oneof.ServiceAttachmentExternal == "" {
-			mapCtx.Errorf("reference %s was not pre-resolved", oneof.MemorystoreInstanceRef.Name)
+			mapCtx.Errorf("reference %s was not pre-resolved", oneof.Name)
 		}
 		out = direct.LazyPtr(oneof.ServiceAttachmentExternal)
 	}
