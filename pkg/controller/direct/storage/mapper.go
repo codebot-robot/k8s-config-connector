@@ -48,11 +48,11 @@ func StorageBucketSpec_ToProto(mapCtx *direct.MapContext, in *krm.StorageBucketS
 	if in.IPFilter != nil {
 		out.IpFilter = &gcp.BucketIpFilter{
 			Mode:                       direct.ValueOf(in.IPFilter.Mode),
-			AllowCrossOrgVPCs:          direct.ValueOf(in.IPFilter.AllowCrossOrgVPCs),
+			AllowCrossOrgVpcs:          direct.ValueOf(in.IPFilter.AllowCrossOrgVPCs),
 			AllowAllServiceAgentAccess: direct.ValueOf(in.IPFilter.AllowAllServiceAgentAccess),
 		}
 		if in.IPFilter.AllowCrossOrgVPCs != nil {
-			out.IpFilter.ForceSendFields = append(out.IpFilter.ForceSendFields, "AllowCrossOrgVPCs")
+			out.IpFilter.ForceSendFields = append(out.IpFilter.ForceSendFields, "AllowCrossOrgVpcs")
 		}
 		if in.IPFilter.AllowAllServiceAgentAccess != nil {
 			out.IpFilter.ForceSendFields = append(out.IpFilter.ForceSendFields, "AllowAllServiceAgentAccess")
@@ -203,7 +203,7 @@ func StorageBucketSpec_FromProto(mapCtx *direct.MapContext, in *gcp.Bucket) *krm
 	if in.IpFilter != nil {
 		out.IPFilter = &krm.BucketIPFilter{
 			Mode:                       direct.LazyPtr(in.IpFilter.Mode),
-			AllowCrossOrgVPCs:          direct.LazyPtr(in.IpFilter.AllowCrossOrgVPCs),
+			AllowCrossOrgVPCs:          direct.LazyPtr(in.IpFilter.AllowCrossOrgVpcs),
 			AllowAllServiceAgentAccess: direct.LazyPtr(in.IpFilter.AllowAllServiceAgentAccess),
 		}
 		if in.IpFilter.PublicNetworkSource != nil {
