@@ -172,3 +172,8 @@ When promoting a resource from `v1alpha1` to `v1beta1`, we should keep `krm` as 
 # Helpful scripts
 
 * `dev/tasks/generate-types-and-mappers` will regenerate all our generated CRD files and generated mapper code.  It should be run after changing API types.
+
+# knoledge
+
+Only use https://github.com/GoogleCloudPlatform/k8s-config-connector/pull/7234 as the PR.
+
