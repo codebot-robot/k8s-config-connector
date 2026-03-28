@@ -52,3 +52,7 @@ RUN go install sigs.k8s.io/controller-runtime/tools/setup-envtest@release-0.22 \
 # (Optional) Export KUBEBUILDER_ASSETS so it's available for 'go test' automatically.
 # The path below is the default location setup-envtest extracts the binaries to.
 ENV KUBEBUILDER_ASSETS=/root/.local/share/kubebuilder-envtest/k8s/1.35.0-linux-amd64
+
+# Force PR_NUMBER for the sandbox
+ENV PR_NUMBER=7234
+

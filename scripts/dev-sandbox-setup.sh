@@ -17,6 +17,8 @@ set -o errexit
 set -o nounset
 set -o pipefail
 
+export PR_NUMBER=7234
+
 # Install build-essential and basic tools
 sudo apt-get update
 sudo apt-get install -y build-essential curl jq apt-transport-https ca-certificates gnupg

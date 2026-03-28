@@ -12,5 +12,8 @@
 			]
 		}
 	},
-	"remoteUser": "root"
+	"remoteUser": "root",
+	"containerEnv": {
+		"PR_NUMBER": "7234"
+	}
 }
