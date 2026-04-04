@@ -32,7 +32,7 @@ def get_crd_resources(crds_dir="config/crds/resources"):
         if not filename.endswith(".yaml"):
             continue
         filepath = os.path.join(crds_dir, filename)
-        with open(filepath, 'r') as f:
+        with open(filepath, 'r', encoding='utf-8') as f:
             try:
                 for doc in yaml.safe_load_all(f):
                     if doc and doc.get("kind") == "CustomResourceDefinition":

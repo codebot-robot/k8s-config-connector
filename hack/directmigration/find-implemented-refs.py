@@ -22,13 +22,13 @@ from collections import defaultdict
 def find_refs(schema, path=""):
     refs = set()
     if isinstance(schema, dict):
-        if 'properties' in schema:
-            for prop, prop_schema in schema['properties'].items():
-                if prop.endswith("Ref"):
-                    refs.add(prop)
-                else:
-                    refs.update(find_refs(prop_schema, path + "." + prop))
-        elif 'items' in schema:
+        properties = schema.get('properties') or {}
+        for prop, prop_schema in properties.items():
+            if prop.endswith("Ref") or prop.endswith("Refs"):
+                refs.add(prop)
+            else:
+                refs.update(find_refs(prop_schema, path + "." + prop))
+        if 'items' in schema:
             refs.update(find_refs(schema['items'], path + "[]"))
     return refs
 
@@ -39,7 +39,7 @@ def get_expected_refs():
         if not filename.endswith(".yaml"):
             continue
         filepath = os.path.join(crds_dir, filename)
-        with open(filepath, 'r') as f:
+        with open(filepath, 'r', encoding='utf-8') as f:
             try:
                 for doc in yaml.safe_load_all(f):
                     if doc and doc.get("kind") == "CustomResourceDefinition":

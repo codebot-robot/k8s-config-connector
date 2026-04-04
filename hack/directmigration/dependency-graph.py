@@ -21,13 +21,13 @@ from collections import defaultdict
 def find_refs(schema, path=""):
     refs = set()
     if isinstance(schema, dict):
-        if 'properties' in schema:
-            for prop, prop_schema in schema['properties'].items():
-                if prop.endswith("Ref"):
-                    refs.add(prop)
-                else:
-                    refs.update(find_refs(prop_schema, path + "." + prop))
-        elif 'items' in schema:
+        properties = schema.get('properties') or {}
+        for prop, prop_schema in properties.items():
+            if prop.endswith("Ref") or prop.endswith("Refs"):
+                refs.add(prop)
+            else:
+                refs.update(find_refs(prop_schema, path + "." + prop))
+        if 'items' in schema:
             refs.update(find_refs(schema['items'], path + "[]"))
     return refs
 
@@ -52,7 +52,7 @@ def main():
         if not filename.endswith(".yaml"):
             continue
         filepath = os.path.join(crds_dir, filename)
-        with open(filepath, 'r') as f:
+        with open(filepath, 'r', encoding='utf-8') as f:
             try:
                 for doc in yaml.safe_load_all(f):
                     if doc and doc.get("kind") == "CustomResourceDefinition":
@@ -78,7 +78,10 @@ def main():
                     if ref == "externalRef": # 'external' is a common inner field of refs, not a separate reference type
                         continue
                     
-                    ref_name = ref[:-3] # remove 'Ref' suffix
+                    if ref.endswith("Refs"):
+                        ref_name = ref[:-4]
+                    else:
+                        ref_name = ref[:-3] # remove 'Ref' suffix
                     matched_kind = None
                     group_prefix = group.split('.')[0]
                     
@@ -88,8 +91,8 @@ def main():
                             break
                     
                     if not matched_kind:
-                        if "project" in ref_name.lower(): matched_kind = "Project"
-                        elif "folder" in ref_name.lower(): matched_kind = "Folder"
+                        if ref_name.lower() == "project": matched_kind = "Project"
+                        elif ref_name.lower() == "folder": matched_kind = "Folder"
                         elif "organization" in ref_name.lower(): matched_kind = "Organization"
                         elif "billingaccount" in ref_name.lower(): matched_kind = "BillingAccount"
                         elif "network" in ref_name.lower(): matched_kind = "ComputeNetwork"

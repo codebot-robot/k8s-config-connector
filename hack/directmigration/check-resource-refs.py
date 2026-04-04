@@ -18,18 +18,21 @@ import re
 import yaml
 import sys
 
+CRDS_DIR = "config/crds/resources"
+SERVICEMAPPINGS_DIR = "config/servicemappings"
+
 def find_refs(schema, path="spec"):
     # Returns a list of (path, field_name)
     refs = []
     if isinstance(schema, dict):
-        if 'properties' in schema:
-            for prop, prop_schema in schema['properties'].items():
-                current_path = f"{path}.{prop}" if path else prop
-                if prop.endswith("Ref"):
-                    refs.append((current_path, prop))
-                else:
-                    refs.extend(find_refs(prop_schema, current_path))
-        elif 'items' in schema:
+        properties = schema.get('properties') or {}
+        for prop, prop_schema in properties.items():
+            current_path = f"{path}.{prop}" if path else prop
+            if prop.endswith("Ref") or prop.endswith("Refs"):
+                refs.append((current_path, prop))
+            else:
+                refs.extend(find_refs(prop_schema, current_path))
+        if 'items' in schema:
             refs.extend(find_refs(schema['items'], f"{path}[]"))
     return refs
 
@@ -91,7 +94,7 @@ def get_tf_reference_mapping(target_kind):
     # Parses config/servicemappings/*.yaml
     # Returns a dict of { field_name: target_kind }
     mappings = {}
-    crds_dir = "config/servicemappings"
+    crds_dir = SERVICEMAPPINGS_DIR
     if not os.path.exists(crds_dir):
         return mappings
 
@@ -99,7 +102,7 @@ def get_tf_reference_mapping(target_kind):
         if not filename.endswith(".yaml"):
             continue
         filepath = os.path.join(crds_dir, filename)
-        with open(filepath, 'r') as f:
+        with open(filepath, 'r', encoding='utf-8') as f:
             try:
                 for doc in yaml.safe_load_all(f):
                     if doc and doc.get("kind") == "ServiceMapping":
@@ -109,7 +112,7 @@ def get_tf_reference_mapping(target_kind):
                                 for ref in refs:
                                     # tf field references can define the expected KCC Kind directly
                                     key = ref.get("key")
-                                    if key and "gvk" in ref and "kind" in ref["gvk"]:
+                                    if key and ref.get("gvk") and "kind" in ref["gvk"]:
                                         mappings[key] = ref["gvk"]["kind"]
                                     
                                     # Or they can be in a 'types' list
@@ -129,7 +132,7 @@ def build_dcl_to_kcc_kind_map():
     if not os.path.exists(metadata_file):
         return dcl_to_kcc
         
-    with open(metadata_file, "r") as f:
+    with open(metadata_file, 'r', encoding='utf-8') as f:
         content = f.read()
 
     # Regex findall ServiceBlocks
@@ -213,18 +216,23 @@ def get_dcl_reference_mapping(target_kind):
     if not target_dcl_resource:
         return mappings
         
-    service, resource = target_dcl_resource.split('/', 1)
+    if '/' in target_dcl_resource:
+        service, resource = target_dcl_resource.split('/', 1)
+    else:
+        service, resource = "", target_dcl_resource
+    
     
     # search for the DCL yaml file
     dcl_dir = "third_party/github.com/GoogleCloudPlatform/declarative-resource-client-library/services/google"
     if not os.path.exists(dcl_dir):
+        print(f"Warning: DCL directory not found at {dcl_dir}. Cannot determine DCL references.", file=sys.stderr)
         return mappings
 
     for root, _, files in os.walk(dcl_dir):
         for file in files:
             if file.endswith(".yaml"):
                 filepath = os.path.join(root, file)
-                with open(filepath, 'r') as f:
+                with open(filepath, 'r', encoding='utf-8') as f:
                     try:
                         dcl = yaml.safe_load(f)
                         if not dcl or 'components' not in dcl or 'schemas' not in dcl['components']:
@@ -256,14 +264,14 @@ def get_kind_to_service_map():
         "ComputeNodeGroup": "compute",
         "ContainerNodePool": "container"
     }
-    crds_dir = "config/crds/resources"
+    crds_dir = CRDS_DIR
     if not os.path.exists(crds_dir):
         return mapping
     for filename in os.listdir(crds_dir):
         if not filename.endswith(".yaml"):
             continue
         filepath = os.path.join(crds_dir, filename)
-        with open(filepath, 'r') as f:
+        with open(filepath, 'r', encoding='utf-8') as f:
             try:
                 for doc in yaml.safe_load_all(f):
                     if doc and doc.get("kind") == "CustomResourceDefinition":
@@ -282,7 +290,7 @@ def main():
         
     target_kind = sys.argv[1]
     
-    crds_dir = "config/crds/resources"
+    crds_dir = CRDS_DIR
     if not os.path.exists(crds_dir):
         print(f"Error: {crds_dir} not found.")
         sys.exit(1)
@@ -295,7 +303,7 @@ def main():
         if not filename.endswith(".yaml"):
             continue
         filepath = os.path.join(crds_dir, filename)
-        with open(filepath, 'r') as f:
+        with open(filepath, 'r', encoding='utf-8') as f:
             try:
                 for doc in yaml.safe_load_all(f):
                     if doc and doc.get("kind") == "CustomResourceDefinition":
@@ -313,6 +321,8 @@ def main():
         sys.exit(1)
 
     # Clean up common generic field
+    # Note: 'externalRef' is the standard status field in KCC containing the GCP ID of the resource itself.
+    # It is not a reference to another resource, so we skip it.
     target_refs = [r for r in target_refs if r[1] != "externalRef"]
 
     if not target_refs:
@@ -388,7 +398,7 @@ def main():
                         possible.extend(t_list)
             
             if possible:
-                possible.sort(key=lambda x: (len(x[0]), not x[0][0].isupper()))
+                possible.sort(key=lambda x: (len(x[0]), x[0][0].isupper()), reverse=True)
                 best = possible[0]
                 candidates = [c for c in possible if len(c[0]) == len(best[0]) and c[0][0].isupper() == best[0][0].isupper()]
                 matched = True
