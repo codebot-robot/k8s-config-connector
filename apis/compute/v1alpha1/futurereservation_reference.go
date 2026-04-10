@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package v1beta1
+package v1alpha1
 
 import (
 	"context"
@@ -68,16 +68,14 @@ func (r *FutureReservationRef) NormalizedExternal(ctx context.Context, reader cl
 		if apierrors.IsNotFound(err) {
 			return "", k8s.NewReferenceNotFoundError(u.GroupVersionKind(), key)
 		}
-		return "", fmt.Errorf("reading referenced %s %s: %w", ComputeFutureReservationGVK, key, err)
+		return "", fmt.Errorf("reading referenced %s %s: %w", ComputeFutureReservationGVK.Kind, key, err)
 	}
-	// Get external from status.externalRef. This is the most trustworthy place.
-	actualExternalRef, _, err := unstructured.NestedString(u.Object, "status", "externalRef")
+	externalValue, _, err := unstructured.NestedString(u.Object, "status", "externalRef")
 	if err != nil {
-		return "", fmt.Errorf("reading status.externalRef: %w", err)
+		return "", fmt.Errorf("reading status.externalRef from referenced %s %s: %w", ComputeFutureReservationGVK.Kind, key, err)
 	}
-	if actualExternalRef == "" {
+	if externalValue == "" {
 		return "", k8s.NewReferenceNotReadyError(u.GroupVersionKind(), key)
 	}
-	r.External = actualExternalRef
-	return r.External, nil
+	return externalValue, nil
 }

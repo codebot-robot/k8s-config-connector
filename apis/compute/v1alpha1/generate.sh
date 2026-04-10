@@ -22,6 +22,16 @@ REPO_ROOT="$(git rev-parse --show-toplevel)"
 source "${REPO_ROOT}/dev/tools/goimports.sh"
 cd ${REPO_ROOT}/dev/tools/controllerbuilder
 
+./generate-proto.sh
+
+go run . generate-types \
+  --service google.cloud.compute.v1beta \
+  --api-version compute.cnrm.cloud.google.com/v1alpha1 \
+  --resource ComputeFutureReservation:FutureReservation \
+  --resource ComputeInterconnect:Interconnect \
+  --resource ComputeNetworkAttachment:NetworkAttachment \
+  --resource ComputeNetworkEdgeSecurityService:NetworkEdgeSecurityService
+
 go run . generate-mapper \
     --multiversion \
     --service google.cloud.compute.v1 \
