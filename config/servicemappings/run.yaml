@@ -174,6 +174,15 @@ spec:
         type: name
       supportsConditions: false
     resourceReferences:
+      - tfField: template.service_mesh.mesh
+        description: |-
+          The Mesh resource name. Format: projects/{project}/locations/global/meshes/{mesh}, where {project} can be project id or number.
+        key: meshRef
+        targetField: name
+        gvk:
+          kind: NetworkServicesMesh
+          version: v1beta1
+          group: networkservices.cnrm.cloud.google.com
       - tfField: project
         key: projectRef
         description: |-

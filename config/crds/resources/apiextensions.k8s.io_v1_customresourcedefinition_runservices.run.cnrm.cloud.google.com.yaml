@@ -639,6 +639,17 @@ spec:
                         description: 'Namespace of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/namespaces/'
                         type: string
                     type: object
+                  serviceMesh:
+                    description: Optional. Specifies the service mesh configuration
+                      for this Cloud Run service.
+                    properties:
+                      mesh:
+                        description: 'The Mesh resource name. Format: projects/{project}/locations/global/meshes/{mesh},
+                          where {project} can be project id or number.'
+                        type: string
+                    required:
+                    - mesh
+                    type: object
                   sessionAffinity:
                     description: Enables session affinity. For more information, go
                       to https://cloud.google.com/run/docs/configuring/session-affinity.

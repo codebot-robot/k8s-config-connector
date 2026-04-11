@@ -546,7 +546,7 @@ All system labels in v1 now have a corresponding field in v2 RevisionTemplate.`,
 									"mesh": {
 										Type:        schema.TypeString,
 										Required:    true,
-										Description: `The mesh resource name.`,
+										Description: `The Mesh resource name. Format: projects/{project}/locations/global/meshes/{mesh}, where {project} can be project id or number.`,
 									},
 								},
 							},
@@ -1780,7 +1780,10 @@ func flattenCloudRunV2ServiceTemplateServiceMesh(v interface{}, d *schema.Resour
 	if v == nil {
 		return nil
 	}
-	original := v.(map[string]interface{})
+	original, ok := v.(map[string]interface{})
+	if !ok {
+		return nil
+	}
 	if len(original) == 0 {
 		return nil
 	}
@@ -1791,7 +1794,10 @@ func flattenCloudRunV2ServiceTemplateServiceMesh(v interface{}, d *schema.Resour
 }
 
 func flattenCloudRunV2ServiceTemplateServiceMeshMesh(v interface{}, d *schema.ResourceData, config *transport_tpg.Config) interface{} {
-	return v
+	if v == nil {
+		return v
+	}
+	return tpgresource.GetResourceNameFromSelfLink(v.(string))
 }
 
 func flattenCloudRunV2ServiceTemplateContainers(v interface{}, d *schema.ResourceData, config *transport_tpg.Config) interface{} {
@@ -3206,6 +3212,9 @@ func expandCloudRunV2ServiceTemplateServiceAccount(v interface{}, d tpgresource.
 }
 
 func expandCloudRunV2ServiceTemplateServiceMesh(v interface{}, d tpgresource.TerraformResourceData, config *transport_tpg.Config) (interface{}, error) {
+	if v == nil {
+		return nil, nil
+	}
 	l := v.([]interface{})
 	if len(l) == 0 || l[0] == nil {
 		return nil, nil
