@@ -35,8 +35,10 @@
 <td>{{product_name_short}} Resource Short Names</td>
 <td>gcpartifactregistryrepository<br>gcpartifactregistryrepositories<br>artifactregistryrepository</td>
 </tr>
+<tr>
 <td>{{product_name_short}} Service Name</td>
 <td>artifactregistry.googleapis.com</td>
+</tr>
 <tr>
 <td>{{product_name_short}} Resource Fully Qualified Name</td>
 <td>artifactregistryrepositories.artifactregistry.cnrm.cloud.google.com</td>

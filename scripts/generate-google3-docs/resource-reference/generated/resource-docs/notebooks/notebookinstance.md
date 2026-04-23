@@ -16,26 +16,28 @@
 <tbody>
 <tr>
 <td>{{gcp_name_short}} Service Name</td>
-<td>AccessContextManager</td>
+<td>Notebooks</td>
 </tr>
 <tr>
 <td>{{gcp_name_short}} Service Documentation</td>
-<td><a href="/access-context-manager/docs/">/access-context-manager/docs/</a></td>
+<td><a href="/notebooks/docs/">/notebooks/docs/</a></td>
 </tr>
 <tr>
 <td>{{gcp_name_short}} REST Resource Name</td>
-<td>accesscontextmanager/v1/accessPolicies</td>
+<td>v1.projects.locations.instances</td>
 </tr>
 <tr>
 <td>{{gcp_name_short}} REST Resource Documentation</td>
-<td><a href="/access-context-manager/docs/reference/rest/v1/accessPolicies">/access-context-manager/docs/reference/rest/v1/accessPolicies</a></td>
+<td><a href="/notebooks/docs/reference/rest/v1/projects.locations.instances">/notebooks/docs/reference/rest/v1/projects.locations.instances</a></td>
 </tr>
 <tr>
 <td>{{product_name_short}} Resource Short Names</td>
 <td>gcpnotebookinstance<br>gcpnotebookinstances<br>notebookinstance</td>
 </tr>
+<tr>
 <td>{{product_name_short}} Service Name</td>
-<td>accesscontextmanager.googleapis.com</td>
+<td>notebooks.googleapis.com</td>
+</tr>
 <tr>
 <td>{{product_name_short}} Resource Fully Qualified Name</td>
 <td>notebookinstances.notebooks.cnrm.cloud.google.com</td>

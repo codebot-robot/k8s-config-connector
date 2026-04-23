@@ -42,8 +42,10 @@
 <td>{{product_name_short}} Resource Short Names</td>
 <td>gcpprivilegedaccessmanagerentitlement<br>gcpprivilegedaccessmanagerentitlements<br>privilegedaccessmanagerentitlement</td>
 </tr>
+<tr>
 <td>{{product_name_short}} Service Name</td>
 <td>privilegedaccessmanager.googleapis.com</td>
+</tr>
 <tr>
 <td>{{product_name_short}} Resource Fully Qualified Name</td>
 <td>privilegedaccessmanagerentitlements.privilegedaccessmanager.cnrm.cloud.google.com</td>
