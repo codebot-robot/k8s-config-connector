@@ -1,4 +1,4 @@
-POST https://compute.googleapis.com/compute/v1/projects/${projectId}/zones/us-central1-a/futureReservations?alt=json
+POST https://compute.googleapis.com/compute/beta/projects/${projectId}/zones/us-central1-a/futureReservations?alt=json
 Accept: application/json
 Authorization: (removed)
 Connection: keep-alive
@@ -37,18 +37,18 @@ X-Xss-Protection: 0
   "name": "${operationID}",
   "operationType": "insert",
   "progress": 0,
-  "selfLink": "https://www.googleapis.com/compute/v1/projects/${projectId}/zones/us-central1-a/operations/${operationID}",
+  "selfLink": "https://www.googleapis.com/compute/beta/projects/${projectId}/zones/us-central1-a/operations/${operationID}",
   "startTime": "2024-04-01T12:34:56.123456Z",
   "status": "RUNNING",
   "targetId": "${futureReservationID}",
-  "targetLink": "https://www.googleapis.com/compute/v1/projects/${projectId}/zones/us-central1-a/futureReservations/${futureReservationID}",
+  "targetLink": "https://www.googleapis.com/compute/beta/projects/${projectId}/zones/us-central1-a/futureReservations/${futureReservationID}",
   "user": "user@example.com",
-  "zone": "https://www.googleapis.com/compute/v1/projects/${projectId}/zones/us-central1-a"
+  "zone": "https://www.googleapis.com/compute/beta/projects/${projectId}/zones/us-central1-a"
 }
 
 ---
 
-POST https://compute.googleapis.com/compute/v1/projects/${projectId}/zones/us-central1-a/operations/${operationID}/wait?alt=json
+POST https://compute.googleapis.com/compute/beta/projects/${projectId}/zones/us-central1-a/operations/${operationID}/wait?alt=json
 Accept: application/json
 Authorization: (removed)
 Connection: keep-alive
@@ -71,18 +71,18 @@ X-Xss-Protection: 0
   "name": "${operationID}",
   "operationType": "insert",
   "progress": 100,
-  "selfLink": "https://www.googleapis.com/compute/v1/projects/${projectId}/zones/us-central1-a/operations/${operationID}",
+  "selfLink": "https://www.googleapis.com/compute/beta/projects/${projectId}/zones/us-central1-a/operations/${operationID}",
   "startTime": "2024-04-01T12:34:56.123456Z",
   "status": "DONE",
   "targetId": "${futureReservationID}",
-  "targetLink": "https://www.googleapis.com/compute/v1/projects/${projectId}/zones/us-central1-a/futureReservations/${futureReservationID}",
+  "targetLink": "https://www.googleapis.com/compute/beta/projects/${projectId}/zones/us-central1-a/futureReservations/${futureReservationID}",
   "user": "user@example.com",
-  "zone": "https://www.googleapis.com/compute/v1/projects/${projectId}/zones/us-central1-a"
+  "zone": "https://www.googleapis.com/compute/beta/projects/${projectId}/zones/us-central1-a"
 }
 
 ---
 
-GET https://compute.googleapis.com/compute/v1/projects/${projectId}/zones/us-central1-a/futureReservations/${futureReservationID}?alt=json
+GET https://compute.googleapis.com/compute/beta/projects/${projectId}/zones/us-central1-a/futureReservations/${futureReservationID}?alt=json
 Accept: application/json
 Authorization: (removed)
 Connection: keep-alive
@@ -104,8 +104,8 @@ X-Xss-Protection: 0
   "kind": "compute#futureReservation",
   "name": "${futureReservationID}",
   "planningStatus": "DRAFT",
-  "selfLink": "https://www.googleapis.com/compute/v1/projects/${projectId}/zones/us-central1-a/futureReservations/${futureReservationID}",
-  "selfLinkWithId": "https://www.googleapis.com/compute/v1/projects/${projectId}/zones/us-central1-a/futureReservations/${futureReservationID}",
+  "selfLink": "https://www.googleapis.com/compute/beta/projects/${projectId}/zones/us-central1-a/futureReservations/${futureReservationID}",
+  "selfLinkWithId": "https://www.googleapis.com/compute/beta/projects/${projectId}/zones/us-central1-a/futureReservations/${futureReservationID}",
   "specificReservationRequired": false,
   "specificSkuProperties": {
     "instanceProperties": {
@@ -120,12 +120,12 @@ X-Xss-Protection: 0
     "endTime": "2026-06-20T07:00:00Z",
     "startTime": "2026-05-20T07:00:00Z"
   },
-  "zone": "https://www.googleapis.com/compute/v1/projects/${projectId}/zones/us-central1-a"
+  "zone": "https://www.googleapis.com/compute/beta/projects/${projectId}/zones/us-central1-a"
 }
 
 ---
 
-PATCH https://compute.googleapis.com/compute/v1/projects/${projectId}/zones/us-central1-a/futureReservations/${futureReservationID}?alt=json&updateMask=description
+PATCH https://compute.googleapis.com/compute/beta/projects/${projectId}/zones/us-central1-a/futureReservations/${futureReservationID}?alt=json&updateMask=description
 Accept: application/json
 Authorization: (removed)
 Connection: keep-alive
@@ -156,18 +156,18 @@ X-Xss-Protection: 0
   "name": "${operationID}",
   "operationType": "update",
   "progress": 0,
-  "selfLink": "https://www.googleapis.com/compute/v1/projects/${projectId}/zones/us-central1-a/operations/${operationID}",
+  "selfLink": "https://www.googleapis.com/compute/beta/projects/${projectId}/zones/us-central1-a/operations/${operationID}",
   "startTime": "2024-04-01T12:34:56.123456Z",
   "status": "RUNNING",
   "targetId": "${futureReservationID}",
-  "targetLink": "https://www.googleapis.com/compute/v1/projects/${projectId}/zones/us-central1-a/futureReservations/${futureReservationID}",
+  "targetLink": "https://www.googleapis.com/compute/beta/projects/${projectId}/zones/us-central1-a/futureReservations/${futureReservationID}",
   "user": "user@example.com",
-  "zone": "https://www.googleapis.com/compute/v1/projects/${projectId}/zones/us-central1-a"
+  "zone": "https://www.googleapis.com/compute/beta/projects/${projectId}/zones/us-central1-a"
 }
 
 ---
 
-POST https://compute.googleapis.com/compute/v1/projects/${projectId}/zones/us-central1-a/operations/${operationID}/wait?alt=json
+POST https://compute.googleapis.com/compute/beta/projects/${projectId}/zones/us-central1-a/operations/${operationID}/wait?alt=json
 Accept: application/json
 Authorization: (removed)
 Connection: keep-alive
@@ -190,18 +190,18 @@ X-Xss-Protection: 0
   "name": "${operationID}",
   "operationType": "update",
   "progress": 100,
-  "selfLink": "https://www.googleapis.com/compute/v1/projects/${projectId}/zones/us-central1-a/operations/${operationID}",
+  "selfLink": "https://www.googleapis.com/compute/beta/projects/${projectId}/zones/us-central1-a/operations/${operationID}",
   "startTime": "2024-04-01T12:34:56.123456Z",
   "status": "DONE",
   "targetId": "${futureReservationID}",
-  "targetLink": "https://www.googleapis.com/compute/v1/projects/${projectId}/zones/us-central1-a/futureReservations/${futureReservationID}",
+  "targetLink": "https://www.googleapis.com/compute/beta/projects/${projectId}/zones/us-central1-a/futureReservations/${futureReservationID}",
   "user": "user@example.com",
-  "zone": "https://www.googleapis.com/compute/v1/projects/${projectId}/zones/us-central1-a"
+  "zone": "https://www.googleapis.com/compute/beta/projects/${projectId}/zones/us-central1-a"
 }
 
 ---
 
-GET https://compute.googleapis.com/compute/v1/projects/${projectId}/zones/us-central1-a/futureReservations/${futureReservationID}?alt=json
+GET https://compute.googleapis.com/compute/beta/projects/${projectId}/zones/us-central1-a/futureReservations/${futureReservationID}?alt=json
 Accept: application/json
 Authorization: (removed)
 Connection: keep-alive
@@ -223,8 +223,8 @@ X-Xss-Protection: 0
   "kind": "compute#futureReservation",
   "name": "${futureReservationID}",
   "planningStatus": "DRAFT",
-  "selfLink": "https://www.googleapis.com/compute/v1/projects/${projectId}/zones/us-central1-a/futureReservations/${futureReservationID}",
-  "selfLinkWithId": "https://www.googleapis.com/compute/v1/projects/${projectId}/zones/us-central1-a/futureReservations/${futureReservationID}",
+  "selfLink": "https://www.googleapis.com/compute/beta/projects/${projectId}/zones/us-central1-a/futureReservations/${futureReservationID}",
+  "selfLinkWithId": "https://www.googleapis.com/compute/beta/projects/${projectId}/zones/us-central1-a/futureReservations/${futureReservationID}",
   "specificReservationRequired": false,
   "specificSkuProperties": {
     "instanceProperties": {
@@ -243,12 +243,12 @@ X-Xss-Protection: 0
     "endTime": "2026-06-20T07:00:00Z",
     "startTime": "2026-05-20T07:00:00Z"
   },
-  "zone": "https://www.googleapis.com/compute/v1/projects/${projectId}/zones/us-central1-a"
+  "zone": "https://www.googleapis.com/compute/beta/projects/${projectId}/zones/us-central1-a"
 }
 
 ---
 
-DELETE https://compute.googleapis.com/compute/v1/projects/${projectId}/zones/us-central1-a/futureReservations/${futureReservationID}?alt=json
+DELETE https://compute.googleapis.com/compute/beta/projects/${projectId}/zones/us-central1-a/futureReservations/${futureReservationID}?alt=json
 Accept: application/json
 Authorization: (removed)
 Connection: keep-alive
@@ -270,18 +270,18 @@ X-Xss-Protection: 0
   "name": "${operationID}",
   "operationType": "delete",
   "progress": 0,
-  "selfLink": "https://www.googleapis.com/compute/v1/projects/${projectId}/zones/us-central1-a/operations/${operationID}",
+  "selfLink": "https://www.googleapis.com/compute/beta/projects/${projectId}/zones/us-central1-a/operations/${operationID}",
   "startTime": "2024-04-01T12:34:56.123456Z",
   "status": "RUNNING",
   "targetId": "${futureReservationID}",
-  "targetLink": "https://www.googleapis.com/compute/v1/projects/${projectId}/zones/us-central1-a/futureReservations/${futureReservationID}",
+  "targetLink": "https://www.googleapis.com/compute/beta/projects/${projectId}/zones/us-central1-a/futureReservations/${futureReservationID}",
   "user": "user@example.com",
-  "zone": "https://www.googleapis.com/compute/v1/projects/${projectId}/zones/us-central1-a"
+  "zone": "https://www.googleapis.com/compute/beta/projects/${projectId}/zones/us-central1-a"
 }
 
 ---
 
-POST https://compute.googleapis.com/compute/v1/projects/${projectId}/zones/us-central1-a/operations/${operationID}/wait?alt=json
+POST https://compute.googleapis.com/compute/beta/projects/${projectId}/zones/us-central1-a/operations/${operationID}/wait?alt=json
 Accept: application/json
 Authorization: (removed)
 Connection: keep-alive
@@ -304,11 +304,11 @@ X-Xss-Protection: 0
   "name": "${operationID}",
   "operationType": "delete",
   "progress": 100,
-  "selfLink": "https://www.googleapis.com/compute/v1/projects/${projectId}/zones/us-central1-a/operations/${operationID}",
+  "selfLink": "https://www.googleapis.com/compute/beta/projects/${projectId}/zones/us-central1-a/operations/${operationID}",
   "startTime": "2024-04-01T12:34:56.123456Z",
   "status": "DONE",
   "targetId": "${futureReservationID}",
-  "targetLink": "https://www.googleapis.com/compute/v1/projects/${projectId}/zones/us-central1-a/futureReservations/${futureReservationID}",
+  "targetLink": "https://www.googleapis.com/compute/beta/projects/${projectId}/zones/us-central1-a/futureReservations/${futureReservationID}",
   "user": "user@example.com",
-  "zone": "https://www.googleapis.com/compute/v1/projects/${projectId}/zones/us-central1-a"
+  "zone": "https://www.googleapis.com/compute/beta/projects/${projectId}/zones/us-central1-a"
 }

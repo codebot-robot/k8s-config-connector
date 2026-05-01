@@ -61,5 +61,7 @@ func firestoreDatabaseFuzzer() fuzztesting.KRMFuzzer {
 	f.Unimplemented_NotYetTriaged(".tags")
 	f.Unimplemented_NotYetTriaged(".database_edition")
 
+	f.Unimplemented_NotYetTriaged(".firestore_data_access_mode")
+	f.Unimplemented_NotYetTriaged(".mongodb_compatible_data_access_mode")
 	return f
 }
