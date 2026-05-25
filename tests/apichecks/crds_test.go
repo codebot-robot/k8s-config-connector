@@ -1048,9 +1048,10 @@ func TestCRDObjectTypes(t *testing.T) {
 	// We want to eventually fix these, but for now we allowlist them so the test passes.
 	// This allows us to detect new regressions.
 	knownInvalidCRDs := map[string]bool{
-		"accesscontextmanageraccesslevels.accesscontextmanager.cnrm.cloud.google.com":   true, // status.observedState is an empty object
-		"aiplatformmodels.aiplatform.cnrm.cloud.google.com":                             true, // status.observedState.supportedExportFormats[] is an empty object
-		"apigeeenvironments.apigee.cnrm.cloud.google.com":                               true, // status.observedState is an empty object
+	        "vertexaicachedcontents.vertexai.cnrm.cloud.google.com":                         true,
+	        "accesscontextmanageraccesslevels.accesscontextmanager.cnrm.cloud.google.com":   true,
+	        "aiplatformmodels.aiplatform.cnrm.cloud.google.com":                             true,
+	        "apigeeenvironments.apigee.cnrm.cloud.google.com":                               true,
 		"apigeeorganizations.apigee.cnrm.cloud.google.com":                              true, // status.observedState is an empty object
 		"bigqueryconnectionconnections.bigqueryconnection.cnrm.cloud.google.com":        true, // spec.cloudResource is an empty object
 		"bigquerydatapolicies.bigquerydatapolicy.cnrm.cloud.google.com":                 true, // status.observedState is an empty object
