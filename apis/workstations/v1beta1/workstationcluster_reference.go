@@ -42,7 +42,7 @@ type WorkstationClusterRef struct {
 }
 
 func init() {
-	refs.Register(&WorkstationClusterRef{})
+	refs.Register(&WorkstationClusterRef{}, &WorkstationClusterIdentity{})
 }
 
 func (r *WorkstationClusterRef) GetGVK() schema.GroupVersionKind {

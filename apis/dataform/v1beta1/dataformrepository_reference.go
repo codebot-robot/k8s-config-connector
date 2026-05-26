@@ -42,7 +42,7 @@ type DataformRepositoryRef struct {
 }
 
 func init() {
-	refs.Register(&DataformRepositoryRef{})
+	refs.Register(&DataformRepositoryRef{}, &DataformRepositoryIdentity{})
 }
 
 func (r *DataformRepositoryRef) GetGVK() schema.GroupVersionKind {

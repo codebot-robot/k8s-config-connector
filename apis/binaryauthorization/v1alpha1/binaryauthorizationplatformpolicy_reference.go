@@ -40,7 +40,7 @@ type BinaryAuthorizationPlatformPolicyRef struct {
 }
 
 func init() {
-	refs.Register(&BinaryAuthorizationPlatformPolicyRef{})
+	refs.Register(&BinaryAuthorizationPlatformPolicyRef{}, &BinaryAuthorizationPlatformPolicyIdentity{})
 }
 
 func (r *BinaryAuthorizationPlatformPolicyRef) GetGVK() schema.GroupVersionKind {

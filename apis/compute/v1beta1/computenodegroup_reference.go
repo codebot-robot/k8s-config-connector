@@ -28,7 +28,7 @@ import (
 var _ refsv1beta1.Ref = &ComputeNodeGroupRef{}
 
 func init() {
-	refsv1beta1.Register(&ComputeNodeGroupRef{})
+	refsv1beta1.Register(&ComputeNodeGroupRef{}, &ComputeNodeGroupIdentity{})
 }
 
 // ComputeNodeGroupRef defines the resource reference to ComputeNodeGroup, which "External" field

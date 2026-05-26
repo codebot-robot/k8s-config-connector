@@ -41,7 +41,7 @@ type ComputeFutureReservationRef struct {
 }
 
 func init() {
-	refs.Register(&ComputeFutureReservationRef{})
+	refs.Register(&ComputeFutureReservationRef{}, &ComputeFutureReservationIdentity{})
 }
 
 func (r *ComputeFutureReservationRef) GetGVK() schema.GroupVersionKind {

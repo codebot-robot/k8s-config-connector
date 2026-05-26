@@ -43,7 +43,7 @@ type TaskRef struct {
 }
 
 func init() {
-	refs.Register(&TaskRef{})
+	refs.Register(&TaskRef{}, &TaskIdentity{})
 }
 
 func (r *TaskRef) GetGVK() schema.GroupVersionKind {

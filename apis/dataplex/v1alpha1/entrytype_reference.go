@@ -42,7 +42,7 @@ type EntryTypeRef struct {
 }
 
 func init() {
-	refs.Register(&EntryTypeRef{})
+	refs.Register(&EntryTypeRef{}, &EntryTypeIdentity{})
 }
 
 func (r *EntryTypeRef) GetGVK() schema.GroupVersionKind {

@@ -42,7 +42,7 @@ type LakeRef struct {
 }
 
 func init() {
-	refs.Register(&LakeRef{})
+	refs.Register(&LakeRef{}, &LakeIdentity{})
 }
 
 func (r *LakeRef) GetGVK() schema.GroupVersionKind {
