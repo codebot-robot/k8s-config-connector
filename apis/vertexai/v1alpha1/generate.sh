@@ -13,7 +13,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
 set -o errexit
 set -o nounset
 set -o pipefail
@@ -31,32 +30,24 @@ go run . generate-types \
     --resource VertexAIFeaturestore:Featurestore \
     --resource VertexAIMetadataStore:MetadataStore \
     --resource VertexAIDeploymentResourcePool:DeploymentResourcePool \
-    --resource VertexAIExampleStore:ExampleStore \
-    --prune-unused-types=false
+    --resource VertexAIExampleStore:ExampleStore
 
-mv ${REPO_ROOT}/apis/vertexai/v1alpha1/types.generated.go ${REPO_ROOT}/apis/vertexai/v1alpha1/types.generated.go.v1beta1
+mv ${REPO_ROOT}/apis/vertexai/v1alpha1/types.generated.go ${REPO_ROOT}/apis/vertexai/v1alpha1/v1beta_types.generated.go
 
 # Generate v1 types
 go run . generate-types \
     --service google.cloud.aiplatform.v1 \
     --api-version vertexai.cnrm.cloud.google.com/v1alpha1 \
     --resource VertexAIDataLabelingJob:DataLabelingJob \
-    --resource VertexAICachedContent:CachedContent \
-    --prune-unused-types=false
+    --resource VertexAICachedContent:CachedContent
 
-mv ${REPO_ROOT}/apis/vertexai/v1alpha1/types.generated.go ${REPO_ROOT}/apis/vertexai/v1alpha1/types.generated.go.v1
+mv ${REPO_ROOT}/apis/vertexai/v1alpha1/types.generated.go ${REPO_ROOT}/apis/vertexai/v1alpha1/v1_types.generated.go
 
-# Combine them using Python script
-python3 ${REPO_ROOT}/apis/vertexai/v1alpha1/combine_types.py \
-    ${REPO_ROOT}/apis/vertexai/v1alpha1/types.generated.go.v1beta1 \
-    ${REPO_ROOT}/apis/vertexai/v1alpha1/types.generated.go.v1 \
-    ${REPO_ROOT}/apis/vertexai/v1alpha1/types.generated.go
 
-# Prune unreachable types from combined file
-go run . prune-types --target ${REPO_ROOT}/apis/vertexai/v1alpha1/types.generated.go
-
-# Clean up temp files
-rm ${REPO_ROOT}/apis/vertexai/v1alpha1/types.generated.go.v1beta1 ${REPO_ROOT}/apis/vertexai/v1alpha1/types.generated.go.v1
+# Add Type=object to empty structs to avoid empty schemas
+sed -i '/type GoogleMaps struct/i \/\/ +kubebuilder:validation:XPreserveUnknownFields\n\/\/ +kubebuilder:validation:Type=object' "${REPO_ROOT}/apis/vertexai/v1alpha1/v1_types.generated.go"
+sed -i '/type Tool_CodeExecution struct/i \/\/ +kubebuilder:validation:XPreserveUnknownFields\n\/\/ +kubebuilder:validation:Type=object' "${REPO_ROOT}/apis/vertexai/v1alpha1/v1_types.generated.go"
+sed -i '/type URLContext struct/i \/\/ +kubebuilder:validation:XPreserveUnknownFields\n\/\/ +kubebuilder:validation:Type=object' "${REPO_ROOT}/apis/vertexai/v1alpha1/v1_types.generated.go"
 
 cd ${REPO_ROOT}
 dev/tasks/generate-crds
