@@ -3497,6 +3497,7 @@ rules:
   - delete
 - apiGroups:
   - securitycenter.cnrm.cloud.google.com
+  - securitycentermanagement.cnrm.cloud.google.com
   resources:
   - '*'
   verbs:
@@ -4811,6 +4812,7 @@ rules:
   - watch
 - apiGroups:
   - securitycenter.cnrm.cloud.google.com
+  - securitycentermanagement.cnrm.cloud.google.com
   resources:
   - '*'
   verbs:
