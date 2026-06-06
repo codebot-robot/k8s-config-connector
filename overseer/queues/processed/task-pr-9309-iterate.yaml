@@ -1,0 +1,8 @@
+type: pr-iterate
+url: https://github.com/GoogleCloudPlatform/k8s-config-connector/pull/9309
+number: 9309
+priority: medium
+phase: 1
+createdAt: 2026-06-05T04:42:32Z
+assignee: codebot-robot
+status: Completed
