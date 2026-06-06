@@ -1,0 +1,8 @@
+type: pr-investigate
+url: https://github.com/GoogleCloudPlatform/k8s-config-connector/pull/9343
+number: 9343
+priority: medium
+phase: 3
+createdAt: 2026-06-05T05:20:23Z
+assignee: codebot-robot
+status: Completed

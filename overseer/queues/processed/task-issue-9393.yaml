@@ -1,0 +1,9 @@
+type: issue-fix
+url: https://github.com/GoogleCloudPlatform/k8s-config-connector/issues/9393
+number: 9393
+priority: critical
+phase: 3
+createdAt: 2026-06-05T23:40:13Z
+assignee: codebot-robot
+status: Failed
+error: exit status 1

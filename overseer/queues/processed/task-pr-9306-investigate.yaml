@@ -1,0 +1,9 @@
+type: pr-investigate
+url: https://github.com/GoogleCloudPlatform/k8s-config-connector/pull/9306
+number: 9306
+priority: medium
+phase: 3
+createdAt: 2026-06-05T04:39:11Z
+assignee: codebot-robot
+status: Failed
+error: exit status 1
