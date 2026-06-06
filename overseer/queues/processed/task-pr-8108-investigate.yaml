@@ -1,0 +1,9 @@
+type: pr-investigate
+url: https://github.com/GoogleCloudPlatform/k8s-config-connector/pull/8108
+number: 8108
+priority: medium
+phase: 3
+createdAt: 2026-05-13T12:40:47Z
+assignee: codebot-robot
+status: Failed
+error: exit status 1

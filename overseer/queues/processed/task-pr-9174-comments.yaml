@@ -1,0 +1,9 @@
+type: pr-comments
+url: https://github.com/GoogleCloudPlatform/k8s-config-connector/pull/9174
+number: 9174
+priority: medium
+phase: 2
+createdAt: 2026-06-04T14:53:52Z
+assignee: codebot-robot
+status: Failed
+error: exit status 1
