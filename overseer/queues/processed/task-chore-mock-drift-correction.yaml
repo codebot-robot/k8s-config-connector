@@ -3,6 +3,6 @@ url: https://github.com/GoogleCloudPlatform/k8s-config-connector
 number: 0
 priority: medium
 phase: 4
-createdAt: 2026-06-06T00:23:03.919788667Z
-status: Pending
-agentFile: .agents/greenfield-reviewgen-controller.md
+createdAt: 2026-06-06T00:23:04.587576662Z
+status: Completed
+agentFile: .agents/mock-drift-correction.md
