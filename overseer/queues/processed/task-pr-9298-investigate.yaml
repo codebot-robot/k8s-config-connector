@@ -5,4 +5,5 @@ priority: medium
 phase: 3
 createdAt: 2026-06-05T04:29:39Z
 assignee: codebot-robot
-status: Pending
+status: Failed
+error: exit status 1
