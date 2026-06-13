@@ -1494,6 +1494,142 @@ func ComputeSecurityPolicySpec_v1beta1_ToProto(mapCtx *direct.MapContext, in *kr
 	// MISSING: UserDefinedFields
 	return out
 }
+
+/* found existing non-generated mapping function "ComputeServiceAttachmentSpec_v1beta1_FromProto", skipping
+func ComputeServiceAttachmentSpec_v1beta1_FromProto(mapCtx *direct.MapContext, in *pb.ServiceAttachment) *krm.ComputeServiceAttachmentSpec {
+	if in == nil {
+		return nil
+	}
+	out := &krm.ComputeServiceAttachmentSpec{}
+	// MISSING: ConnectedEndpoints
+	out.ConnectionPreference = in.ConnectionPreference
+	out.ConsumerAcceptLists = direct.Slice_FromProto(mapCtx, in.ConsumerAcceptLists, ServiceattachmentConsumerAcceptLists_v1beta1_FromProto)
+	out.ConsumerRejectLists = ComputeServiceAttachmentSpec_ConsumerRejectLists_FromProto(mapCtx, in.ConsumerRejectLists)
+	// MISSING: CreationTimestamp
+	out.Description = in.Description
+	// MISSING: DomainNames
+	out.EnableProxyProtocol = in.EnableProxyProtocol
+	// MISSING: Fingerprint
+	// MISSING: ID
+	// MISSING: Kind
+	// MISSING: Metadata
+	// MISSING: Name
+	// MISSING: NATSubnets
+	// (near miss): "NATSubnets" vs "NatSubnets"
+	// MISSING: ProducerForwardingRule
+	// MISSING: PropagatedConnectionLimit
+	// MISSING: PSCServiceAttachmentID
+	// MISSING: ReconcileConnections
+	// MISSING: Region
+	// MISSING: SelfLink
+	if in.GetTargetService() != "" {
+		out.TargetServiceRef = &refsv1beta1.ComputeForwardingRuleRef{External: in.GetTargetService()}
+	}
+	return out
+}
+*/
+
+/* found existing non-generated mapping function "ComputeServiceAttachmentSpec_v1beta1_ToProto", skipping
+func ComputeServiceAttachmentSpec_v1beta1_ToProto(mapCtx *direct.MapContext, in *krm.ComputeServiceAttachmentSpec) *pb.ServiceAttachment {
+	if in == nil {
+		return nil
+	}
+	out := &pb.ServiceAttachment{}
+	// MISSING: ConnectedEndpoints
+	out.ConnectionPreference = in.ConnectionPreference
+	out.ConsumerAcceptLists = direct.Slice_ToProto(mapCtx, in.ConsumerAcceptLists, ServiceattachmentConsumerAcceptLists_v1beta1_ToProto)
+	out.ConsumerRejectLists = ComputeServiceAttachmentSpec_ConsumerRejectLists_ToProto(mapCtx, in.ConsumerRejectLists)
+	// MISSING: CreationTimestamp
+	out.Description = in.Description
+	// MISSING: DomainNames
+	out.EnableProxyProtocol = in.EnableProxyProtocol
+	// MISSING: Fingerprint
+	// MISSING: ID
+	// MISSING: Kind
+	// MISSING: Metadata
+	// MISSING: Name
+	// MISSING: NATSubnets
+	// (near miss): "NATSubnets" vs "NatSubnets"
+	// MISSING: ProducerForwardingRule
+	// MISSING: PropagatedConnectionLimit
+	// MISSING: PSCServiceAttachmentID
+	// MISSING: ReconcileConnections
+	// MISSING: Region
+	// MISSING: SelfLink
+	if in.TargetServiceRef != nil {
+		out.TargetService = &in.TargetServiceRef.External
+	}
+	return out
+}
+*/
+
+/* found existing non-generated mapping function "ComputeServiceAttachmentStatus_v1beta1_FromProto", skipping
+func ComputeServiceAttachmentStatus_v1beta1_FromProto(mapCtx *direct.MapContext, in *pb.ServiceAttachment) *krm.ComputeServiceAttachmentStatus {
+	if in == nil {
+		return nil
+	}
+	out := &krm.ComputeServiceAttachmentStatus{}
+	out.ConnectedEndpoints = direct.Slice_FromProto(mapCtx, in.ConnectedEndpoints, ServiceattachmentConnectedEndpointsStatus_v1beta1_FromProto)
+	// MISSING: ConnectionPreference
+	// MISSING: ConsumerAcceptLists
+	// MISSING: ConsumerRejectLists
+	// MISSING: CreationTimestamp
+	// MISSING: Description
+	// MISSING: DomainNames
+	// MISSING: EnableProxyProtocol
+	out.Fingerprint = in.Fingerprint
+	// MISSING: ID
+	// (near miss): "ID" vs "Id"
+	// MISSING: Kind
+	// MISSING: Metadata
+	// MISSING: Name
+	// MISSING: NATSubnets
+	// MISSING: ProducerForwardingRule
+	// MISSING: PropagatedConnectionLimit
+	// MISSING: PSCServiceAttachmentID
+	// (near miss): "PSCServiceAttachmentID" vs "PscServiceAttachmentId"
+	// MISSING: ReconcileConnections
+	out.Region = in.Region
+	out.SelfLink = in.SelfLink
+	// MISSING: TargetService
+	return out
+}
+*/
+
+/*
+found existing non-generated mapping function "ComputeServiceAttachmentStatus_v1beta1_ToProto", skipping
+
+	func ComputeServiceAttachmentStatus_v1beta1_ToProto(mapCtx *direct.MapContext, in *krm.ComputeServiceAttachmentStatus) *pb.ServiceAttachment {
+		if in == nil {
+			return nil
+		}
+		out := &pb.ServiceAttachment{}
+		out.ConnectedEndpoints = direct.Slice_ToProto(mapCtx, in.ConnectedEndpoints, ServiceattachmentConnectedEndpointsStatus_v1beta1_ToProto)
+		// MISSING: ConnectionPreference
+		// MISSING: ConsumerAcceptLists
+		// MISSING: ConsumerRejectLists
+		// MISSING: CreationTimestamp
+		// MISSING: Description
+		// MISSING: DomainNames
+		// MISSING: EnableProxyProtocol
+		out.Fingerprint = in.Fingerprint
+		// MISSING: ID
+		// (near miss): "ID" vs "Id"
+		// MISSING: Kind
+		// MISSING: Metadata
+		// MISSING: Name
+		// MISSING: NATSubnets
+		// MISSING: ProducerForwardingRule
+		// MISSING: PropagatedConnectionLimit
+		// MISSING: PSCServiceAttachmentID
+		// (near miss): "PSCServiceAttachmentID" vs "PscServiceAttachmentId"
+		// MISSING: ReconcileConnections
+		out.Region = in.Region
+		out.SelfLink = in.SelfLink
+		// MISSING: TargetService
+		return out
+	}
+*/
 func ComputeSubnetworkSpec_v1beta1_FromProto(mapCtx *direct.MapContext, in *pb.Subnetwork) *krm.ComputeSubnetworkSpec {
 	if in == nil {
 		return nil
